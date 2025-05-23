@@ -1,21 +1,51 @@
-// app/modal/create.tsx
-import { router } from 'expo-router';
-import React, { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import QRCodePreview from '../../components/QRCodePreview';
-import QRForm from '../../components/QRForm';
-import QRTypeSelector from '../../components/QRTypeSelector';
-import { QRGenerator } from '../../services/QRGenerator';
-import { QRStorage } from '../../services/QRStorage';
-import { QRCodeData, QRCodeType, QRCodeTypeData } from '../../types/QRCode';
+import QRCodePreview from '../components/QRCodePreview';
+import QRForm from '../components/QRForm';
+import { QRGenerator } from '../services/QRGenerator';
+import { QRStorage } from '../services/QRStorage';
+import { QRCodeData, QRCodeTypeData } from '../types/QRCode';
 
-export default function CreateModal() {
-  const [selectedType, setSelectedType] = useState<QRCodeType>('link');
+export default function EditModal() {
+  const { id } = useLocalSearchParams<{ id: string }>();
+  const [qrCode, setQrCode] = useState<QRCodeData | null>(null);
   const [formData, setFormData] = useState<QRCodeTypeData>({} as QRCodeTypeData);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadQRCode();
+  }, [id]);
+
+  const loadQRCode = async () => {
+    if (!id) {
+      Alert.alert('Error', 'No QR code ID provided');
+      router.back();
+      return;
+    }
+
+    try {
+      const code = await QRStorage.getQRCodeById(id);
+      if (code) {
+        setQrCode(code);
+        setFormData(code.data);
+      } else {
+        Alert.alert('Error', 'QR code not found');
+        router.back();
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to load QR code');
+      router.back();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const canSave = () => {
-    switch (selectedType) {
+    if (!qrCode) return false;
+    
+    switch (qrCode.type) {
       case 'link':
         return 'url' in formData && formData.url?.trim();
       case 'email':
@@ -35,7 +65,7 @@ export default function CreateModal() {
   };
 
   const handleSave = async () => {
-    if (!canSave()) {
+    if (!qrCode || !canSave()) {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
@@ -43,39 +73,45 @@ export default function CreateModal() {
     setSaving(true);
     
     try {
-      const content = QRGenerator.generateContent(selectedType, formData);
-      const label = QRGenerator.generateLabel(selectedType, formData);
+      const content = QRGenerator.generateContent(qrCode.type, formData);
+      const label = QRGenerator.generateLabel(qrCode.type, formData);
       
-      const qrCodeData: QRCodeData = {
-        id: Date.now().toString(),
-        type: selectedType,
+      const updatedQRCode: QRCodeData = {
+        ...qrCode,
         label,
         data: formData,
         content,
-        createdAt: new Date().toISOString(),
       };
 
-      await QRStorage.saveQRCode(qrCodeData);
+      await QRStorage.updateQRCode(updatedQRCode);
       router.back();
     } catch (error) {
-      Alert.alert('Error', 'Failed to save QR code');
+      Alert.alert('Error', 'Failed to update QR code');
     } finally {
       setSaving(false);
     }
   };
 
-  const qrContent = canSave() ? QRGenerator.generateContent(selectedType, formData) : '';
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text style={styles.loadingText}>Loading...</Text>
+      </View>
+    );
+  }
+
+  if (!qrCode) {
+    return null;
+  }
+
+  const qrContent = canSave() ? QRGenerator.generateContent(qrCode.type, formData) : '';
 
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <QRTypeSelector
-          selectedType={selectedType}
-          onTypeSelect={setSelectedType}
-        />
-        
         <QRForm
-          type={selectedType}
+          type={qrCode.type}
+          initialData={qrCode.data}
           onDataChange={setFormData}
         />
         
@@ -106,7 +142,7 @@ export default function CreateModal() {
           disabled={!canSave() || saving}
         >
           <Text style={styles.saveButtonText}>
-            {saving ? 'Saving...' : 'Save'}
+            {saving ? 'Updating...' : 'Update'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -118,6 +154,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
   },
   content: {
     flex: 1,

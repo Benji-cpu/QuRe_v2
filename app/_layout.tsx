@@ -1,4 +1,3 @@
-// app/_layout.tsx
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
@@ -24,21 +23,21 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen 
-          name="modal/create" 
+          name="create" 
           options={{ 
             title: 'Create QR Code',
             presentation: 'modal',
           }} 
         />
         <Stack.Screen 
-          name="modal/edit" 
+          name="edit" 
           options={{ 
             title: 'Edit QR Code',
             presentation: 'modal',
           }} 
         />
         <Stack.Screen 
-          name="modal/view" 
+          name="view" 
           options={{ 
             title: 'QR Code',
             presentation: 'modal',

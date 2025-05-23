@@ -1,4 +1,3 @@
-// app/index.tsx
 import { Link, router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,6 +11,9 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadQRCodes();
+    
+    const interval = setInterval(loadQRCodes, 1000);
+    return () => clearInterval(interval);
   }, []);
 
   const loadQRCodes = async () => {
@@ -27,14 +29,14 @@ export default function HomeScreen() {
 
   const handleView = (qrCode: QRCodeData) => {
     router.push({
-      pathname: '/modal/view',
+      pathname: '/view',
       params: { id: qrCode.id }
     });
   };
 
   const handleEdit = (qrCode: QRCodeData) => {
     router.push({
-      pathname: '/modal/edit',
+      pathname: '/edit',
       params: { id: qrCode.id }
     });
   };
@@ -55,7 +57,7 @@ export default function HomeScreen() {
       <Text style={styles.emptyText}>
         Create your first QR code to get started!
       </Text>
-      <Link href="/modal/create" asChild>
+      <Link href="/create" asChild>
         <TouchableOpacity style={styles.emptyButton}>
           <Text style={styles.emptyButtonText}>Create QR Code</Text>
         </TouchableOpacity>
@@ -90,7 +92,7 @@ export default function HomeScreen() {
       />
       
       {qrCodes.length > 0 && (
-        <Link href="/modal/create" asChild>
+        <Link href="/create" asChild>
           <TouchableOpacity style={styles.fab}>
             <Text style={styles.fabIcon}>+</Text>
           </TouchableOpacity>
