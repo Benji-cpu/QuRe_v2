@@ -11,9 +11,6 @@ export default function HomeScreen() {
 
   useEffect(() => {
     loadQRCodes();
-    
-    const interval = setInterval(loadQRCodes, 1000);
-    return () => clearInterval(interval);
   }, []);
 
   const loadQRCodes = async () => {
@@ -29,14 +26,14 @@ export default function HomeScreen() {
 
   const handleView = (qrCode: QRCodeData) => {
     router.push({
-      pathname: '/view',
+      pathname: '/modal/view',
       params: { id: qrCode.id }
     });
   };
 
   const handleEdit = (qrCode: QRCodeData) => {
     router.push({
-      pathname: '/edit',
+      pathname: '/modal/edit',
       params: { id: qrCode.id }
     });
   };
@@ -57,7 +54,7 @@ export default function HomeScreen() {
       <Text style={styles.emptyText}>
         Create your first QR code to get started!
       </Text>
-      <Link href="/create" asChild>
+      <Link href="/modal/create" asChild>
         <TouchableOpacity style={styles.emptyButton}>
           <Text style={styles.emptyButtonText}>Create QR Code</Text>
         </TouchableOpacity>
@@ -75,6 +72,15 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.wallpaperButton}
+          onPress={() => router.push('/wallpaper')}
+        >
+          <Text style={styles.wallpaperButtonText}>🖼️ Wallpaper Mode</Text>
+        </TouchableOpacity>
+      </View>
+
       <FlatList
         data={qrCodes}
         keyExtractor={(item) => item.id}
@@ -92,7 +98,7 @@ export default function HomeScreen() {
       />
       
       {qrCodes.length > 0 && (
-        <Link href="/create" asChild>
+        <Link href="/modal/create" asChild>
           <TouchableOpacity style={styles.fab}>
             <Text style={styles.fabIcon}>+</Text>
           </TouchableOpacity>
@@ -106,6 +112,24 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  header: {
+    padding: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  wallpaperButton: {
+    backgroundColor: '#2196f3',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignItems: 'center',
+  },
+  wallpaperButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,

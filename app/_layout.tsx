@@ -16,6 +16,13 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen 
+          name="wallpaper" 
+          options={{ 
+            title: 'QuRe Wallpaper',
+            headerShown: false,
+          }} 
+        />
+        <Stack.Screen 
           name="index" 
           options={{ 
             title: 'QuRe',
@@ -23,23 +30,37 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen 
-          name="create" 
+          name="modal/create" 
           options={{ 
             title: 'Create QR Code',
             presentation: 'modal',
           }} 
         />
         <Stack.Screen 
-          name="edit" 
+          name="modal/edit" 
           options={{ 
             title: 'Edit QR Code',
             presentation: 'modal',
           }} 
         />
         <Stack.Screen 
-          name="view" 
+          name="modal/view" 
           options={{ 
             title: 'QR Code',
+            presentation: 'modal',
+          }} 
+        />
+        <Stack.Screen 
+          name="modal/settings" 
+          options={{ 
+            title: 'Settings',
+            presentation: 'modal',
+          }} 
+        />
+        <Stack.Screen 
+          name="modal/premium" 
+          options={{ 
+            title: 'Premium',
             presentation: 'modal',
           }} 
         />
