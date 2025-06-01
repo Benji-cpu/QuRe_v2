@@ -1,6 +1,5 @@
-// app/modal/create.tsx
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QRCodePreview from '../../components/QRCodePreview';
 import QRForm from '../../components/QRForm';
@@ -111,7 +110,7 @@ export default function CreateModal() {
       </ScrollView>
       
       <View style={styles.footer}>
-      <TouchableOpacity 
+        <TouchableOpacity 
           style={styles.cancelButton} 
           onPress={() => {
             if (router.canGoBack()) {
@@ -122,6 +121,19 @@ export default function CreateModal() {
           }}
         >
           <Text style={styles.cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[
+            styles.saveButton,
+            (!canSave() || saving) && styles.disabledButton
+          ]} 
+          onPress={handleSave}
+          disabled={!canSave() || saving}
+        >
+          <Text style={styles.saveButtonText}>
+            {saving ? 'Saving...' : 'Save'}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>

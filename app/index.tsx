@@ -1,9 +1,8 @@
-// app/index.tsx
 import { LinearGradient } from 'expo-linear-gradient';
 import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -16,7 +15,7 @@ import { QRCodeData } from '../types/QRCode';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export default function HomeScreen() {
+function HomeScreen() {
   const insets = useSafeAreaInsets();
   const wallpaperRef = useRef<View>(null);
   
@@ -259,6 +258,8 @@ export default function HomeScreen() {
     </GestureHandlerRootView>
   );
 }
+
+export default HomeScreen;
 
 const styles = StyleSheet.create({
   container: {
