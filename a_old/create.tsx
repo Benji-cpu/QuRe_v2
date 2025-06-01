@@ -2,12 +2,12 @@
 import { router } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { QRCodeData, QRCodeType, QRCodeTypeData } from '../../types/QRCode';
 import QRCodePreview from '../components/QRCodePreview';
 import QRForm from '../components/QRForm';
 import QRTypeSelector from '../components/QRTypeSelector';
 import { QRGenerator } from '../services/QRGenerator';
 import { QRStorage } from '../services/QRStorage';
+import { QRCodeData, QRCodeType, QRCodeTypeData } from '../types/QRCode';
 
 export default function CreateModal() {
   const [selectedType, setSelectedType] = useState<QRCodeType>('link');

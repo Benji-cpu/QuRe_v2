@@ -1,10 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import QRCodePreview from '../components/QRCodePreview';
-import { QR_TYPES } from '../constants/QRTypes';
-import { QRStorage } from '../services/QRStorage';
-import { QRCodeData } from '../types/QRCode';
+import QRCodePreview from '../../components/QRCodePreview';
+import { QR_TYPES } from '../../constants/QRTypes';
+import { QRStorage } from '../../services/QRStorage';
+import { QRCodeData } from '../../types/QRCode';
 
 export default function ViewModal() {
   const { id } = useLocalSearchParams<{ id: string }>();

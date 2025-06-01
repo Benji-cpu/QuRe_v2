@@ -7,11 +7,11 @@ import { Alert, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'rea
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
-import QRCodePreview from '../components/QRCodePreview';
-import { GRADIENT_PRESETS } from '../constants/Gradients';
-import { QRStorage } from '../services/QRStorage';
-import { UserPreferencesService } from '../services/UserPreferences';
-import { QRCodeData } from '../types/QRCode';
+import QRCodePreview from '../../components/QRCodePreview';
+import { GRADIENT_PRESETS } from '../../constants/Gradients';
+import { QRStorage } from '../../services/QRStorage';
+import { UserPreferencesService } from '../../services/UserPreferences';
+import { QRCodeData } from '../../types/QRCode';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 

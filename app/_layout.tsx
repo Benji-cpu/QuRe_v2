@@ -16,17 +16,17 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen 
-          name="wallpaper" 
-          options={{ 
-            title: 'QuRe Wallpaper',
-            headerShown: false,
-          }} 
-        />
-        <Stack.Screen 
           name="index" 
           options={{ 
             title: 'QuRe',
             headerShown: true,
+          }} 
+        />
+        <Stack.Screen 
+          name="wallpaper" 
+          options={{ 
+            title: 'QuRe Wallpaper',
+            headerShown: false,
           }} 
         />
         <Stack.Screen 
