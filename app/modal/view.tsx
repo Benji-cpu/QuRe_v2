@@ -1,3 +1,4 @@
+// app/modal/view.tsx (update the handleEdit function and navigation)
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -40,9 +41,17 @@ export default function ViewModal() {
 
   const handleEdit = () => {
     router.push({
-      pathname: '/edit',
+      pathname: '/modal/edit',
       params: { id: qrCode?.id }
     });
+  };
+
+  const handleClose = () => {
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/');
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -93,7 +102,7 @@ export default function ViewModal() {
       <View style={styles.footer}>
         <TouchableOpacity 
           style={styles.closeButton} 
-          onPress={() => router.back()}
+          onPress={handleClose}
         >
           <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>

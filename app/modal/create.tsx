@@ -1,3 +1,4 @@
+// app/modal/create.tsx
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -10,7 +11,7 @@ import { UserPreferencesService } from '../../services/UserPreferences';
 import { QRCodeData, QRCodeType, QRCodeTypeData } from '../../types/QRCode';
 
 export default function CreateModal() {
-  const { slot, returnTo } = useLocalSearchParams<{ slot?: string; returnTo?: string }>();
+  const { slot } = useLocalSearchParams<{ slot?: string }>();
   const [selectedType, setSelectedType] = useState<QRCodeType>('link');
   const [formData, setFormData] = useState<QRCodeTypeData>({} as QRCodeTypeData);
   const [saving, setSaving] = useState(false);
@@ -40,7 +41,7 @@ export default function CreateModal() {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
-
+  
     setSaving(true);
     
     try {
@@ -55,19 +56,19 @@ export default function CreateModal() {
         content,
         createdAt: new Date().toISOString(),
       };
-
+  
       await QRStorage.saveQRCode(qrCodeData);
-
+  
       if (slot === 'primary') {
         await UserPreferencesService.updatePrimaryQR(qrCodeData.id);
       } else if (slot === 'secondary') {
         await UserPreferencesService.updateSecondaryQR(qrCodeData.id);
       }
-
-      if (returnTo === 'wallpaper') {
-        router.replace('/wallpaper');
-      } else {
+  
+      if (router.canGoBack()) {
         router.back();
+      } else {
+        router.replace('/');
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to save QR code');
@@ -110,24 +111,17 @@ export default function CreateModal() {
       </ScrollView>
       
       <View style={styles.footer}>
-        <TouchableOpacity 
+      <TouchableOpacity 
           style={styles.cancelButton} 
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/');
+            }
+          }}
         >
           <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[
-            styles.saveButton,
-            (!canSave() || saving) && styles.disabledButton
-          ]} 
-          onPress={handleSave}
-          disabled={!canSave() || saving}
-        >
-          <Text style={styles.saveButtonText}>
-            {saving ? 'Saving...' : 'Save'}
-          </Text>
         </TouchableOpacity>
       </View>
     </View>

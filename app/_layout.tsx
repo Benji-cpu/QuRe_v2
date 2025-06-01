@@ -1,3 +1,4 @@
+// app/_layout.tsx
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 
@@ -19,13 +20,6 @@ export default function RootLayout() {
           name="index" 
           options={{ 
             title: 'QuRe',
-            headerShown: true,
-          }} 
-        />
-        <Stack.Screen 
-          name="wallpaper" 
-          options={{ 
-            title: 'QuRe Wallpaper',
             headerShown: false,
           }} 
         />
@@ -48,6 +42,14 @@ export default function RootLayout() {
           options={{ 
             title: 'QR Code',
             presentation: 'modal',
+          }} 
+        />
+        <Stack.Screen 
+          name="modal/history" 
+          options={{ 
+            title: 'QR Code History',
+            presentation: 'modal',
+            headerShown: false,
           }} 
         />
         <Stack.Screen 

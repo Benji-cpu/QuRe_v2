@@ -1,17 +1,15 @@
 import { LinearGradient } from 'expo-linear-gradient';
-import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { captureRef } from 'react-native-view-shot';
-import QRCodePreview from '../../components/QRCodePreview';
-import { GRADIENT_PRESETS } from '../../constants/Gradients';
-import { QRStorage } from '../../services/QRStorage';
-import { UserPreferencesService } from '../../services/UserPreferences';
-import { QRCodeData } from '../../types/QRCode';
+import QRCodePreview from '../components/QRCodePreview';
+import { GRADIENT_PRESETS } from '../constants/Gradients';
+import { QRStorage } from '../services/QRStorage';
+import { UserPreferencesService } from '../services/UserPreferences';
+import { QRCodeData } from '../types/QRCode';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -94,31 +92,11 @@ export default function WallpaperScreen() {
   };
 
   const handleExportWallpaper = async () => {
-    try {
-      setShowActionButtons(false);
-      
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Please grant permission to save photos');
-        setShowActionButtons(true);
-        return;
-      }
-
-      const uri = await captureRef(wallpaperRef, {
-        format: 'png',
-        quality: 1,
-      });
-
-      await MediaLibrary.saveToLibraryAsync(uri);
-      Alert.alert('Success', 'Wallpaper saved to your photos!');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save wallpaper');
-      console.error('Export error:', error);
-    } finally {
-      setShowActionButtons(true);
-    }
+    Alert.alert(
+      'Export Wallpaper', 
+      'To enable wallpaper export, you need to create a development build with expo-media-library. For now, you can take a screenshot of this screen.',
+      [{ text: 'OK' }]
+    );
   };
 
   const handleSettings = () => {
@@ -155,7 +133,7 @@ export default function WallpaperScreen() {
         <View style={styles.container}>
           <View ref={wallpaperRef} collapsable={false} style={styles.wallpaperContainer}>
             <LinearGradient
-              colors={currentGradient.colors}
+              colors={currentGradient.colors as [string, string, ...string[]]}
               start={currentGradient.start}
               end={currentGradient.end}
               style={styles.gradient}
@@ -177,7 +155,7 @@ export default function WallpaperScreen() {
                     </View>
                     <View style={styles.actionTextContainer}>
                       <Text style={styles.actionTitle}>Export Wallpaper</Text>
-                      <Text style={styles.actionSubtitle}>Save to your photos</Text>
+                      <Text style={styles.actionSubtitle}>Take a screenshot to save</Text>
                     </View>
                   </TouchableOpacity>
 
