@@ -1,11 +1,11 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import QRCodePreview from '../../components/QRCodePreview';
-import QRForm from '../../components/QRForm';
 import { QRGenerator } from '../../services/QRGenerator';
 import { QRStorage } from '../../services/QRStorage';
 import { QRCodeData, QRCodeTypeData } from '../../types/QRCode';
+import QRCodePreview from '../components/QRCodePreview';
+import QRForm from '../components/QRForm';
 
 export default function EditModal() {
   const { id, slot } = useLocalSearchParams<{ id: string; slot?: string }>();
@@ -85,14 +85,8 @@ export default function EditModal() {
 
       await QRStorage.updateQRCode(updatedQRCode);
       
-      if (slot) {
-        router.replace({
-          pathname: '/modal/view',
-          params: { id: qrCode.id, slot }
-        });
-      } else {
-        router.back();
-      }
+      router.dismissAll();
+      router.replace('/');
     } catch (error) {
       Alert.alert('Error', 'Failed to update QR code');
     } finally {
@@ -109,7 +103,8 @@ export default function EditModal() {
         { 
           text: 'Create New', 
           onPress: () => {
-            router.replace({
+            router.dismissAll();
+            router.push({
               pathname: '/modal/create',
               params: slot ? { slot } : {}
             });

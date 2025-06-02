@@ -75,7 +75,11 @@ function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  const changeGradient = (newIndex: number) => {
+  const changeGradient = (direction: 'left' | 'right') => {
+    const newIndex = direction === 'right' 
+      ? (currentGradientIndex < GRADIENT_PRESETS.length - 1 ? currentGradientIndex + 1 : 0)
+      : (currentGradientIndex > 0 ? currentGradientIndex - 1 : GRADIENT_PRESETS.length - 1);
+    
     setCurrentGradientIndex(newIndex);
     gradientTransition.value = withTiming(1, { duration: 200 }, () => {
       gradientTransition.value = 0;
@@ -84,15 +88,11 @@ function HomeScreen() {
 
   const swipeGesture = Gesture.Pan()
     .onEnd((event) => {
-      if (Math.abs(event.velocityX) > Math.abs(event.velocityY)) {
-        if (event.velocityX > 500) {
-          runOnJS(changeGradient)(
-            currentGradientIndex > 0 ? currentGradientIndex - 1 : GRADIENT_PRESETS.length - 1
-          );
-        } else if (event.velocityX < -500) {
-          runOnJS(changeGradient)(
-            currentGradientIndex < GRADIENT_PRESETS.length - 1 ? currentGradientIndex + 1 : 0
-          );
+      if (Math.abs(event.velocityX) > Math.abs(event.velocityY) && Math.abs(event.velocityX) > 500) {
+        if (event.velocityX > 0) {
+          runOnJS(changeGradient)('left');
+        } else {
+          runOnJS(changeGradient)('right');
         }
       }
     });

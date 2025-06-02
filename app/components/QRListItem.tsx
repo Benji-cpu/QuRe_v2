@@ -1,4 +1,3 @@
-// components/QRListItem.tsx
 import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { QR_TYPES } from '../../constants/QRTypes';
@@ -9,9 +8,10 @@ interface QRListItemProps {
   onPress: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  hideActions?: boolean;
 }
 
-export default function QRListItem({ qrCode, onPress, onEdit, onDelete }: QRListItemProps) {
+export default function QRListItem({ qrCode, onPress, onEdit, onDelete, hideActions = false }: QRListItemProps) {
   const typeConfig = QR_TYPES.find(t => t.type === qrCode.type);
   
   const handleDelete = () => {
@@ -53,14 +53,16 @@ export default function QRListItem({ qrCode, onPress, onEdit, onDelete }: QRList
         
         <Text style={styles.label}>{qrCode.label}</Text>
         
-        <View style={styles.actions}>
-          <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
-            <Text style={styles.editButton}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
-            <Text style={styles.deleteButton}>Delete</Text>
-          </TouchableOpacity>
-        </View>
+        {!hideActions && (
+          <View style={styles.actions}>
+            <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
+              <Text style={styles.editButton}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
+              <Text style={styles.deleteButton}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
   );

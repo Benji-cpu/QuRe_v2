@@ -1,10 +1,10 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import QRListItem from '../../components/QRListItem';
 import { QRStorage } from '../../services/QRStorage';
 import { UserPreferencesService } from '../../services/UserPreferences';
 import { QRCodeData } from '../../types/QRCode';
+import QRListItem from '../components/QRListItem';
 
 export default function HistoryModal() {
   const { selectMode, slot } = useLocalSearchParams<{ selectMode?: string; slot?: string }>();
@@ -35,7 +35,8 @@ export default function HistoryModal() {
         } else if (slot === 'secondary') {
           await UserPreferencesService.updateSecondaryQR(qrCode.id);
         }
-        router.back();
+        router.dismissAll();
+        router.replace('/');
       } catch (error) {
         Alert.alert('Error', 'Failed to select QR code');
       }

@@ -1,5 +1,7 @@
+import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import SwipeIndicator from './SwipeIndicator';
 
 interface ActionCardsProps {
   onExportWallpaper: () => void;
@@ -10,8 +12,8 @@ export default function ActionCards({ onExportWallpaper, onSettings }: ActionCar
   return (
     <View style={styles.actionsContainer}>
       <TouchableOpacity style={styles.actionCard} onPress={onExportWallpaper}>
-        <View style={styles.actionLeft}>
-          <Text style={styles.actionIcon}>⬇</Text>
+        <View style={styles.iconContainer}>
+          <Feather name="download" size={24} color="white" />
         </View>
         <View style={styles.actionContent}>
           <Text style={styles.actionTitle}>Export Wallpaper</Text>
@@ -20,8 +22,8 @@ export default function ActionCards({ onExportWallpaper, onSettings }: ActionCar
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.actionCard} onPress={onSettings}>
-        <View style={styles.actionLeft}>
-          <Text style={styles.actionIcon}>⚙️</Text>
+        <View style={styles.iconContainer}>
+          <Feather name="settings" size={24} color="white" />
         </View>
         <View style={styles.actionContent}>
           <Text style={styles.actionTitle}>Settings</Text>
@@ -29,15 +31,7 @@ export default function ActionCards({ onExportWallpaper, onSettings }: ActionCar
         </View>
       </TouchableOpacity>
 
-      <View style={styles.actionCard}>
-        <View style={styles.actionLeft}>
-          <Text style={styles.actionIcon}>⟨ ⟩</Text>
-        </View>
-        <View style={styles.actionContent}>
-          <Text style={styles.actionTitle}>Swipe to change background</Text>
-          <Text style={styles.actionSubtitle}>Change gradient colors</Text>
-        </View>
-      </View>
+      <SwipeIndicator />
     </View>
   );
 }
@@ -51,16 +45,20 @@ const styles = StyleSheet.create({
   actionCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 12,
     padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  actionLeft: {
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
-  },
-  actionIcon: {
-    fontSize: 20,
-    color: 'white',
   },
   actionContent: {
     flex: 1,
