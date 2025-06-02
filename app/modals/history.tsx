@@ -1,14 +1,19 @@
-// app/modal/history.tsx
-import { router } from 'expo-router';
+// app/modals/history.tsx
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QRListItem from '../../components/QRListItem';
 import { QRStorage } from '../../services/QRStorage';
+import { UserPreferencesService } from '../../services/UserPreferences';
 import { QRCodeData } from '../../types/QRCode';
 
 export default function HistoryModal() {
+  const { selectMode, slot } = useLocalSearchParams<{ selectMode?: string; slot?: string }>();
   const [qrCodes, setQrCodes] = useState<QRCodeData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [assigning, setAssigning] = useState(false);
+
+  const isSelectMode = selectMode === 'true';
 
   useEffect(() => {
     loadQRCodes();
@@ -25,16 +30,55 @@ export default function HistoryModal() {
     }
   };
 
+  const handleSelectQRCode = async (qrCode: QRCodeData) => {
+    if (!isSelectMode || !slot) return;
+    
+    setAssigning(true);
+    try {
+      if (slot === 'primary') {
+        await UserPreferencesService.updatePrimaryQR(qrCode.id);
+      } else if (slot === 'secondary') {
+        await UserPreferencesService.updateSecondaryQR(qrCode.id);
+      }
+      
+      Alert.alert(
+        'Success', 
+        `QR code assigned to ${slot} slot`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (router.canGoBack()) {
+                router.back();
+              } else {
+                router.replace('/');
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'Failed to assign QR code to slot');
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   const handleView = (qrCode: QRCodeData) => {
+    if (isSelectMode) {
+      handleSelectQRCode(qrCode);
+      return;
+    }
+    
     router.push({
-      pathname: '/modal/view',
+      pathname: '/modals/view',
       params: { id: qrCode.id }
     });
   };
 
   const handleEdit = (qrCode: QRCodeData) => {
     router.push({
-      pathname: '/modal/edit',
+      pathname: '/modals/edit',
       params: { id: qrCode.id }
     });
   };
@@ -49,7 +93,14 @@ export default function HistoryModal() {
   };
 
   const handleCreate = () => {
-    router.push('/modal/create');
+    if (isSelectMode && slot) {
+      router.push({
+        pathname: '/modals/create',
+        params: { slot: slot }
+      });
+    } else {
+      router.push('/modals/create');
+    }
   };
 
   const renderEmpty = () => (
@@ -57,7 +108,10 @@ export default function HistoryModal() {
       <Text style={styles.emptyIcon}>📱</Text>
       <Text style={styles.emptyTitle}>No QR Codes Yet</Text>
       <Text style={styles.emptyText}>
-        Create your first QR code to get started!
+        {isSelectMode 
+          ? `Create your first QR code for the ${slot} slot!`
+          : 'Create your first QR code to get started!'
+        }
       </Text>
       <TouchableOpacity style={styles.emptyButton} onPress={handleCreate}>
         <Text style={styles.emptyButtonText}>Create QR Code</Text>
@@ -76,7 +130,12 @@ export default function HistoryModal() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Your QR Codes</Text>
+        <Text style={styles.headerTitle}>
+          {isSelectMode 
+            ? `Select QR Code for ${slot === 'primary' ? 'Primary' : 'Secondary'} Slot`
+            : 'Your QR Codes'
+          }
+        </Text>
         <TouchableOpacity 
           style={styles.closeButton} 
           onPress={() => router.back()}
@@ -85,6 +144,14 @@ export default function HistoryModal() {
         </TouchableOpacity>
       </View>
       
+      {isSelectMode && slot && (
+        <View style={styles.selectModeInfo}>
+          <Text style={styles.selectModeText}>
+            Tap a QR code to assign it to the {slot === 'primary' ? 'Primary' : 'Secondary'} slot
+          </Text>
+        </View>
+      )}
+      
       <FlatList
         data={qrCodes}
         keyExtractor={(item) => item.id}
@@ -92,8 +159,12 @@ export default function HistoryModal() {
           <QRListItem
             qrCode={item}
             onPress={() => handleView(item)}
-            onEdit={() => handleEdit(item)}
-            onDelete={() => handleDelete(item)}
+            {...(!isSelectMode && { 
+              onEdit: () => handleEdit(item),
+              onDelete: () => handleDelete(item)
+            })}
+            showActions={!isSelectMode}
+            disabled={assigning}
           />
         )}
         contentContainerStyle={qrCodes.length === 0 ? styles.emptyList : styles.list}
@@ -129,6 +200,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    flex: 1,
+    marginRight: 10,
   },
   closeButton: {
     width: 30,
@@ -141,6 +214,19 @@ const styles = StyleSheet.create({
   closeButtonText: {
     fontSize: 18,
     color: '#666',
+  },
+  selectModeInfo: {
+    backgroundColor: '#e3f2fd',
+    padding: 12,
+    marginHorizontal: 20,
+    marginTop: 10,
+    borderRadius: 8,
+  },
+  selectModeText: {
+    fontSize: 14,
+    color: '#1976d2',
+    fontWeight: '500',
+    textAlign: 'center',
   },
   loadingContainer: {
     flex: 1,

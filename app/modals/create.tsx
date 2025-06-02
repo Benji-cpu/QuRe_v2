@@ -1,15 +1,16 @@
-// app/modal/create.tsx
-import { router } from 'expo-router';
-import React, { useState } from 'react';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import QRCodePreview from '../components/QRCodePreview';
-import QRForm from '../components/QRForm';
-import QRTypeSelector from '../components/QRTypeSelector';
-import { QRGenerator } from '../services/QRGenerator';
-import { QRStorage } from '../services/QRStorage';
-import { QRCodeData, QRCodeType, QRCodeTypeData } from '../types/QRCode';
+import QRCodePreview from '../../components/QRCodePreview';
+import QRForm from '../../components/QRForm';
+import QRTypeSelector from '../../components/QRTypeSelector';
+import { QRGenerator } from '../../services/QRGenerator';
+import { QRStorage } from '../../services/QRStorage';
+import { UserPreferencesService } from '../../services/UserPreferences';
+import { QRCodeData, QRCodeType, QRCodeTypeData } from '../../types/QRCode';
 
 export default function CreateModal() {
+  const { slot } = useLocalSearchParams<{ slot?: string }>();
   const [selectedType, setSelectedType] = useState<QRCodeType>('link');
   const [formData, setFormData] = useState<QRCodeTypeData>({} as QRCodeTypeData);
   const [saving, setSaving] = useState(false);
@@ -39,7 +40,7 @@ export default function CreateModal() {
       Alert.alert('Error', 'Please fill in all required fields');
       return;
     }
-
+  
     setSaving(true);
     
     try {
@@ -54,10 +55,25 @@ export default function CreateModal() {
         content,
         createdAt: new Date().toISOString(),
       };
-
+  
+      // Save the QR code to storage first
       await QRStorage.saveQRCode(qrCodeData);
-      router.back();
+  
+      // Then assign it to the specified slot
+      if (slot === 'primary') {
+        await UserPreferencesService.updatePrimaryQR(qrCodeData.id);
+      } else if (slot === 'secondary') {
+        await UserPreferencesService.updateSecondaryQR(qrCodeData.id);
+      }
+  
+      // Navigate back to home screen
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/');
+      }
     } catch (error) {
+      console.error('Error saving QR code:', error);
       Alert.alert('Error', 'Failed to save QR code');
     } finally {
       setSaving(false);
@@ -69,6 +85,14 @@ export default function CreateModal() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {slot && (
+          <View style={styles.slotInfo}>
+            <Text style={styles.slotText}>
+              Creating QR code for {slot === 'primary' ? 'Primary' : 'Secondary'} slot
+            </Text>
+          </View>
+        )}
+        
         <QRTypeSelector
           selectedType={selectedType}
           onTypeSelect={setSelectedType}
@@ -92,7 +116,13 @@ export default function CreateModal() {
       <View style={styles.footer}>
         <TouchableOpacity 
           style={styles.cancelButton} 
-          onPress={() => router.back()}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/');
+            }
+          }}
         >
           <Text style={styles.cancelButtonText}>Cancel</Text>
         </TouchableOpacity>
@@ -122,6 +152,18 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+  },
+  slotInfo: {
+    backgroundColor: '#e3f2fd',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  slotText: {
+    fontSize: 14,
+    color: '#1976d2',
+    fontWeight: '500',
+    textAlign: 'center',
   },
   previewContainer: {
     marginTop: 20,
