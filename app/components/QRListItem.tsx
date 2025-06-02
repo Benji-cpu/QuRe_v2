@@ -1,31 +1,20 @@
 // components/QRListItem.tsx
 import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { QR_TYPES } from '../constants/QRTypes';
-import { QRCodeData } from '../types/QRCode';
+import { QR_TYPES } from '../../constants/QRTypes';
+import { QRCodeData } from '../../types/QRCode';
 
 interface QRListItemProps {
   qrCode: QRCodeData;
   onPress: () => void;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  showActions?: boolean;
-  disabled?: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
-export default function QRListItem({ 
-  qrCode, 
-  onPress, 
-  onEdit, 
-  onDelete, 
-  showActions = true,
-  disabled = false 
-}: QRListItemProps) {
+export default function QRListItem({ qrCode, onPress, onEdit, onDelete }: QRListItemProps) {
   const typeConfig = QR_TYPES.find(t => t.type === qrCode.type);
   
   const handleDelete = () => {
-    if (!onDelete) return;
-    
     Alert.alert(
       'Delete QR Code',
       `Are you sure you want to delete "${qrCode.label}"?`,
@@ -52,11 +41,7 @@ export default function QRListItem({
   };
 
   return (
-    <TouchableOpacity 
-      style={[styles.container, disabled && styles.disabled]} 
-      onPress={onPress}
-      disabled={disabled}
-    >
+    <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.typeIndicator}>
@@ -68,20 +53,14 @@ export default function QRListItem({
         
         <Text style={styles.label}>{qrCode.label}</Text>
         
-        {showActions && (onEdit || onDelete) && (
-          <View style={styles.actions}>
-            {onEdit && (
-              <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
-                <Text style={styles.editButton}>Edit</Text>
-              </TouchableOpacity>
-            )}
-            {onDelete && (
-              <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
-                <Text style={styles.deleteButton}>Delete</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+        <View style={styles.actions}>
+          <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
+            <Text style={styles.editButton}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
+            <Text style={styles.deleteButton}>Delete</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -101,9 +80,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
     elevation: 3,
-  },
-  disabled: {
-    opacity: 0.6,
   },
   content: {
     padding: 15,

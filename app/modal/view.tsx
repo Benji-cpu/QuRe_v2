@@ -1,18 +1,15 @@
-// app/modals/view.tsx (update the handleEdit function and navigation)
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import QRCodePreview from '../../components/QRCodePreview';
 import { QR_TYPES } from '../../constants/QRTypes';
 import { QRStorage } from '../../services/QRStorage';
-import { UserPreferencesService } from '../../services/UserPreferences';
 import { QRCodeData } from '../../types/QRCode';
 
 export default function ViewModal() {
   const { id, slot } = useLocalSearchParams<{ id: string; slot?: string }>();
   const [qrCode, setQrCode] = useState<QRCodeData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [assigningToSlot, setAssigningToSlot] = useState(false);
 
   useEffect(() => {
     loadQRCode();
@@ -43,43 +40,16 @@ export default function ViewModal() {
 
   const handleEdit = () => {
     router.push({
-      pathname: '/modals/edit',
-      params: { id: qrCode?.id, slot: slot }
+      pathname: '/modal/edit',
+      params: { id: qrCode?.id, slot }
     });
   };
 
-  const handleAssignToSlot = async (targetSlot: 'primary' | 'secondary') => {
-    if (!qrCode) return;
-    
-    setAssigningToSlot(true);
-    try {
-      if (targetSlot === 'primary') {
-        await UserPreferencesService.updatePrimaryQR(qrCode.id);
-      } else {
-        await UserPreferencesService.updateSecondaryQR(qrCode.id);
-      }
-      
-      Alert.alert(
-        'Success', 
-        `QR code assigned to ${targetSlot} slot`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              if (router.canGoBack()) {
-                router.back();
-              } else {
-                router.replace('/');
-              }
-            }
-          }
-        ]
-      );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to assign QR code to slot');
-    } finally {
-      setAssigningToSlot(false);
-    }
+  const handleChangeQR = () => {
+    router.push({
+      pathname: '/modal/history',
+      params: { selectMode: 'true', slot: slot || '' }
+    });
   };
 
   const handleClose = () => {
@@ -132,29 +102,6 @@ export default function ViewModal() {
             <Text style={styles.dataTitle}>QR Code Data:</Text>
             <Text style={styles.dataContent}>{qrCode.content}</Text>
           </View>
-
-          {/* Show slot assignment options if we're not coming from a specific slot */}
-          {!slot && (
-            <View style={styles.slotAssignmentContainer}>
-              <Text style={styles.slotAssignmentTitle}>Assign to Slot:</Text>
-              <View style={styles.slotButtons}>
-                <TouchableOpacity 
-                  style={styles.slotButton}
-                  onPress={() => handleAssignToSlot('primary')}
-                  disabled={assigningToSlot}
-                >
-                  <Text style={styles.slotButtonText}>Primary Slot</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.slotButton}
-                  onPress={() => handleAssignToSlot('secondary')}
-                  disabled={assigningToSlot}
-                >
-                  <Text style={styles.slotButtonText}>Secondary Slot</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
         </View>
       </ScrollView>
       
@@ -165,6 +112,15 @@ export default function ViewModal() {
         >
           <Text style={styles.closeButtonText}>Close</Text>
         </TouchableOpacity>
+        
+        {slot && (
+          <TouchableOpacity 
+            style={styles.changeButton} 
+            onPress={handleChangeQR}
+          >
+            <Text style={styles.changeButtonText}>Change</Text>
+          </TouchableOpacity>
+        )}
         
         <TouchableOpacity 
           style={styles.editButton} 
@@ -268,35 +224,6 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
   },
-  slotAssignmentContainer: {
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-    paddingTop: 20,
-    marginTop: 20,
-  },
-  slotAssignmentTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
-  },
-  slotButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  slotButton: {
-    flex: 1,
-    backgroundColor: '#e3f2fd',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  slotButtonText: {
-    fontSize: 14,
-    color: '#1976d2',
-    fontWeight: '500',
-  },
   footer: {
     flexDirection: 'row',
     padding: 20,
@@ -316,6 +243,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     fontWeight: '500',
+  },
+  changeButton: {
+    flex: 1,
+    paddingVertical: 15,
+    borderRadius: 8,
+    backgroundColor: '#FF9800',
+    alignItems: 'center',
+  },
+  changeButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: 'bold',
   },
   editButton: {
     flex: 1,

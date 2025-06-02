@@ -1,8 +1,8 @@
 // components/QRForm.tsx
 import React, { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { QR_TYPES } from '../constants/QRTypes';
-import { QRCodeType, QRCodeTypeData } from '../types/QRCode';
+import { QR_TYPES } from '../../constants/QRTypes';
+import { QRCodeType, QRCodeTypeData } from '../../types/QRCode';
 
 interface QRFormProps {
   type: QRCodeType;
@@ -28,7 +28,7 @@ export default function QRForm({ type, initialData, onDataChange }: QRFormProps)
   }, [initialData, type]);
 
   useEffect(() => {
-    onDataChange(formData as QRCodeTypeData);
+    onDataChange(formData as unknown as QRCodeTypeData);
   }, [formData, onDataChange]);
 
   const updateField = (key: string, value: string) => {

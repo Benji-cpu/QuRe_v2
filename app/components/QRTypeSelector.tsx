@@ -1,8 +1,8 @@
 // components/QRTypeSelector.tsx
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { QR_TYPES } from '../constants/QRTypes';
-import { QRCodeType } from '../types/QRCode';
+import { QR_TYPES } from '../../constants/QRTypes';
+import { QRCodeType } from '../../types/QRCode';
 
 interface QRTypeSelectorProps {
   selectedType: QRCodeType;

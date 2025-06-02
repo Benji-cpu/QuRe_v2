@@ -8,7 +8,7 @@ import { QRStorage } from '../../services/QRStorage';
 import { QRCodeData, QRCodeTypeData } from '../../types/QRCode';
 
 export default function EditModal() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, slot } = useLocalSearchParams<{ id: string; slot?: string }>();
   const [qrCode, setQrCode] = useState<QRCodeData | null>(null);
   const [formData, setFormData] = useState<QRCodeTypeData>({} as QRCodeTypeData);
   const [saving, setSaving] = useState(false);
@@ -84,12 +84,39 @@ export default function EditModal() {
       };
 
       await QRStorage.updateQRCode(updatedQRCode);
-      router.back();
+      
+      if (slot) {
+        router.replace({
+          pathname: '/modal/view',
+          params: { id: qrCode.id, slot }
+        });
+      } else {
+        router.back();
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to update QR code');
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleChangeType = () => {
+    Alert.alert(
+      'Change QR Type',
+      'To change the QR code type, please create a new QR code.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Create New', 
+          onPress: () => {
+            router.replace({
+              pathname: '/modal/create',
+              params: slot ? { slot } : {}
+            });
+          }
+        }
+      ]
+    );
   };
 
   if (loading) {
@@ -108,7 +135,24 @@ export default function EditModal() {
 
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>Edit QR Code</Text>
+        {slot && (
+          <Text style={styles.slotIndicator}>
+            {slot === 'primary' ? 'Primary' : 'Secondary'} Slot
+          </Text>
+        )}
+      </View>
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <TouchableOpacity style={styles.typeDisplay} onPress={handleChangeType}>
+          <Text style={styles.typeLabel}>QR Code Type</Text>
+          <View style={styles.typeValue}>
+            <Text style={styles.typeText}>{qrCode.type.toUpperCase()}</Text>
+            <Text style={styles.changeText}>Change →</Text>
+          </View>
+        </TouchableOpacity>
+
         <QRForm
           type={qrCode.type}
           initialData={qrCode.data}
@@ -155,6 +199,23 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  header: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  slotIndicator: {
+    fontSize: 14,
+    color: '#2196f3',
+    marginTop: 4,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -167,6 +228,33 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+  },
+  typeDisplay: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  typeLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
+  typeValue: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  typeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  changeText: {
+    fontSize: 14,
+    color: '#2196f3',
   },
   previewContainer: {
     marginTop: 20,

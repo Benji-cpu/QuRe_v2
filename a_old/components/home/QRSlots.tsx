@@ -2,8 +2,8 @@ import { router } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { EdgeInsets } from 'react-native-safe-area-context';
-import { QRCodeData } from '../../types/QRCode';
-import QRCodePreview from '../QRCodePreview';
+import QRCodePreview from '../../../components/QRCodePreview';
+import { QRCodeData } from '../../../types/QRCode';
 
 interface QRSlotsProps {
   primaryQR: QRCodeData | null;
@@ -25,7 +25,7 @@ export default function QRSlots({
   
   const handleQRSlotPress = (slot: 'primary' | 'secondary') => {
     if (slot === 'secondary' && !isPremium) {
-      router.push('/modals/premium');
+      router.push('/modal/premium');
       return;
     }
 
@@ -33,12 +33,12 @@ export default function QRSlots({
     
     if (existingQR) {
       router.push({
-        pathname: '/modals/view',
+        pathname: '/modal/view',
         params: { id: existingQR.id, slot: slot }
       });
     } else {
       router.push({
-        pathname: '/modals/create',
+        pathname: '/modal/create',
         params: { slot: slot }
       });
     }

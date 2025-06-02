@@ -44,8 +44,8 @@ export default function SettingsModal() {
     }
   };
 
-  const handlePremiumAccess = () => {
-    router.push('/modals/premium');
+  const handleUpgrade = () => {
+    router.push('/modal/premium');
   };
 
   return (
@@ -64,7 +64,7 @@ export default function SettingsModal() {
               onPress={() => handleGradientSelect(gradient.id)}
             >
               <LinearGradient
-                colors={gradient.colors as unknown as readonly [string, string, ...string[]]}
+                colors={gradient.colors}
                 start={gradient.start}
                 end={gradient.end}
                 style={styles.gradientPreview}
@@ -95,7 +95,7 @@ export default function SettingsModal() {
           </View>
           
           {!isPremium ? (
-            <TouchableOpacity style={styles.upgradeButton} onPress={handlePremiumAccess}>
+            <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgrade}>
               <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
             </TouchableOpacity>
           ) : (

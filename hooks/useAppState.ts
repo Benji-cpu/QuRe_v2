@@ -1,9 +1,9 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
-import { GRADIENT_PRESETS } from '../../constants/Gradients';
-import { QRStorage } from '../../services/QRStorage';
-import { UserPreferencesService } from '../../services/UserPreferences';
-import { QRCodeData } from '../../types/QRCode';
+import { GRADIENT_PRESETS } from '../constants/Gradients';
+import { QRStorage } from '../services/QRStorage';
+import { UserPreferencesService } from '../services/UserPreferences';
+import { QRCodeData } from '../types/QRCode';
 
 export interface AppState {
   currentGradientIndex: number;

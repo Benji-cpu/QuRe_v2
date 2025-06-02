@@ -1,39 +1,74 @@
-import { LinearGradient } from 'expo-linear-gradient';
 import * as MediaLibrary from 'expo-media-library';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, {
-  interpolate,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming
-} from 'react-native-reanimated';
+import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
-import ActionButtons from '../components/home/ActionButtons';
-import DevTools from '../components/home/DevTools';
-import QRSlots from '../components/home/QRSlots';
-import TimeDisplay from '../components/home/TimeDisplay';
 import { GRADIENT_PRESETS } from '../constants/Gradients';
-import { useAppState } from '../hooks/useAppState';
+import { QRStorage } from '../services/QRStorage';
 import { UserPreferencesService } from '../services/UserPreferences';
+import { QRCodeData } from '../types/QRCode';
+import ActionCards from './components/home/ActionCards';
+import DevTools from './components/home/DevTools';
+import GradientBackground from './components/home/GradientBackground';
+import QRSlots from './components/home/QRSlots';
+import TimeDisplay from './components/home/TimeDisplay';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 function HomeScreen() {
   const insets = useSafeAreaInsets();
   const wallpaperRef = useRef<View>(null);
+  const params = useLocalSearchParams();
   
+  const [currentGradientIndex, setCurrentGradientIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [primaryQR, setPrimaryQR] = useState<QRCodeData | null>(null);
+  const [secondaryQR, setSecondaryQR] = useState<QRCodeData | null>(null);
+  const [isPremium, setIsPremium] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
   
-  const { state, updateGradientIndex, updatePremiumStatus, removeQR } = useAppState();
-  const { currentGradientIndex, primaryQR, secondaryQR, isPremium, loading } = state;
-  
   const gradientTransition = useSharedValue(0);
+
+  const loadUserData = useCallback(async () => {
+    try {
+      const preferences = await UserPreferencesService.getPreferences();
+      const premium = await UserPreferencesService.isPremium();
+      
+      const gradientIndex = GRADIENT_PRESETS.findIndex(g => g.id === preferences.selectedGradientId);
+      setCurrentGradientIndex(gradientIndex >= 0 ? gradientIndex : 0);
+      setIsPremium(premium);
+
+      if (preferences.primaryQRCodeId) {
+        const primaryQRData = await QRStorage.getQRCodeById(preferences.primaryQRCodeId);
+        setPrimaryQR(primaryQRData);
+      } else {
+        setPrimaryQR(null);
+      }
+
+      if (preferences.secondaryQRCodeId && premium) {
+        const secondaryQRData = await QRStorage.getQRCodeById(preferences.secondaryQRCodeId);
+        setSecondaryQR(secondaryQRData);
+      } else if (!premium) {
+        setSecondaryQR(null);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadUserData();
+  }, [loadUserData]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadUserData();
+    }, [loadUserData])
+  );
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -41,7 +76,7 @@ function HomeScreen() {
   }, []);
 
   const changeGradient = (newIndex: number) => {
-    updateGradientIndex(newIndex);
+    setCurrentGradientIndex(newIndex);
     gradientTransition.value = withTiming(1, { duration: 200 }, () => {
       gradientTransition.value = 0;
     });
@@ -101,29 +136,55 @@ function HomeScreen() {
     }
   };
 
+  const handleSettings = () => {
+    router.push('/modal/settings');
+  };
+
+  const handleQRSlotPress = (slot: 'primary' | 'secondary') => {
+    if (slot === 'secondary' && !isPremium) {
+      router.push('/modal/premium');
+      return;
+    }
+
+    const existingQR = slot === 'primary' ? primaryQR : secondaryQR;
+    
+    if (existingQR) {
+      router.push({
+        pathname: '/modal/view',
+        params: { id: existingQR.id, slot }
+      });
+    } else {
+      router.push({
+        pathname: '/modal/history',
+        params: { selectMode: 'true', slot }
+      });
+    }
+  };
+
+  const handleRemoveQR = async (slot: 'primary' | 'secondary') => {
+    try {
+      if (slot === 'primary') {
+        await UserPreferencesService.updatePrimaryQR(undefined);
+        setPrimaryQR(null);
+      } else {
+        await UserPreferencesService.updateSecondaryQR(undefined);
+        setSecondaryQR(null);
+      }
+    } catch (error) {
+      console.error('Error removing QR code:', error);
+    }
+  };
+
   const handleTestUpgrade = async () => {
     const newStatus = !isPremium;
     await UserPreferencesService.setPremium(newStatus);
-    updatePremiumStatus(newStatus);
+    setIsPremium(newStatus);
+    loadUserData();
   };
-
-  if (loading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
-      </View>
-    );
-  }
 
   const currentGradient = GRADIENT_PRESETS[currentGradientIndex];
   const nextGradientIndex = currentGradientIndex < GRADIENT_PRESETS.length - 1 ? currentGradientIndex + 1 : 0;
   const nextGradient = GRADIENT_PRESETS[nextGradientIndex];
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: interpolate(gradientTransition.value, [0, 1], [1, 0]),
-    };
-  });
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -131,21 +192,11 @@ function HomeScreen() {
       <GestureDetector gesture={swipeGesture}>
         <View style={styles.container}>
           <View ref={wallpaperRef} collapsable={false} style={styles.wallpaperContainer}>
-            <LinearGradient
-              colors={currentGradient.colors as unknown as readonly [string, string, ...string[]]}
-              start={currentGradient.start}
-              end={currentGradient.end}
-              style={styles.gradient}
+            <GradientBackground
+              currentGradient={currentGradient}
+              nextGradient={nextGradient}
+              transition={gradientTransition}
             >
-              <Animated.View style={[styles.gradientOverlay, animatedStyle]}>
-                <LinearGradient
-                  colors={nextGradient.colors as unknown as readonly [string, string, ...string[]]}
-                  start={nextGradient.start}
-                  end={nextGradient.end}
-                  style={styles.gradient}
-                />
-              </Animated.View>
-              
               <ScrollView 
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContent}
@@ -157,28 +208,33 @@ function HomeScreen() {
 
                 <TimeDisplay currentTime={currentTime} />
 
-                <ActionButtons 
-                  onExportWallpaper={handleExportWallpaper}
-                  showActionButtons={showActionButtons}
-                />
+                {showActionButtons && (
+                  <ActionCards 
+                    onExportWallpaper={handleExportWallpaper}
+                    onSettings={handleSettings}
+                  />
+                )}
 
                 <QRSlots
                   primaryQR={primaryQR}
                   secondaryQR={secondaryQR}
                   isPremium={isPremium}
                   showActionButtons={showActionButtons}
-                  insets={insets}
-                  onRemoveQR={removeQR}
+                  onSlotPress={handleQRSlotPress}
+                  onRemoveQR={handleRemoveQR}
                 />
 
-                <DevTools
-                  isPremium={isPremium}
-                  showActionButtons={showActionButtons}
-                  insets={insets}
-                  onTestUpgrade={handleTestUpgrade}
-                />
+                {showActionButtons && (
+                  <View style={{ paddingBottom: insets.bottom + 15 }}>
+                    <DevTools
+                      isPremium={isPremium}
+                      onTestUpgrade={handleTestUpgrade}
+                      onToggleOnboarding={() => {}}
+                    />
+                  </View>
+                )}
               </ScrollView>
-            </LinearGradient>
+            </GradientBackground>
           </View>
         </View>
       </GestureDetector>
@@ -192,24 +248,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f5f5f5',
-  },
-  loadingText: {
-    fontSize: 16,
-    color: '#666',
-  },
   wallpaperContainer: {
     flex: 1,
-  },
-  gradient: {
-    flex: 1,
-  },
-  gradientOverlay: {
-    ...StyleSheet.absoluteFillObject,
   },
   scrollView: {
     flex: 1,

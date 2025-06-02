@@ -1,21 +1,12 @@
-import { router } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
-interface ActionButtonsProps {
+interface ActionCardsProps {
   onExportWallpaper: () => void;
-  showActionButtons: boolean;
+  onSettings: () => void;
 }
 
-export default function ActionButtons({ onExportWallpaper, showActionButtons }: ActionButtonsProps) {
-  const handleSettings = () => {
-    router.push('/modals/settings');
-  };
-
-  if (!showActionButtons) {
-    return null;
-  }
-
+export default function ActionCards({ onExportWallpaper, onSettings }: ActionCardsProps) {
   return (
     <View style={styles.actionsContainer}>
       <TouchableOpacity style={styles.actionCard} onPress={onExportWallpaper}>
@@ -28,7 +19,7 @@ export default function ActionButtons({ onExportWallpaper, showActionButtons }: 
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionCard} onPress={handleSettings}>
+      <TouchableOpacity style={styles.actionCard} onPress={onSettings}>
         <View style={styles.actionLeft}>
           <Text style={styles.actionIcon}>⚙️</Text>
         </View>
@@ -38,7 +29,7 @@ export default function ActionButtons({ onExportWallpaper, showActionButtons }: 
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionCard} onPress={() => {}}>
+      <View style={styles.actionCard}>
         <View style={styles.actionLeft}>
           <Text style={styles.actionIcon}>⟨ ⟩</Text>
         </View>
@@ -46,7 +37,7 @@ export default function ActionButtons({ onExportWallpaper, showActionButtons }: 
           <Text style={styles.actionTitle}>Swipe to change background</Text>
           <Text style={styles.actionSubtitle}>Change gradient colors</Text>
         </View>
-      </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -84,4 +75,4 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: 'rgba(255, 255, 255, 0.8)',
   },
-}); 
+});

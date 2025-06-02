@@ -1,8 +1,8 @@
-// app/modals/history.tsx
+// app/modal/history.tsx
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import QRListItem from '../../components/QRListItem';
+import QRListItem from '../../../app/components/QRListItem';
 import { QRStorage } from '../../services/QRStorage';
 import { UserPreferencesService } from '../../services/UserPreferences';
 import { QRCodeData } from '../../types/QRCode';
@@ -71,14 +71,14 @@ export default function HistoryModal() {
     }
     
     router.push({
-      pathname: '/modals/view',
+      pathname: '/modal/view',
       params: { id: qrCode.id }
     });
   };
 
   const handleEdit = (qrCode: QRCodeData) => {
     router.push({
-      pathname: '/modals/edit',
+      pathname: '/modal/edit',
       params: { id: qrCode.id }
     });
   };
@@ -95,11 +95,11 @@ export default function HistoryModal() {
   const handleCreate = () => {
     if (isSelectMode && slot) {
       router.push({
-        pathname: '/modals/create',
+        pathname: '/modal/create',
         params: { slot: slot }
       });
     } else {
-      router.push('/modals/create');
+      router.push('/modal/create');
     }
   };
 
@@ -159,10 +159,8 @@ export default function HistoryModal() {
           <QRListItem
             qrCode={item}
             onPress={() => handleView(item)}
-            {...(!isSelectMode && { 
-              onEdit: () => handleEdit(item),
-              onDelete: () => handleDelete(item)
-            })}
+            onEdit={isSelectMode ? undefined : () => handleEdit(item)}
+            onDelete={isSelectMode ? undefined : () => handleDelete(item)}
             showActions={!isSelectMode}
             disabled={assigning}
           />
