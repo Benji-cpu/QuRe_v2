@@ -2,8 +2,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as MediaLibrary from 'expo-media-library';
 import { router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useRef, useState } from 'react';
-import { Alert, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
@@ -125,10 +125,6 @@ function HomeScreen() {
     router.push('/modal/settings');
   };
 
-  const handleHistory = () => {
-    router.push('/modal/history');
-  };
-
   const handleQRSlotPress = (slot: 'primary' | 'secondary') => {
     if (slot === 'secondary' && !isPremium) {
       router.push('/modal/premium');
@@ -150,6 +146,13 @@ function HomeScreen() {
     }
   };
 
+  const handleTestUpgrade = async () => {
+    const newStatus = !isPremium;
+    await UserPreferencesService.setPremium(newStatus);
+    setIsPremium(newStatus);
+    Alert.alert('Test Mode', `Premium ${newStatus ? 'enabled' : 'disabled'}`);
+  };
+
   const currentGradient = GRADIENT_PRESETS[currentGradientIndex];
 
   return (
@@ -164,93 +167,107 @@ function HomeScreen() {
               end={currentGradient.end}
               style={styles.gradient}
             >
-              <View style={[styles.header, { paddingTop: insets.top + 20 }]}>
-                <Text style={styles.appTitle}>QuRe</Text>
-              </View>
+              <ScrollView 
+                style={styles.scrollView}
+                contentContainerStyle={styles.scrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={[styles.header, { marginTop: insets.top + 20 }]}>
+                  <Text style={styles.appTitle}>QuRe</Text>
+                </View>
 
-              <View style={styles.timeContainer}>
-                <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-                <Text style={styles.dateText}>{formatDate(currentTime)}</Text>
-              </View>
+                <View style={styles.timeContainer}>
+                  <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+                  <Text style={styles.dateText}>{formatDate(currentTime)}</Text>
+                </View>
 
-              {showActionButtons && (
-                <View style={styles.actionsContainer}>
-                  <TouchableOpacity style={styles.actionCard} onPress={handleExportWallpaper}>
-                    <View style={styles.actionIconContainer}>
-                      <Text style={styles.actionIcon}>⬇</Text>
+                {showActionButtons && (
+                  <>
+                    <View style={styles.actionsContainer}>
+                      <TouchableOpacity style={styles.actionCard} onPress={handleExportWallpaper}>
+                        <View style={styles.actionLeft}>
+                          <Text style={styles.actionIcon}>⬇</Text>
+                        </View>
+                        <View style={styles.actionContent}>
+                          <Text style={styles.actionTitle}>Export Wallpaper</Text>
+                          <Text style={styles.actionSubtitle}>Save to your photos</Text>
+                        </View>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity style={styles.actionCard} onPress={handleSettings}>
+                        <View style={styles.actionLeft}>
+                          <Text style={styles.actionIcon}>⚙️</Text>
+                        </View>
+                        <View style={styles.actionContent}>
+                          <Text style={styles.actionTitle}>Settings</Text>
+                          <Text style={styles.actionSubtitle}>Backgrounds & Plan Status</Text>
+                        </View>
+                      </TouchableOpacity>
                     </View>
-                    <View style={styles.actionTextContainer}>
-                      <Text style={styles.actionTitle}>Export Wallpaper</Text>
-                      <Text style={styles.actionSubtitle}>Save to your photos</Text>
+
+                    <View style={styles.swipeIndicator}>
+                      <Text style={styles.swipeArrow}>‹</Text>
+                      <View style={styles.swipeTextContainer}>
+                        <Text style={styles.swipeTitle}>Swipe to change background</Text>
+                        <Text style={styles.swipeSubtitle}>Change gradient colors</Text>
+                      </View>
+                      <Text style={styles.swipeArrow}>›</Text>
                     </View>
+                  </>
+                )}
+
+                <View style={[styles.qrSlotsContainer, { marginBottom: insets.bottom + 100 }]}>
+                  <TouchableOpacity 
+                    style={styles.qrSlot} 
+                    onPress={() => handleQRSlotPress('primary')}
+                  >
+                    {primaryQR ? (
+                      <View style={styles.qrContent}>
+                        <View style={styles.qrCodeContainer}>
+                          <QRCodePreview value={primaryQR.content} size={80} />
+                        </View>
+                        <Text style={styles.qrLabel}>{primaryQR.label}</Text>
+                      </View>
+                    ) : (
+                      <View style={styles.qrPlaceholder}>
+                        <Text style={styles.qrPlaceholderIcon}>+</Text>
+                        <Text style={styles.qrPlaceholderText}>CREATE QR CODE</Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
 
-                  <TouchableOpacity style={styles.actionCard} onPress={handleSettings}>
-                    <View style={styles.actionIconContainer}>
-                      <Text style={styles.actionIcon}>⚙️</Text>
-                    </View>
-                    <View style={styles.actionTextContainer}>
-                      <Text style={styles.actionTitle}>Settings</Text>
-                      <Text style={styles.actionSubtitle}>Backgrounds & Plan Status</Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  <TouchableOpacity style={styles.actionCard} onPress={handleHistory}>
-                    <View style={styles.actionIconContainer}>
-                      <Text style={styles.actionIcon}>📱</Text>
-                    </View>
-                    <View style={styles.actionTextContainer}>
-                      <Text style={styles.actionTitle}>QR History</Text>
-                      <Text style={styles.actionSubtitle}>View all your QR codes</Text>
-                    </View>
+                  <TouchableOpacity 
+                    style={styles.qrSlot} 
+                    onPress={() => handleQRSlotPress('secondary')}
+                  >
+                    {secondaryQR && isPremium ? (
+                      <View style={styles.qrContent}>
+                        <View style={styles.qrCodeContainer}>
+                          <QRCodePreview value={secondaryQR.content} size={80} />
+                        </View>
+                        <Text style={styles.qrLabel}>{secondaryQR.label}</Text>
+                      </View>
+                    ) : (
+                      <View style={[styles.qrPlaceholder, !isPremium && styles.qrPlaceholderPremium]}>
+                        <Text style={styles.qrPlaceholderIcon}>+</Text>
+                        <Text style={styles.qrPlaceholderText}>CREATE QR CODE</Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
                 </View>
-              )}
 
-              <View style={[styles.qrSlotsContainer, { paddingBottom: insets.bottom + 20 }]}>
-                <TouchableOpacity 
-                  style={styles.qrSlot} 
-                  onPress={() => handleQRSlotPress('primary')}
-                >
-                  {primaryQR ? (
-                    <View style={styles.qrContent}>
-                      <View style={styles.qrCodeContainer}>
-                        <QRCodePreview value={primaryQR.content} size={80} />
-                      </View>
-                      <Text style={styles.qrLabel}>{primaryQR.label}</Text>
-                    </View>
-                  ) : (
-                    <View style={styles.qrPlaceholder}>
-                      <Text style={styles.qrPlaceholderIcon}>+</Text>
-                      <Text style={styles.qrPlaceholderText}>CREATE QR CODE</Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={styles.qrSlot} 
-                  onPress={() => handleQRSlotPress('secondary')}
-                >
-                  {secondaryQR && isPremium ? (
-                    <View style={styles.qrContent}>
-                      <View style={styles.qrCodeContainer}>
-                        <QRCodePreview value={secondaryQR.content} size={80} />
-                      </View>
-                      <Text style={styles.qrLabel}>{secondaryQR.label}</Text>
-                    </View>
-                  ) : (
-                    <View style={[styles.qrPlaceholder, !isPremium && styles.qrPlaceholderPremium]}>
-                      <Text style={styles.qrPlaceholderIcon}>+</Text>
-                      <Text style={styles.qrPlaceholderText}>
-                        {isPremium ? 'CREATE QR CODE' : 'PREMIUM SLOT'}
-                      </Text>
-                      {!isPremium && (
-                        <Text style={styles.premiumBadge}>PRO</Text>
-                      )}
-                    </View>
-                  )}
-                </TouchableOpacity>
-              </View>
+                {showActionButtons && (
+                  <View style={[styles.devTools, { paddingBottom: insets.bottom + 20 }]}>
+                    <TouchableOpacity style={styles.devButton} onPress={handleTestUpgrade}>
+                      <Text style={styles.devButtonText}>Test Upgrade</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.devButton, styles.orangeButton]} onPress={() => {}}>
+                      <Text style={styles.devButtonText}>Toggle Onboarding</Text>
+                    </TouchableOpacity>
+                    <Text style={styles.premiumStatus}>Premium: {isPremium ? 'YES' : 'NO'}</Text>
+                  </View>
+                )}
+              </ScrollView>
             </LinearGradient>
           </View>
         </View>
@@ -270,10 +287,16 @@ const styles = StyleSheet.create({
   },
   gradient: {
     flex: 1,
-    justifyContent: 'space-between',
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
   },
   header: {
     alignItems: 'center',
+    marginBottom: 30,
   },
   appTitle: {
     fontSize: 24,
@@ -283,7 +306,7 @@ const styles = StyleSheet.create({
   },
   timeContainer: {
     alignItems: 'center',
-    marginTop: -50,
+    marginBottom: 30,
   },
   timeText: {
     fontSize: 72,
@@ -300,6 +323,7 @@ const styles = StyleSheet.create({
   actionsContainer: {
     paddingHorizontal: 20,
     gap: 15,
+    marginBottom: 20,
   },
   actionCard: {
     flexDirection: 'row',
@@ -307,21 +331,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 16,
     padding: 20,
-    backdropFilter: 'blur(10px)',
   },
-  actionIconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
+  actionLeft: {
     marginRight: 15,
   },
   actionIcon: {
-    fontSize: 20,
+    fontSize: 24,
+    color: 'white',
   },
-  actionTextContainer: {
+  actionContent: {
     flex: 1,
   },
   actionTitle: {
@@ -334,10 +352,37 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: 'rgba(255, 255, 255, 0.8)',
   },
+  swipeIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    marginBottom: 30,
+  },
+  swipeArrow: {
+    fontSize: 28,
+    color: 'rgba(255, 255, 255, 0.6)',
+    paddingHorizontal: 10,
+  },
+  swipeTextContainer: {
+    alignItems: 'center',
+  },
+  swipeTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: 'white',
+    marginBottom: 2,
+  },
+  swipeSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
   qrSlotsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
     gap: 20,
+    marginTop: 'auto',
   },
   qrSlot: {
     flex: 1,
@@ -389,16 +434,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 1,
   },
-  premiumBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#FFD700',
-    color: '#000',
-    fontSize: 10,
-    fontWeight: 'bold',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 10,
+  devTools: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    marginTop: 20,
+    gap: 10,
+  },
+  devButton: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  orangeButton: {
+    backgroundColor: '#FF9800',
+  },
+  devButtonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  premiumStatus: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    fontWeight: '600',
   },
 });
