@@ -1,3 +1,4 @@
+import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import React, { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
@@ -65,7 +66,9 @@ export default function PositionSlider({ value, onValueChange, visible }: Positi
         </TouchableWithoutFeedback>
       ) : (
         <TouchableOpacity style={styles.notificationCard} onPress={handlePress}>
-          <Text style={styles.notificationIcon}>↕️</Text>
+          <View style={styles.iconContainer}>
+            <Feather name="chevrons-up" size={24} color="white" />
+          </View>
           <View style={styles.notificationContent}>
             <Text style={styles.notificationTitle}>Adjust QR position</Text>
             <Text style={styles.notificationSubtitle}>Move QR codes up or down</Text>
@@ -88,8 +91,13 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 16,
   },
-  notificationIcon: {
-    fontSize: 20,
+  iconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: 12,
   },
   notificationContent: {
@@ -121,6 +129,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    marginLeft: 12,
   },
   slider: {
     flex: 1,
