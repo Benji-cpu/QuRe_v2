@@ -1,5 +1,5 @@
 import * as MediaLibrary from 'expo-media-library';
-import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -14,7 +14,9 @@ import { QRCodeData } from '../types/QRCode';
 import ActionCards from './components/home/ActionCards';
 import DevTools from './components/home/DevTools';
 import GradientBackground from './components/home/GradientBackground';
+import PositionSlider from './components/home/PositionSlider';
 import QRSlots from './components/home/QRSlots';
+import SwipeIndicator from './components/home/SwipeIndicator';
 import TimeDisplay from './components/home/TimeDisplay';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -22,7 +24,6 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 function HomeScreen() {
   const insets = useSafeAreaInsets();
   const wallpaperRef = useRef<View>(null);
-  const params = useLocalSearchParams();
   
   const [currentGradientIndex, setCurrentGradientIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -30,6 +31,9 @@ function HomeScreen() {
   const [secondaryQR, setSecondaryQR] = useState<QRCodeData | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
+  const [qrVerticalOffset, setQrVerticalOffset] = useState(80);
+  const [showSwipeIndicator, setShowSwipeIndicator] = useState(true);
+  const [showPositionSlider, setShowPositionSlider] = useState(false);
   
   const gradientTransition = useSharedValue(0);
 
@@ -41,6 +45,7 @@ function HomeScreen() {
       const gradientIndex = GRADIENT_PRESETS.findIndex(g => g.id === preferences.selectedGradientId);
       setCurrentGradientIndex(gradientIndex >= 0 ? gradientIndex : 0);
       setIsPremium(premium);
+      setQrVerticalOffset(preferences.qrVerticalOffset || 80);
 
       if (preferences.primaryQRCodeId) {
         const primaryQRData = await QRStorage.getQRCodeById(preferences.primaryQRCodeId);
@@ -75,11 +80,7 @@ function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  const changeGradient = (direction: 'left' | 'right') => {
-    const newIndex = direction === 'right' 
-      ? (currentGradientIndex < GRADIENT_PRESETS.length - 1 ? currentGradientIndex + 1 : 0)
-      : (currentGradientIndex > 0 ? currentGradientIndex - 1 : GRADIENT_PRESETS.length - 1);
-    
+  const changeGradient = (newIndex: number) => {
     setCurrentGradientIndex(newIndex);
     gradientTransition.value = withTiming(1, { duration: 200 }, () => {
       gradientTransition.value = 0;
@@ -88,11 +89,15 @@ function HomeScreen() {
 
   const swipeGesture = Gesture.Pan()
     .onEnd((event) => {
-      if (Math.abs(event.velocityX) > Math.abs(event.velocityY) && Math.abs(event.velocityX) > 500) {
-        if (event.velocityX > 0) {
-          runOnJS(changeGradient)('left');
-        } else {
-          runOnJS(changeGradient)('right');
+      if (Math.abs(event.velocityX) > Math.abs(event.velocityY)) {
+        if (event.velocityX > 500) {
+          runOnJS(changeGradient)(
+            currentGradientIndex > 0 ? currentGradientIndex - 1 : GRADIENT_PRESETS.length - 1
+          );
+        } else if (event.velocityX < -500) {
+          runOnJS(changeGradient)(
+            currentGradientIndex < GRADIENT_PRESETS.length - 1 ? currentGradientIndex + 1 : 0
+          );
         }
       }
     });
@@ -107,6 +112,20 @@ function HomeScreen() {
     };
     updateGradientPreference();
   }, [currentGradientIndex]);
+
+  const handleVerticalOffsetChange = async (value: number) => {
+    try {
+      setQrVerticalOffset(value);
+      await UserPreferencesService.updateQRVerticalOffset(value);
+    } catch (error) {
+      console.error('Error updating vertical offset:', error);
+    }
+  };
+
+  const handleSwipeFadeComplete = () => {
+    setShowSwipeIndicator(false);
+    setShowPositionSlider(true);
+  };
 
   const handleExportWallpaper = async () => {
     try {
@@ -209,10 +228,20 @@ function HomeScreen() {
                 <TimeDisplay currentTime={currentTime} />
 
                 {showActionButtons && (
-                  <ActionCards 
-                    onExportWallpaper={handleExportWallpaper}
-                    onSettings={handleSettings}
-                  />
+                  <>
+                    <ActionCards 
+                      onExportWallpaper={handleExportWallpaper}
+                      onSettings={handleSettings}
+                    />
+                    {showSwipeIndicator && (
+                      <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
+                    )}
+                    <PositionSlider
+                      value={qrVerticalOffset}
+                      onValueChange={handleVerticalOffsetChange}
+                      visible={showPositionSlider}
+                    />
+                  </>
                 )}
 
                 <QRSlots
@@ -220,6 +249,7 @@ function HomeScreen() {
                   secondaryQR={secondaryQR}
                   isPremium={isPremium}
                   showActionButtons={showActionButtons}
+                  verticalOffset={qrVerticalOffset}
                   onSlotPress={handleQRSlotPress}
                   onRemoveQR={handleRemoveQR}
                 />
@@ -229,7 +259,10 @@ function HomeScreen() {
                     <DevTools
                       isPremium={isPremium}
                       onTestUpgrade={handleTestUpgrade}
-                      onToggleOnboarding={() => {}}
+                      onToggleOnboarding={() => {
+                        setShowSwipeIndicator(true);
+                        setShowPositionSlider(false);
+                      }}
                     />
                   </View>
                 )}

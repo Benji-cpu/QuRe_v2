@@ -1,3 +1,4 @@
+import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -8,6 +9,7 @@ import { UserPreferencesService } from '../../services/UserPreferences';
 export default function SettingsModal() {
   const [selectedGradientId, setSelectedGradientId] = useState('sunset');
   const [isPremium, setIsPremium] = useState(false);
+  const [qrVerticalOffset, setQrVerticalOffset] = useState(80);
 
   useEffect(() => {
     loadSettings();
@@ -18,6 +20,7 @@ export default function SettingsModal() {
       const preferences = await UserPreferencesService.getPreferences();
       const premium = await UserPreferencesService.isPremium();
       setSelectedGradientId(preferences.selectedGradientId);
+      setQrVerticalOffset(preferences.qrVerticalOffset || 80);
       setIsPremium(premium);
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -30,6 +33,15 @@ export default function SettingsModal() {
       await UserPreferencesService.updateGradient(gradientId);
     } catch (error) {
       Alert.alert('Error', 'Failed to update gradient');
+    }
+  };
+
+  const handleVerticalOffsetChange = async (value: number) => {
+    try {
+      setQrVerticalOffset(value);
+      await UserPreferencesService.updateQRVerticalOffset(value);
+    } catch (error) {
+      console.error('Error updating vertical offset:', error);
     }
   };
 
@@ -51,6 +63,23 @@ export default function SettingsModal() {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionTitle}>QR Code Position</Text>
+        
+        <View style={styles.sliderContainer}>
+          <Text style={styles.sliderLabel}>Vertical Position</Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={20}
+            maximumValue={150}
+            value={qrVerticalOffset}
+            onSlidingComplete={handleVerticalOffsetChange}
+            minimumTrackTintColor="#2196f3"
+            maximumTrackTintColor="#ddd"
+            thumbTintColor="#2196f3"
+          />
+          <Text style={styles.sliderValue}>{Math.round(qrVerticalOffset)}px from bottom</Text>
+        </View>
+
         <Text style={styles.sectionTitle}>Background Gradients</Text>
         
         <View style={styles.gradientsGrid}>
@@ -141,6 +170,28 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 15,
     marginTop: 20,
+  },
+  sliderContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+  },
+  sliderLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 10,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  sliderValue: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 5,
   },
   gradientsGrid: {
     flexDirection: 'row',

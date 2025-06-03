@@ -1,4 +1,3 @@
-// components/QRCodePreview.tsx
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -17,7 +16,7 @@ export default function QRCodePreview({
   color = 'black' 
 }: QRCodePreviewProps) {
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View style={[styles.container, { width: size + 10, height: size + 10, backgroundColor }]}>
       <QRCode 
         value={value}
         size={size}
@@ -30,8 +29,8 @@ export default function QRCodePreview({
 
 const styles = StyleSheet.create({
   container: {
-    padding: 20,
-    borderRadius: 10,
+    padding: 5,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },

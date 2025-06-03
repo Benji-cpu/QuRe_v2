@@ -1,121 +1,65 @@
-import { Feather } from '@expo/vector-icons';
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import Animated, {
-    Easing,
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withSequence,
-    withTiming
-} from 'react-native-reanimated';
+import React, { useEffect, useState } from 'react';
+import { Animated, StyleSheet, Text, View } from 'react-native';
 
-export default function SwipeIndicator() {
-  const leftArrowOpacity = useSharedValue(0.5);
-  const rightArrowOpacity = useSharedValue(0.5);
-  const leftArrowTranslateX = useSharedValue(0);
-  const rightArrowTranslateX = useSharedValue(0);
+interface SwipeIndicatorProps {
+  onFadeComplete: () => void;
+}
+
+export default function SwipeIndicator({ onFadeComplete }: SwipeIndicatorProps) {
+  const [opacity] = useState(new Animated.Value(1));
 
   useEffect(() => {
-    leftArrowOpacity.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.5, { duration: 1000, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    );
+    const timer = setTimeout(() => {
+      Animated.timing(opacity, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }).start(() => {
+        onFadeComplete();
+      });
+    }, 5000);
 
-    rightArrowOpacity.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.5, { duration: 1000, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    );
-
-    leftArrowTranslateX.value = withRepeat(
-      withSequence(
-        withTiming(-5, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0, { duration: 1000, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    );
-
-    rightArrowTranslateX.value = withRepeat(
-      withSequence(
-        withTiming(5, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0, { duration: 1000, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      true
-    );
+    return () => clearTimeout(timer);
   }, []);
 
-  const leftArrowStyle = useAnimatedStyle(() => {
-    return {
-      opacity: leftArrowOpacity.value,
-      transform: [{ translateX: leftArrowTranslateX.value }],
-    };
-  });
-
-  const rightArrowStyle = useAnimatedStyle(() => {
-    return {
-      opacity: rightArrowOpacity.value,
-      transform: [{ translateX: rightArrowTranslateX.value }],
-    };
-  });
-
   return (
-    <View style={styles.container}>
-      <View style={styles.iconContainer}>
-        <Feather name="chevrons-left" size={24} color="white" />
-        <Feather name="chevrons-right" size={24} color="white" />
-      </View>
-      <View style={styles.content}>
-        <Animated.View style={[styles.arrow, leftArrowStyle]}>
-          <Feather name="chevron-left" size={20} color="white" />
-        </Animated.View>
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>Swipe to change background</Text>
-          <Text style={styles.subtitle}>Change gradient colors</Text>
+    <Animated.View style={[styles.container, { opacity }]}>
+      <View style={styles.card}>
+        <View style={styles.arrows}>
+          <Text style={styles.arrow}>‹</Text>
+          <View style={styles.content}>
+            <Text style={styles.title}>Swipe to change background</Text>
+            <Text style={styles.subtitle}>Change gradient colors</Text>
+          </View>
+          <Text style={styles.arrow}>›</Text>
         </View>
-        <Animated.View style={[styles.arrow, rightArrowStyle]}>
-          <Feather name="chevron-right" size={20} color="white" />
-        </Animated.View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  card: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 12,
     padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  iconContainer: {
+  arrows: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    opacity: 0.6,
-  },
-  content: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   arrow: {
-    marginHorizontal: 8,
+    fontSize: 24,
+    color: 'white',
+    fontWeight: '300',
   },
-  textContainer: {
+  content: {
+    flex: 1,
     alignItems: 'center',
-    marginHorizontal: 12,
   },
   title: {
     fontSize: 16,

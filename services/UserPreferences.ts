@@ -7,16 +7,17 @@ export interface UserPreferences {
   selectedGradientId: string;
   primaryQRCodeId?: string;
   secondaryQRCodeId?: string;
+  qrVerticalOffset?: number;
 }
 
 export class UserPreferencesService {
   static async getPreferences(): Promise<UserPreferences> {
     try {
       const data = await AsyncStorage.getItem(PREFERENCES_KEY);
-      return data ? JSON.parse(data) : { selectedGradientId: 'sunset' };
+      return data ? JSON.parse(data) : { selectedGradientId: 'sunset', qrVerticalOffset: 80 };
     } catch (error) {
       console.error('Error loading user preferences:', error);
-      return { selectedGradientId: 'sunset' };
+      return { selectedGradientId: 'sunset', qrVerticalOffset: 80 };
     }
   }
 
@@ -58,6 +59,17 @@ export class UserPreferencesService {
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating secondary QR:', error);
+      throw error;
+    }
+  }
+
+  static async updateQRVerticalOffset(offset: number): Promise<void> {
+    try {
+      const preferences = await this.getPreferences();
+      preferences.qrVerticalOffset = offset;
+      await this.savePreferences(preferences);
+    } catch (error) {
+      console.error('Error updating QR vertical offset:', error);
       throw error;
     }
   }
