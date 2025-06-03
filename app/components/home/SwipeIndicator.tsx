@@ -15,7 +15,7 @@ export default function SwipeIndicator({ onFadeComplete }: SwipeIndicatorProps) 
         duration: 500,
         useNativeDriver: true,
       }).start(() => {
-        onFadeComplete();
+        onFadeComplete?.();
       });
     }, 5000);
 

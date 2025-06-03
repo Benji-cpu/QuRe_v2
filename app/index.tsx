@@ -1,8 +1,9 @@
+// app/index.tsx
 import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Dimensions, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -216,46 +217,46 @@ function HomeScreen() {
               nextGradient={nextGradient}
               transition={gradientTransition}
             >
-              <ScrollView 
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
-              >
-                <View style={[styles.header, { marginTop: insets.top + 15 }]}>
+              <View style={styles.content}>
+                <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
                   <Text style={styles.appTitle}>QuRe</Text>
                 </View>
 
                 <TimeDisplay currentTime={currentTime} />
 
-                {showActionButtons && (
-                  <>
-                    <ActionCards 
-                      onExportWallpaper={handleExportWallpaper}
-                      onSettings={handleSettings}
-                    />
-                    {showSwipeIndicator && (
-                      <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
-                    )}
-                    <PositionSlider
-                      value={qrVerticalOffset}
-                      onValueChange={handleVerticalOffsetChange}
-                      visible={showPositionSlider}
-                    />
-                  </>
-                )}
+                <View style={styles.middleContent}>
+                  {showActionButtons && (
+                    <View style={styles.actionSection}>
+                      <ActionCards 
+                        onExportWallpaper={handleExportWallpaper}
+                        onSettings={handleSettings}
+                      />
+                      {showSwipeIndicator && (
+                        <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
+                      )}
+                      {showPositionSlider && (
+                        <PositionSlider
+                          value={qrVerticalOffset}
+                          onValueChange={handleVerticalOffsetChange}
+                          visible={showPositionSlider}
+                        />
+                      )}
+                    </View>
+                  )}
+                </View>
 
-                <QRSlots
-                  primaryQR={primaryQR}
-                  secondaryQR={secondaryQR}
-                  isPremium={isPremium}
-                  showActionButtons={showActionButtons}
-                  verticalOffset={qrVerticalOffset}
-                  onSlotPress={handleQRSlotPress}
-                  onRemoveQR={handleRemoveQR}
-                />
+                <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 15 }]}>
+                  <QRSlots
+                    primaryQR={primaryQR}
+                    secondaryQR={secondaryQR}
+                    isPremium={isPremium}
+                    showActionButtons={showActionButtons}
+                    verticalOffset={qrVerticalOffset}
+                    onSlotPress={handleQRSlotPress}
+                    onRemoveQR={handleRemoveQR}
+                  />
 
-                {showActionButtons && (
-                  <View style={{ paddingBottom: insets.bottom + 15 }}>
+                  {showActionButtons && (
                     <DevTools
                       isPremium={isPremium}
                       onTestUpgrade={handleTestUpgrade}
@@ -264,9 +265,9 @@ function HomeScreen() {
                         setShowPositionSlider(false);
                       }}
                     />
-                  </View>
-                )}
-              </ScrollView>
+                  )}
+                </View>
+              </View>
             </GradientBackground>
           </View>
         </View>
@@ -284,11 +285,8 @@ const styles = StyleSheet.create({
   wallpaperContainer: {
     flex: 1,
   },
-  scrollView: {
+  content: {
     flex: 1,
-  },
-  scrollContent: {
-    flexGrow: 1,
   },
   header: {
     alignItems: 'center',
@@ -299,5 +297,14 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
     textAlign: 'center',
+  },
+  middleContent: {
+    flex: 1,
+  },
+  actionSection: {
+    gap: 12,
+  },
+  bottomSection: {
+    marginTop: 'auto',
   },
 });

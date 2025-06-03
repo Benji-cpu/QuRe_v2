@@ -1,7 +1,7 @@
+// app/components/home/ActionCards.tsx
 import { Feather } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import SwipeIndicator from './SwipeIndicator';
 
 interface ActionCardsProps {
   onExportWallpaper: () => void;
@@ -30,8 +30,6 @@ export default function ActionCards({ onExportWallpaper, onSettings }: ActionCar
           <Text style={styles.actionSubtitle}>Backgrounds & Plan Status</Text>
         </View>
       </TouchableOpacity>
-
-      <SwipeIndicator />
     </View>
   );
 }
@@ -40,7 +38,6 @@ const styles = StyleSheet.create({
   actionsContainer: {
     paddingHorizontal: 20,
     gap: 12,
-    marginBottom: 40,
   },
   actionCard: {
     flexDirection: 'row',
