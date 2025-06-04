@@ -1,19 +1,40 @@
+// app/modal/create.tsx
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import QRCodePreview from '../../components/QRCodePreview';
-import QRForm from '../../components/QRForm';
-import QRTypeSelector from '../../components/QRTypeSelector';
 import { QRGenerator } from '../../services/QRGenerator';
 import { QRStorage } from '../../services/QRStorage';
 import { UserPreferencesService } from '../../services/UserPreferences';
-import { QRCodeData, QRCodeType, QRCodeTypeData } from '../../types/QRCode';
+import { QRCodeData, QRCodeDesign, QRCodeType, QRCodeTypeData } from '../../types/QRCode';
+import QRCodePreview from '../components/QRCodePreview';
+import QRForm from '../components/QRForm';
+import QRTypeSelector from '../components/QRTypeSelector';
+import QRDesignForm from '../components/qr-design/QRDesignForm';
 
 export default function CreateModal() {
   const { slot } = useLocalSearchParams<{ slot?: string }>();
   const [selectedType, setSelectedType] = useState<QRCodeType>('link');
   const [formData, setFormData] = useState<QRCodeTypeData>({} as QRCodeTypeData);
+  const [activeTab, setActiveTab] = useState<'content' | 'design'>('content');
+  const [design, setDesign] = useState<QRCodeDesign>({
+    color: '#000000',
+    backgroundColor: '#FFFFFF',
+    enableLinearGradient: false,
+    logoSize: 20,
+    logoMargin: 2,
+    logoBorderRadius: 0,
+  });
   const [saving, setSaving] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
+
+  useEffect(() => {
+    loadPremiumStatus();
+  }, []);
+
+  const loadPremiumStatus = async () => {
+    const premium = await UserPreferencesService.isPremium();
+    setIsPremium(premium);
+  };
 
   const canSave = () => {
     switch (selectedType) {
@@ -54,6 +75,7 @@ export default function CreateModal() {
         data: formData,
         content,
         createdAt: new Date().toISOString(),
+        design: isPremium ? design : undefined,
       };
   
       await QRStorage.saveQRCode(qrCodeData);
@@ -92,36 +114,72 @@ export default function CreateModal() {
         )}
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity 
-          style={styles.historyButton}
-          onPress={handleSelectFromHistory}
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'content' && styles.activeTab]}
+          onPress={() => setActiveTab('content')}
         >
-          <Text style={styles.historyButtonIcon}>📋</Text>
-          <Text style={styles.historyButtonText}>Select from History</Text>
+          <Text style={[styles.tabText, activeTab === 'content' && styles.activeTabText]}>
+            Content
+          </Text>
         </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'design' && styles.activeTab]}
+          onPress={() => setActiveTab('design')}
+        >
+          <View style={styles.tabContent}>
+            {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
+            <Text style={[styles.tabText, activeTab === 'design' && styles.activeTabText]}>
+              Design
+            </Text>
+          </View>
+        </TouchableOpacity>
+      </View>
 
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR CREATE NEW</Text>
-          <View style={styles.dividerLine} />
-        </View>
-        
-        <QRTypeSelector
-          selectedType={selectedType}
-          onTypeSelect={setSelectedType}
-        />
-        
-        <QRForm
-          type={selectedType}
-          onDataChange={setFormData}
-        />
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {activeTab === 'content' ? (
+          <>
+            <TouchableOpacity 
+              style={styles.historyButton}
+              onPress={handleSelectFromHistory}
+            >
+              <Text style={styles.historyButtonIcon}>📋</Text>
+              <Text style={styles.historyButtonText}>Select from History</Text>
+            </TouchableOpacity>
+
+            <View style={styles.divider}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR CREATE NEW</Text>
+              <View style={styles.dividerLine} />
+            </View>
+            
+            <QRTypeSelector
+              selectedType={selectedType}
+              onTypeSelect={setSelectedType}
+            />
+            
+            <QRForm
+              type={selectedType}
+              onDataChange={setFormData}
+            />
+          </>
+        ) : (
+          <QRDesignForm
+            design={design}
+            onDesignChange={setDesign}
+            isPremium={isPremium}
+          />
+        )}
         
         {qrContent ? (
           <View style={styles.previewContainer}>
             <Text style={styles.previewTitle}>Preview</Text>
             <View style={styles.previewWrapper}>
-              <QRCodePreview value={qrContent} size={150} />
+              <QRCodePreview 
+                value={qrContent} 
+                size={150} 
+                design={isPremium ? design : undefined}
+              />
             </View>
           </View>
         ) : null}
@@ -174,6 +232,39 @@ const styles = StyleSheet.create({
     color: '#2196f3',
     marginTop: 4,
   },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 15,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: '#2196f3',
+  },
+  tabContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#666',
+  },
+  activeTabText: {
+    color: '#2196f3',
+    fontWeight: '600',
+  },
+  lockIcon: {
+    fontSize: 14,
+  },
   content: {
     flex: 1,
     padding: 20,
@@ -187,82 +278,82 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 2,
     borderColor: '#2196f3',
-    marginBottom: 20,
-  },
-  historyButtonIcon: {
-    fontSize: 24,
-    marginRight: 10,
-  },
-  historyButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2196f3',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
-  },
-  dividerText: {
-    paddingHorizontal: 15,
-    fontSize: 12,
-    color: '#999',
-    fontWeight: '600',
-  },
-  previewContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  previewTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
-  },
-  previewWrapper: {
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 15,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
-  },
-  saveButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    backgroundColor: '#2196f3',
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
-  },
+   marginBottom: 20,
+ },
+ historyButtonIcon: {
+   fontSize: 24,
+   marginRight: 10,
+ },
+ historyButtonText: {
+   fontSize: 16,
+   fontWeight: '600',
+   color: '#2196f3',
+ },
+ divider: {
+   flexDirection: 'row',
+   alignItems: 'center',
+   marginVertical: 20,
+ },
+ dividerLine: {
+   flex: 1,
+   height: 1,
+   backgroundColor: '#ddd',
+ },
+ dividerText: {
+   paddingHorizontal: 15,
+   fontSize: 12,
+   color: '#999',
+   fontWeight: '600',
+ },
+ previewContainer: {
+   marginTop: 20,
+   marginBottom: 20,
+ },
+ previewTitle: {
+   fontSize: 18,
+   fontWeight: 'bold',
+   marginBottom: 15,
+   color: '#333',
+ },
+ previewWrapper: {
+   alignItems: 'center',
+   backgroundColor: '#fff',
+   borderRadius: 10,
+   padding: 20,
+ },
+ footer: {
+   flexDirection: 'row',
+   padding: 20,
+   gap: 15,
+   backgroundColor: '#fff',
+   borderTopWidth: 1,
+   borderTopColor: '#eee',
+ },
+ cancelButton: {
+   flex: 1,
+   paddingVertical: 15,
+   borderRadius: 8,
+   backgroundColor: '#f5f5f5',
+   alignItems: 'center',
+ },
+ cancelButtonText: {
+   fontSize: 16,
+   color: '#666',
+   fontWeight: '500',
+ },
+ saveButton: {
+   flex: 1,
+   paddingVertical: 15,
+   borderRadius: 8,
+   backgroundColor: '#2196f3',
+   alignItems: 'center',
+ },
+ saveButtonText: {
+   fontSize: 16,
+   color: '#fff',
+   fontWeight: 'bold',
+ },
+ disabledButton: {
+   backgroundColor: '#ccc',
+ },
 });

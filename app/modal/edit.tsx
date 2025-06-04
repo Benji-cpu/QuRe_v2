@@ -1,22 +1,41 @@
+// app/modal/edit.tsx
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { QRGenerator } from '../../services/QRGenerator';
 import { QRStorage } from '../../services/QRStorage';
-import { QRCodeData, QRCodeTypeData } from '../../types/QRCode';
+import { UserPreferencesService } from '../../services/UserPreferences';
+import { QRCodeData, QRCodeDesign, QRCodeTypeData } from '../../types/QRCode';
 import QRCodePreview from '../components/QRCodePreview';
 import QRForm from '../components/QRForm';
+import QRDesignForm from '../components/qr-design/QRDesignForm';
 
 export default function EditModal() {
   const { id, slot } = useLocalSearchParams<{ id: string; slot?: string }>();
   const [qrCode, setQrCode] = useState<QRCodeData | null>(null);
   const [formData, setFormData] = useState<QRCodeTypeData>({} as QRCodeTypeData);
+  const [activeTab, setActiveTab] = useState<'content' | 'design'>('content');
+  const [design, setDesign] = useState<QRCodeDesign>({
+    color: '#000000',
+    backgroundColor: '#FFFFFF',
+    enableLinearGradient: false,
+    logoSize: 20,
+    logoMargin: 2,
+    logoBorderRadius: 0,
+  });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
 
   useEffect(() => {
     loadQRCode();
+    loadPremiumStatus();
   }, [id]);
+
+  const loadPremiumStatus = async () => {
+    const premium = await UserPreferencesService.isPremium();
+    setIsPremium(premium);
+  };
 
   const loadQRCode = async () => {
     if (!id) {
@@ -30,6 +49,9 @@ export default function EditModal() {
       if (code) {
         setQrCode(code);
         setFormData(code.data);
+        if (code.design) {
+          setDesign(code.design);
+        }
       } else {
         Alert.alert('Error', 'QR code not found');
         router.back();
@@ -81,6 +103,7 @@ export default function EditModal() {
         label,
         data: formData,
         content,
+        design: isPremium ? design : undefined,
       };
 
       await QRStorage.updateQRCode(updatedQRCode);
@@ -139,26 +162,62 @@ export default function EditModal() {
         )}
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <TouchableOpacity style={styles.typeDisplay} onPress={handleChangeType}>
-          <Text style={styles.typeLabel}>QR Code Type</Text>
-          <View style={styles.typeValue}>
-            <Text style={styles.typeText}>{qrCode.type.toUpperCase()}</Text>
-            <Text style={styles.changeText}>Change →</Text>
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'content' && styles.activeTab]}
+          onPress={() => setActiveTab('content')}
+        >
+          <Text style={[styles.tabText, activeTab === 'content' && styles.activeTabText]}>
+            Content
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === 'design' && styles.activeTab]}
+          onPress={() => setActiveTab('design')}
+        >
+          <View style={styles.tabContent}>
+            {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
+            <Text style={[styles.tabText, activeTab === 'design' && styles.activeTabText]}>
+              Design
+            </Text>
           </View>
         </TouchableOpacity>
+      </View>
 
-        <QRForm
-          type={qrCode.type}
-          initialData={qrCode.data}
-          onDataChange={setFormData}
-        />
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {activeTab === 'content' ? (
+          <>
+            <TouchableOpacity style={styles.typeDisplay} onPress={handleChangeType}>
+              <Text style={styles.typeLabel}>QR Code Type</Text>
+              <View style={styles.typeValue}>
+                <Text style={styles.typeText}>{qrCode.type.toUpperCase()}</Text>
+                <Text style={styles.changeText}>Change →</Text>
+              </View>
+            </TouchableOpacity>
+
+            <QRForm
+              type={qrCode.type}
+              initialData={qrCode.data}
+              onDataChange={setFormData}
+            />
+          </>
+        ) : (
+          <QRDesignForm
+            design={design}
+            onDesignChange={setDesign}
+            isPremium={isPremium}
+          />
+        )}
         
         {qrContent ? (
           <View style={styles.previewContainer}>
             <Text style={styles.previewTitle}>Preview</Text>
             <View style={styles.previewWrapper}>
-              <QRCodePreview value={qrContent} size={150} />
+              <QRCodePreview 
+                value={qrContent} 
+                size={150} 
+                design={isPremium ? design : undefined}
+              />
             </View>
           </View>
         ) : null}
@@ -219,6 +278,39 @@ const styles = StyleSheet.create({
   loadingText: {
     fontSize: 16,
     color: '#666',
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 15,
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
+  },
+  activeTab: {
+    borderBottomColor: '#2196f3',
+  },
+  tabContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#666',
+  },
+  activeTabText: {
+    color: '#2196f3',
+    fontWeight: '600',
+  },
+  lockIcon: {
+    fontSize: 14,
   },
   content: {
     flex: 1,

@@ -1,10 +1,11 @@
+// app/modal/view.tsx
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import QRCodePreview from '../../components/QRCodePreview';
 import { QR_TYPES } from '../../constants/QRTypes';
 import { QRStorage } from '../../services/QRStorage';
 import { QRCodeData } from '../../types/QRCode';
+import QRCodePreview from '../components/QRCodePreview';
 
 export default function ViewModal() {
   const { id, slot } = useLocalSearchParams<{ id: string; slot?: string }>();
@@ -86,7 +87,11 @@ export default function ViewModal() {
     <View style={styles.container}>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.qrContainer}>
-          <QRCodePreview value={qrCode.content} size={250} />
+          <QRCodePreview 
+            value={qrCode.content} 
+            size={250} 
+            design={qrCode.design}
+          />
         </View>
         
         <View style={styles.infoContainer}>
@@ -223,49 +228,49 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     padding: 15,
     borderRadius: 8,
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 15,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  closeButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
-  },
-  changeButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    backgroundColor: '#FF9800',
-    alignItems: 'center',
-  },
-  changeButtonText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  editButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    backgroundColor: '#2196f3',
-    alignItems: 'center',
-  },
-  editButtonText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
+ },
+ footer: {
+   flexDirection: 'row',
+   padding: 20,
+   gap: 15,
+   backgroundColor: '#fff',
+   borderTopWidth: 1,
+   borderTopColor: '#eee',
+ },
+ closeButton: {
+   flex: 1,
+   paddingVertical: 15,
+   borderRadius: 8,
+   backgroundColor: '#f5f5f5',
+   alignItems: 'center',
+ },
+ closeButtonText: {
+   fontSize: 16,
+   color: '#666',
+   fontWeight: '500',
+ },
+ changeButton: {
+   flex: 1,
+   paddingVertical: 15,
+   borderRadius: 8,
+   backgroundColor: '#FF9800',
+   alignItems: 'center',
+ },
+ changeButtonText: {
+   fontSize: 16,
+   color: '#fff',
+   fontWeight: 'bold',
+ },
+ editButton: {
+   flex: 1,
+   paddingVertical: 15,
+   borderRadius: 8,
+   backgroundColor: '#2196f3',
+   alignItems: 'center',
+ },
+ editButtonText: {
+   fontSize: 16,
+   color: '#fff',
+   fontWeight: 'bold',
+ },
 });
