@@ -1,8 +1,20 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { AppStateProvider } from '../contexts/AppStateContext';
+import { IAPService } from '../services/IAPService';
 
 export default function RootLayout() {
+  useEffect(() => {
+    // Initialize IAP when app starts
+    IAPService.initialize().catch(console.error);
+    
+    return () => {
+      // Cleanup when app unmounts
+      IAPService.disconnect().catch(console.error);
+    };
+  }, []);
+  
   return (
     <AppStateProvider>
       <Stack

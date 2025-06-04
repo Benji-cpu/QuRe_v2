@@ -1,13 +1,13 @@
 // services/PricingService.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 import { UserPreferencesService } from './UserPreferences';
 
 const PRICING_KEY = '@qure_pricing_state';
-const PURCHASE_KEY = '@qure_purchase_state';
 
 export interface PricingState {
-  currentTier: number; // 0 = $4.99, 1 = $3.99, 2 = $2.99
-  rejectedOffers: string[]; // timestamps of rejections
+  currentTier: number;
+  rejectedOffers: string[];
   lastOfferDate?: string;
   purchaseDate?: string;
   purchasePrice?: number;
@@ -21,9 +21,24 @@ export interface PricingTier {
 }
 
 export const PRICING_TIERS: PricingTier[] = [
-  { tier: 0, price: 4.99, productId: 'qure_premium_499', displayPrice: '$4.99' },
-  { tier: 1, price: 3.99, productId: 'qure_premium_399', displayPrice: '$3.99' },
-  { tier: 2, price: 2.99, productId: 'qure_premium_299', displayPrice: '$2.99' },
+  { 
+    tier: 0, 
+    price: 4.99, 
+    productId: Platform.OS === 'ios' ? 'com.anonymous.QuRe.premium_499' : 'qure_premium_499',
+    displayPrice: '$4.99' 
+  },
+  { 
+    tier: 1, 
+    price: 3.99, 
+    productId: Platform.OS === 'ios' ? 'com.anonymous.QuRe.premium_399' : 'qure_premium_399',
+    displayPrice: '$3.99' 
+  },
+  { 
+    tier: 2, 
+    price: 2.99, 
+    productId: Platform.OS === 'ios' ? 'com.anonymous.QuRe.premium_299' : 'qure_premium_299',
+    displayPrice: '$2.99' 
+  },
 ];
 
 export class PricingService {
@@ -51,7 +66,6 @@ export class PricingService {
       const state = await this.getPricingState();
       state.rejectedOffers.push(new Date().toISOString());
       
-      // Move to next tier if available
       if (state.currentTier < PRICING_TIERS.length - 1) {
         state.currentTier += 1;
       }
@@ -83,7 +97,6 @@ export class PricingService {
       state.purchasePrice = price;
       await this.savePricingState(state);
       
-      // Also update premium status
       await UserPreferencesService.setPremium(true);
     } catch (error) {
       console.error('Error recording purchase:', error);

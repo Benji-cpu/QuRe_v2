@@ -2,6 +2,8 @@
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { PurchaseError } from 'react-native-iap';
+import { IAPService } from '../../services/IAPService';
 import { PRICING_TIERS, PricingService, PricingTier } from '../../services/PricingService';
 import { UserPreferencesService } from '../../services/UserPreferences';
 
@@ -11,15 +13,20 @@ export default function PremiumModal() {
   const [isPurchasing, setIsPurchasing] = useState(false);
 
   useEffect(() => {
-    loadCurrentTier();
+    initializeIAP();
+    
+    return () => {
+      IAPService.cleanup();
+    };
   }, []);
 
-  const loadCurrentTier = async () => {
+  const initializeIAP = async () => {
     try {
+      await IAPService.initialize();
       const tier = await PricingService.getCurrentPricingTier();
       setCurrentTier(tier);
     } catch (error) {
-      console.error('Error loading pricing tier:', error);
+      console.error('Failed to initialize IAP:', error);
     }
   };
 
@@ -27,22 +34,44 @@ export default function PremiumModal() {
     setIsPurchasing(true);
     
     try {
-      // For now, simulate the purchase
-      // In production, this would call RevenueCat's purchaseProduct method
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      await PricingService.recordPurchase(currentTier.price);
-      await UserPreferencesService.setPremium(true);
-      
-      Alert.alert(
-        'Success!', 
-        'Welcome to QuRe Premium! You now have access to all features.',
-        [{ text: 'Great!', onPress: () => router.back() }]
+      await IAPService.purchaseProduct(
+        currentTier.productId,
+        async (purchase) => {
+          // Purchase successful
+          await PricingService.recordPurchase(currentTier.price);
+          await UserPreferencesService.setPremium(true);
+          
+          setIsPurchasing(false);
+          
+          Alert.alert(
+            'Success!', 
+            'Welcome to QuRe Premium! You now have access to all features.',
+            [{ text: 'Great!', onPress: () => router.back() }]
+          );
+        },
+        (error: PurchaseError) => {
+          // Purchase failed
+          setIsPurchasing(false);
+          
+          if (error.code === 'E_USER_CANCELLED') {
+            // User cancelled, don't show error
+            return;
+          }
+          
+          Alert.alert(
+            'Purchase Failed', 
+            error.message || 'Unable to complete purchase. Please try again.',
+            [{ text: 'OK' }]
+          );
+        }
       );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to complete purchase. Please try again.');
-    } finally {
+    } catch (error: any) {
       setIsPurchasing(false);
+      Alert.alert(
+        'Error', 
+        'Unable to start purchase. Please try again.',
+        [{ text: 'OK' }]
+      );
     }
   };
 
@@ -51,7 +80,6 @@ export default function PremiumModal() {
       const newTier = await PricingService.recordRejection();
       
       if (newTier.tier === currentTier.tier) {
-        // No more discounts available
         Alert.alert(
           'Last Chance!',
           `This is our best offer at ${currentTier.displayPrice}. Premium features help support continued development.`,
@@ -61,7 +89,6 @@ export default function PremiumModal() {
           ]
         );
       } else {
-        // Show the next discount
         setCurrentTier(newTier);
         Alert.alert(
           'Special Offer!',
