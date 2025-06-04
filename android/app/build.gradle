@@ -89,6 +89,7 @@ android {
 
     namespace 'com.anonymous.QuRe'
     defaultConfig {
+missingDimensionStrategy "store", "play"
         applicationId 'com.anonymous.QuRe'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion

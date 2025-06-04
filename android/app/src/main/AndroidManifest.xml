@@ -26,6 +26,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="qure"/>
+        <data android:scheme="exp+qure"/>
       </intent-filter>
     </activity>
   </application>

@@ -35,10 +35,19 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      ["react-native-iap", {
+        "paymentProvider": "Play Store"
+      }]
     ],
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "382a05a5-832d-4999-980f-2d14a15d4111"
+      }
     }
   }
 }
