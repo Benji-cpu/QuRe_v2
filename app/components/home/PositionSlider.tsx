@@ -12,6 +12,7 @@ interface PositionSliderProps {
 export default function PositionSlider({ value, onValueChange, visible }: PositionSliderProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [opacity] = useState(new Animated.Value(0));
+  const [contentOpacity] = useState(new Animated.Value(1));
 
   useEffect(() => {
     if (visible) {
@@ -30,51 +31,76 @@ export default function PositionSlider({ value, onValueChange, visible }: Positi
   }, [visible]);
 
   const handlePress = () => {
-    setIsExpanded(true);
+    Animated.timing(contentOpacity, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsExpanded(true);
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+    });
   };
 
   const handleDismiss = () => {
-    setIsExpanded(false);
+    Animated.timing(contentOpacity, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      setIsExpanded(false);
+      Animated.timing(contentOpacity, {
+        toValue: 1,
+        duration: 150,
+        useNativeDriver: true,
+      }).start();
+    });
   };
 
   if (!visible) return null;
 
   return (
     <Animated.View style={[styles.container, { opacity }]}>
-      {isExpanded ? (
+      <View style={styles.cardContainer}>
         <TouchableWithoutFeedback onPress={handleDismiss}>
-          <View style={StyleSheet.absoluteFillObject}>
-            <TouchableWithoutFeedback>
-              <View style={styles.sliderCard}>
-                <Text style={styles.sliderIcon}>↕️</Text>
-                <View style={styles.sliderContent}>
-                  <Slider
-                    style={styles.slider}
-                    minimumValue={20}
-                    maximumValue={150}
-                    value={value}
-                    onValueChange={onValueChange}
-                    minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-                    maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-                    thumbTintColor="white"
-                  />
-                  <Text style={styles.sliderValue}>{Math.round(value)}px</Text>
-                </View>
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
+          <View style={StyleSheet.absoluteFillObject} />
         </TouchableWithoutFeedback>
-      ) : (
-        <TouchableOpacity style={styles.notificationCard} onPress={handlePress}>
-          <View style={styles.iconContainer}>
-            <Feather name="chevrons-up" size={24} color="white" />
-          </View>
-          <View style={styles.notificationContent}>
-            <Text style={styles.notificationTitle}>Adjust QR position</Text>
-            <Text style={styles.notificationSubtitle}>Move QR codes up or down</Text>
-          </View>
-        </TouchableOpacity>
-      )}
+        <Animated.View style={[styles.content, { opacity: contentOpacity }]}>
+          {isExpanded ? (
+            <View style={styles.sliderCard}>
+              <View style={styles.iconContainer}>
+                <Feather name="chevrons-up" size={24} color="white" />
+              </View>
+              <View style={styles.sliderContent}>
+                <Slider
+                  style={styles.slider}
+                  minimumValue={20}
+                  maximumValue={150}
+                  value={value}
+                  onValueChange={onValueChange}
+                  minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
+                  maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                  thumbTintColor="white"
+                />
+                <Text style={styles.sliderValue}>{Math.round(value)}px</Text>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.notificationCard} onPress={handlePress}>
+              <View style={styles.iconContainer}>
+                <Feather name="chevrons-up" size={24} color="white" />
+              </View>
+              <View style={styles.notificationContent}>
+                <Text style={styles.notificationTitle}>Adjust QR position</Text>
+                <Text style={styles.notificationSubtitle}>Move QR codes up or down</Text>
+              </View>
+            </TouchableOpacity>
+          )}
+        </Animated.View>
+      </View>
     </Animated.View>
   );
 }
@@ -84,12 +110,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 12,
   },
-  notificationCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  cardContainer: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 12,
     padding: 16,
+  },
+  content: {
+    minHeight: 42, // Ensures consistent height
+  },
+  notificationCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   iconContainer: {
     width: 40,
@@ -116,10 +147,6 @@ const styles = StyleSheet.create({
   sliderCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 12,
-    padding: 16,
-    marginHorizontal: 20,
   },
   sliderIcon: {
     fontSize: 20,
