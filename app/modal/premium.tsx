@@ -3,58 +3,77 @@ import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { PurchaseError } from 'react-native-iap';
+import { EngagementPricingService, PricingOffer } from '../../services/EngagementPricingService';
 import { IAPService } from '../../services/IAPService';
-import { PRICING_TIERS, PricingService, PricingTier } from '../../services/PricingService';
 import { UserPreferencesService } from '../../services/UserPreferences';
 
 export default function PremiumModal() {
-  const [currentTier, setCurrentTier] = useState<PricingTier>(PRICING_TIERS[0]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [offer, setOffer] = useState<PricingOffer | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [insights, setInsights] = useState<any>(null);
 
   useEffect(() => {
-    initializeIAP();
+    initializeScreen();
     
     return () => {
       IAPService.cleanup();
     };
   }, []);
 
-  const initializeIAP = async () => {
+  const initializeScreen = async () => {
     try {
       await IAPService.initialize();
-      const tier = await PricingService.getCurrentPricingTier();
-      setCurrentTier(tier);
+      
+      const currentOffer = await EngagementPricingService.determineOffer();
+      const engagementInsights = await EngagementPricingService.getEngagementInsights();
+      
+      if (!currentOffer) {
+        const defaultOffer: PricingOffer = {
+          price: 4.99,
+          productId: 'com.anonymous.QuRe.premium_499',
+          displayPrice: '$4.99',
+          trigger: 'default',
+          message: 'Unlock all premium features'
+        };
+        setOffer(defaultOffer);
+      } else {
+        setOffer(currentOffer);
+        await EngagementPricingService.recordOfferShown(currentOffer);
+      }
+      
+      setInsights(engagementInsights);
     } catch (error) {
-      console.error('Failed to initialize IAP:', error);
+      console.error('Failed to initialize premium screen:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handlePurchase = async () => {
+    if (!offer) return;
+    
     setIsPurchasing(true);
     
     try {
       await IAPService.purchaseProduct(
-        currentTier.productId,
+        offer.productId,
         async (purchase) => {
-          // Purchase successful
-          await PricingService.recordPurchase(currentTier.price);
+          await EngagementPricingService.recordPurchase(offer.price);
           await UserPreferencesService.setPremium(true);
           
           setIsPurchasing(false);
           
           Alert.alert(
-            'Success!', 
-            'Welcome to QuRe Premium! You now have access to all features.',
-            [{ text: 'Great!', onPress: () => router.back() }]
+            'Welcome to QuRe Premium!', 
+            'You now have access to all features including secondary QR codes and custom designs.',
+            [{ text: 'Awesome!', onPress: () => router.back() }]
           );
         },
         (error: PurchaseError) => {
-          // Purchase failed
           setIsPurchasing(false);
           
           if (error.code === 'E_USER_CANCELLED') {
-            // User cancelled, don't show error
             return;
           }
           
@@ -75,72 +94,63 @@ export default function PremiumModal() {
     }
   };
 
-  const handleReject = async () => {
-    try {
-      const newTier = await PricingService.recordRejection();
-      
-      if (newTier.tier === currentTier.tier) {
-        Alert.alert(
-          'Last Chance!',
-          `This is our best offer at ${currentTier.displayPrice}. Premium features help support continued development.`,
-          [
-            { text: 'I\'ll think about it', onPress: () => router.back() },
-            { text: 'OK, I\'ll upgrade', onPress: handlePurchase }
-          ]
-        );
-      } else {
-        setCurrentTier(newTier);
-        Alert.alert(
-          'Special Offer!',
-          `We\'d love to have you join QuRe Premium. How about ${newTier.displayPrice} instead?`,
-          [
-            { text: 'Show me', style: 'default' }
-          ]
-        );
-      }
-    } catch (error) {
-      console.error('Error handling rejection:', error);
-      router.back();
-    }
-  };
-
   const features = [
     {
-      icon: '🔧',
+      icon: '🎯',
       title: 'Secondary QR Code',
       description: 'Add a second QR code to your wallpaper for more functionality'
     },
     {
       icon: '🎨',
+      title: 'Custom QR Designs',
+      description: 'Customize colors, gradients, and add logos to your QR codes'
+    },
+    {
+      icon: '🌈',
       title: 'Premium Backgrounds',
-      description: 'Access to exclusive gradient collections and custom themes'
+      description: 'Access exclusive gradient collections and themes'
     },
     {
-      icon: '📱',
-      title: 'Advanced Export',
-      description: 'Export in multiple formats and resolutions'
+      icon: '✨',
+      title: 'No Watermarks',
+      description: 'Export wallpapers without QuRe branding'
     },
     {
-      icon: '🚫',
-      title: 'No Branding',
-      description: 'Remove QuRe branding from your wallpapers'
-    },
-    {
-      icon: '🔒',
-      title: 'Priority Support',
-      description: 'Get help faster with premium customer support'
+      icon: '🚀',
+      title: 'Future Updates',
+      description: 'All future premium features included'
     }
   ];
 
-  const getSavingsText = () => {
-    const originalPrice = PRICING_TIERS[0].price;
-    const savings = originalPrice - currentTier.price;
-    
-    if (savings > 0) {
-      return `Save $${savings.toFixed(2)} today!`;
+  const getSpecialMessage = () => {
+    if (!offer || !insights) return null;
+
+    if (offer.trigger === 'secondary_slot') {
+      return 'We noticed you tried to add a second QR code. Unlock this feature now!';
     }
+    
+    if (offer.trigger === 'high_engagement' && insights.totalQRCodes >= 3) {
+      return `You've created ${insights.totalQRCodes} QR codes! Here's a special offer for power users.`;
+    }
+    
+    if (offer.trigger === 'loyal_user' && insights.daysActive >= 7) {
+      return `Thanks for using QuRe for ${insights.daysActive} days! Here's an exclusive offer.`;
+    }
+    
+    if (offer.trigger === 'export_wallpaper') {
+      return 'Love creating wallpapers? Remove watermarks and get premium backgrounds!';
+    }
+
     return null;
   };
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2196f3" />
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -148,9 +158,15 @@ export default function PremiumModal() {
         <View style={styles.header}>
           <Text style={styles.title}>Unlock Premium</Text>
           <Text style={styles.subtitle}>
-            Get the most out of QuRe with premium features
+            {offer?.message || 'Get the most out of QuRe'}
           </Text>
         </View>
+
+        {getSpecialMessage() && (
+          <View style={styles.specialMessageContainer}>
+            <Text style={styles.specialMessage}>{getSpecialMessage()}</Text>
+          </View>
+        )}
 
         <View style={styles.featuresContainer}>
           {features.map((feature, index) => (
@@ -166,39 +182,36 @@ export default function PremiumModal() {
 
         <View style={styles.pricingContainer}>
           <View style={styles.priceCard}>
-            <Text style={styles.priceTitle}>Premium Plan</Text>
+            <Text style={styles.priceTitle}>One-Time Purchase</Text>
             
-            {currentTier.tier > 0 && (
+            {offer && offer.price < 4.99 && (
               <View style={styles.discountBadge}>
-                <Text style={styles.discountText}>SPECIAL OFFER</Text>
+                <Text style={styles.discountText}>SPECIAL PRICE</Text>
               </View>
             )}
             
             <View style={styles.priceRow}>
-              {currentTier.tier > 0 && (
-                <Text style={styles.originalPrice}>${PRICING_TIERS[0].price}</Text>
+              {offer && offer.price < 4.99 && (
+                <Text style={styles.originalPrice}>$4.99</Text>
               )}
-              <Text style={styles.priceAmount}>{currentTier.displayPrice}</Text>
+              <Text style={styles.priceAmount}>{offer?.displayPrice || '$4.99'}</Text>
             </View>
             
-            <Text style={styles.pricePeriod}>one-time purchase</Text>
+            <Text style={styles.pricePeriod}>lifetime access</Text>
             
-            {getSavingsText() && (
-              <Text style={styles.savingsText}>{getSavingsText()}</Text>
+            {offer && offer.price < 4.99 && (
+              <Text style={styles.savingsText}>
+                Save ${(4.99 - offer.price).toFixed(2)} with this offer!
+              </Text>
             )}
           </View>
         </View>
 
         <View style={styles.guaranteeContainer}>
-          <Text style={styles.guaranteeText}>
-            ✓ Lifetime access
-          </Text>
-          <Text style={styles.guaranteeText}>
-            ✓ All future updates included
-          </Text>
-          <Text style={styles.guaranteeText}>
-            ✓ Instant activation
-          </Text>
+          <Text style={styles.guaranteeText}>✓ Lifetime access to all features</Text>
+          <Text style={styles.guaranteeText}>✓ All future updates included</Text>
+          <Text style={styles.guaranteeText}>✓ No recurring charges</Text>
+          <Text style={styles.guaranteeText}>✓ Instant activation</Text>
         </View>
       </ScrollView>
       
@@ -212,14 +225,14 @@ export default function PremiumModal() {
             <ActivityIndicator color="white" />
           ) : (
             <Text style={styles.upgradeButtonText}>
-              Unlock Premium - {currentTier.displayPrice}
+              Unlock Premium - {offer?.displayPrice || '$4.99'}
             </Text>
           )}
         </TouchableOpacity>
         
         <TouchableOpacity 
           style={styles.cancelButton} 
-          onPress={handleReject}
+          onPress={() => router.back()}
           disabled={isPurchasing}
         >
           <Text style={styles.cancelButtonText}>Maybe Later</Text>
@@ -233,6 +246,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   content: {
     flex: 1,
@@ -252,6 +270,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
+  },
+  specialMessageContainer: {
+    backgroundColor: '#FFF3CD',
+    padding: 15,
+    margin: 20,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#FFC107',
+  },
+  specialMessage: {
+    fontSize: 14,
+    color: '#856404',
+    lineHeight: 20,
   },
   featuresContainer: {
     backgroundColor: 'white',
@@ -303,11 +334,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -10,
     right: -10,
-    backgroundColor: '#FF6B6B',
+    backgroundColor: '#4CAF50',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
-    transform: [{ rotate: '10deg' }],
   },
   discountText: {
     color: 'white',

@@ -1,7 +1,8 @@
-// app/modal/create.tsx
+// app/modal/create.tsx - Add engagement tracking
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { QRGenerator } from '../../services/QRGenerator';
 import { QRStorage } from '../../services/QRStorage';
 import { UserPreferencesService } from '../../services/UserPreferences';
@@ -77,8 +78,10 @@ export default function CreateModal() {
         createdAt: new Date().toISOString(),
         design: isPremium ? design : undefined,
       };
-  
+
       await QRStorage.saveQRCode(qrCodeData);
+      
+      await EngagementPricingService.trackAction('qrCodesCreated');
   
       if (slot === 'primary') {
         await UserPreferencesService.updatePrimaryQR(qrCodeData.id);
@@ -100,9 +103,9 @@ export default function CreateModal() {
       params: { selectMode: 'true', slot: slot || '' }
     });
   };
-
+ 
   const qrContent = canSave() ? QRGenerator.generateContent(selectedType, formData) : '';
-
+ 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -113,7 +116,7 @@ export default function CreateModal() {
           </Text>
         )}
       </View>
-
+ 
       <View style={styles.tabsContainer}>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'content' && styles.activeTab]}
@@ -135,7 +138,7 @@ export default function CreateModal() {
           </View>
         </TouchableOpacity>
       </View>
-
+ 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {activeTab === 'content' ? (
           <>
@@ -146,7 +149,7 @@ export default function CreateModal() {
               <Text style={styles.historyButtonIcon}>📋</Text>
               <Text style={styles.historyButtonText}>Select from History</Text>
             </TouchableOpacity>
-
+ 
             <View style={styles.divider}>
               <View style={styles.dividerLine} />
               <Text style={styles.dividerText}>OR CREATE NEW</Text>
@@ -208,9 +211,9 @@ export default function CreateModal() {
       </View>
     </View>
   );
-}
-
-const styles = StyleSheet.create({
+ }
+ 
+ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
@@ -356,4 +359,4 @@ const styles = StyleSheet.create({
  disabledButton: {
    backgroundColor: '#ccc',
  },
-});
+ });

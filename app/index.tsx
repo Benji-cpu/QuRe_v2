@@ -1,4 +1,4 @@
-// app/index.tsx
+// app/index.tsx - Update the relevant parts
 import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -9,6 +9,7 @@ import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import { GRADIENT_PRESETS } from '../constants/Gradients';
+import { EngagementPricingService } from '../services/EngagementPricingService';
 import { QRStorage } from '../services/QRStorage';
 import { UserPreferencesService } from '../services/UserPreferences';
 import { QRCodeData } from '../types/QRCode';
@@ -25,6 +26,7 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 function HomeScreen() {
   const insets = useSafeAreaInsets();
   const wallpaperRef = useRef<View>(null);
+  const sessionStartTime = useRef<number>(Date.now());
   
   const [currentGradientIndex, setCurrentGradientIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -68,11 +70,18 @@ function HomeScreen() {
 
   useEffect(() => {
     loadUserData();
+    checkForOffer();
   }, [loadUserData]);
 
   useFocusEffect(
     useCallback(() => {
       loadUserData();
+      sessionStartTime.current = Date.now();
+      
+      return () => {
+        const sessionDuration = Date.now() - sessionStartTime.current;
+        EngagementPricingService.trackSession(sessionDuration);
+      };
     }, [loadUserData])
   );
 
@@ -80,6 +89,19 @@ function HomeScreen() {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  const checkForOffer = async () => {
+    try {
+      const offer = await EngagementPricingService.determineOffer();
+      if (offer && !isPremium) {
+        setTimeout(() => {
+          router.push('/modal/premium');
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('Error checking for offer:', error);
+    }
+  };
 
   const changeGradient = (newIndex: number) => {
     setCurrentGradientIndex(newIndex);
@@ -147,6 +169,9 @@ function HomeScreen() {
       });
 
       await MediaLibrary.saveToLibraryAsync(uri);
+      
+      await EngagementPricingService.trackAction('wallpapersExported');
+      
       Alert.alert('Success', 'Wallpaper saved to your photos!');
     } catch (error) {
       Alert.alert('Error', 'Failed to save wallpaper');
@@ -156,12 +181,14 @@ function HomeScreen() {
     }
   };
 
-  const handleSettings = () => {
+  const handleSettings = async () => {
+    await EngagementPricingService.trackAction('settingsOpened');
     router.push('/modal/settings');
   };
 
-  const handleQRSlotPress = (slot: 'primary' | 'secondary') => {
+  const handleQRSlotPress = async (slot: 'primary' | 'secondary') => {
     if (slot === 'secondary' && !isPremium) {
+      await EngagementPricingService.trackAction('secondarySlotAttempts');
       router.push('/modal/premium');
       return;
     }
@@ -232,79 +259,79 @@ function HomeScreen() {
                         onSettings={handleSettings}
                       />
                       {showSwipeIndicator && (
-                        <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
-                      )}
-                      {showPositionSlider && (
-                        <PositionSlider
-                          value={qrVerticalOffset}
-                          onValueChange={handleVerticalOffsetChange}
-                          visible={showPositionSlider}
-                        />
-                      )}
-                    </View>
-                  )}
-                </View>
+                       <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
+                     )}
+                     {showPositionSlider && (
+                       <PositionSlider
+                         value={qrVerticalOffset}
+                         onValueChange={handleVerticalOffsetChange}
+                         visible={showPositionSlider}
+                       />
+                     )}
+                   </View>
+                 )}
+               </View>
 
-                <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 15 }]}>
-                  <QRSlots
-                    primaryQR={primaryQR}
-                    secondaryQR={secondaryQR}
-                    isPremium={isPremium}
-                    showActionButtons={showActionButtons}
-                    verticalOffset={qrVerticalOffset}
-                    onSlotPress={handleQRSlotPress}
-                    onRemoveQR={handleRemoveQR}
-                  />
+               <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 15 }]}>
+                 <QRSlots
+                   primaryQR={primaryQR}
+                   secondaryQR={secondaryQR}
+                   isPremium={isPremium}
+                   showActionButtons={showActionButtons}
+                   verticalOffset={qrVerticalOffset}
+                   onSlotPress={handleQRSlotPress}
+                   onRemoveQR={handleRemoveQR}
+                 />
 
-                  {showActionButtons && (
-                    <DevTools
-                      isPremium={isPremium}
-                      onTestUpgrade={handleTestUpgrade}
-                      onToggleOnboarding={() => {
-                        setShowSwipeIndicator(true);
-                        setShowPositionSlider(false);
-                      }}
-                    />
-                  )}
-                </View>
-              </View>
-            </GradientBackground>
-          </View>
-        </View>
-      </GestureDetector>
-    </GestureHandlerRootView>
-  );
+                 {showActionButtons && (
+                   <DevTools
+                     isPremium={isPremium}
+                     onTestUpgrade={handleTestUpgrade}
+                     onToggleOnboarding={() => {
+                       setShowSwipeIndicator(true);
+                       setShowPositionSlider(false);
+                     }}
+                   />
+                 )}
+               </View>
+             </View>
+           </GradientBackground>
+         </View>
+       </View>
+     </GestureDetector>
+   </GestureHandlerRootView>
+ );
 }
 
 export default HomeScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  wallpaperContainer: {
-    flex: 1,
-  },
-  content: {
-    flex: 1,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  appTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: 'white',
-    textAlign: 'center',
-  },
-  middleContent: {
-    flex: 1,
-  },
-  actionSection: {
-    gap: 12,
-  },
-  bottomSection: {
-    marginTop: 'auto',
-  },
+ container: {
+   flex: 1,
+ },
+ wallpaperContainer: {
+   flex: 1,
+ },
+ content: {
+   flex: 1,
+ },
+ header: {
+   alignItems: 'center',
+   marginBottom: 20,
+ },
+ appTitle: {
+   fontSize: 20,
+   fontWeight: 'bold',
+   color: 'white',
+   textAlign: 'center',
+ },
+ middleContent: {
+   flex: 1,
+ },
+ actionSection: {
+   gap: 12,
+ },
+ bottomSection: {
+   marginTop: 'auto',
+ },
 });

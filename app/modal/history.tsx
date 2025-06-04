@@ -1,6 +1,8 @@
+// app/modal/history.tsx - Add engagement tracking
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { QRStorage } from '../../services/QRStorage';
 import { UserPreferencesService } from '../../services/UserPreferences';
 import { QRCodeData } from '../../types/QRCode';
@@ -14,7 +16,12 @@ export default function HistoryModal() {
 
   useEffect(() => {
     loadQRCodes();
+    trackHistoryVisit();
   }, []);
+
+  const trackHistoryVisit = async () => {
+    await EngagementPricingService.trackAction('historyVisits');
+  };
 
   const loadQRCodes = async () => {
     try {

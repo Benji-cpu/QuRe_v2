@@ -1,7 +1,8 @@
-// app/modal/edit.tsx
+// app/modal/edit.tsx - Add engagement tracking for edits
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { QRGenerator } from '../../services/QRGenerator';
 import { QRStorage } from '../../services/QRStorage';
 import { UserPreferencesService } from '../../services/UserPreferences';
@@ -107,6 +108,8 @@ export default function EditModal() {
       };
 
       await QRStorage.updateQRCode(updatedQRCode);
+      
+      await EngagementPricingService.trackAction('qrCodesEdited');
       
       router.dismissAll();
       router.replace('/');
