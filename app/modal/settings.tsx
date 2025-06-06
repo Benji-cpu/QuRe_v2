@@ -1,182 +1,291 @@
-import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { GRADIENT_PRESETS } from '../../constants/Gradients';
+import { UserPreferencesService } from '../../services/UserPreferences';
 
-interface PositionSliderProps {
-  value: number;
-  onValueChange: (value: number) => void;
-  visible: boolean;
-}
-
-export default function PositionSlider({ value, onValueChange, visible }: PositionSliderProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [opacity] = useState(new Animated.Value(0));
-  const [contentOpacity] = useState(new Animated.Value(1));
+export default function SettingsModal() {
+  const [selectedGradientId, setSelectedGradientId] = useState('sunset');
+  const [isPremium, setIsPremium] = useState(false);
+  const [qrVerticalOffset, setQrVerticalOffset] = useState(80);
 
   useEffect(() => {
-    if (visible) {
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-    } else {
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
+    loadSettings();
+  }, []);
+
+  const loadSettings = async () => {
+    try {
+      const preferences = await UserPreferencesService.getPreferences();
+      const premium = await UserPreferencesService.isPremium();
+      setSelectedGradientId(preferences.selectedGradientId);
+      setQrVerticalOffset(preferences.qrVerticalOffset || 80);
+      setIsPremium(premium);
+    } catch (error) {
+      console.error('Error loading settings:', error);
     }
-  }, [visible]);
-
-  const handlePress = () => {
-    Animated.timing(contentOpacity, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start(() => {
-      setIsExpanded(true);
-      Animated.timing(contentOpacity, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }).start();
-    });
   };
 
-  const handleDismiss = () => {
-    Animated.timing(contentOpacity, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start(() => {
-      setIsExpanded(false);
-      Animated.timing(contentOpacity, {
-        toValue: 1,
-        duration: 150,
-        useNativeDriver: true,
-      }).start();
-    });
+  const handleGradientSelect = async (gradientId: string) => {
+    try {
+      setSelectedGradientId(gradientId);
+      await UserPreferencesService.updateGradient(gradientId);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update gradient');
+    }
   };
 
-  if (!visible) return null;
+  const handleVerticalOffsetChange = async (value: number) => {
+    try {
+      setQrVerticalOffset(value);
+      await UserPreferencesService.updateQRVerticalOffset(value);
+    } catch (error) {
+      console.error('Error updating vertical offset:', error);
+    }
+  };
+
+  const handlePremiumToggle = async () => {
+    try {
+      const newStatus = !isPremium;
+      await UserPreferencesService.setPremium(newStatus);
+      setIsPremium(newStatus);
+      Alert.alert('Success', `Premium status ${newStatus ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update premium status');
+    }
+  };
+
+  const handleUpgrade = () => {
+    router.push('/modal/premium');
+  };
 
   return (
-    <Animated.View style={[styles.container, { opacity }]}>
-      <View style={styles.cardContainer}>
-        {isExpanded && (
-          <TouchableWithoutFeedback onPress={handleDismiss}>
-            <View style={styles.overlay} />
-          </TouchableWithoutFeedback>
-        )}
-        <Animated.View style={[styles.content, { opacity: contentOpacity }]}>
-          {isExpanded ? (
-            <View style={styles.sliderCard}>
-              <Text style={styles.sliderIcon}>↕️</Text>
-              <View style={styles.sliderContent}>
-                <Slider
-                  style={styles.slider}
-                  minimumValue={20}
-                  maximumValue={150}
-                  value={value}
-                  onValueChange={onValueChange}
-                  minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-                  maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-                  thumbTintColor="white"
-                />
-                <Text style={styles.sliderValue}>{Math.round(value)}px</Text>
-              </View>
-            </View>
-          ) : (
-            <TouchableOpacity style={styles.notificationCard} onPress={handlePress}>
-              <View style={styles.iconContainer}>
-                <Feather name="chevrons-up" size={24} color="white" />
-              </View>
-              <View style={styles.notificationContent}>
-                <Text style={styles.notificationTitle}>Adjust QR position</Text>
-                <Text style={styles.notificationSubtitle}>Move QR codes up or down</Text>
-              </View>
+    <View style={styles.container}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionTitle}>QR Code Position</Text>
+        
+        <View style={styles.sliderContainer}>
+          <Text style={styles.sliderLabel}>Vertical Position</Text>
+          <Slider
+            style={styles.slider}
+            minimumValue={20}
+            maximumValue={150}
+            value={qrVerticalOffset}
+            onSlidingComplete={handleVerticalOffsetChange}
+            minimumTrackTintColor="#2196f3"
+            maximumTrackTintColor="#ddd"
+            thumbTintColor="#2196f3"
+          />
+          <Text style={styles.sliderValue}>{Math.round(qrVerticalOffset)}px from bottom</Text>
+        </View>
+
+        <Text style={styles.sectionTitle}>Background Gradients</Text>
+        
+        <View style={styles.gradientsGrid}>
+          {GRADIENT_PRESETS.map((gradient) => (
+            <TouchableOpacity
+              key={gradient.id}
+              style={[
+                styles.gradientOption,
+                selectedGradientId === gradient.id && styles.selectedGradient
+              ]}
+              onPress={() => handleGradientSelect(gradient.id)}
+            >
+              <LinearGradient
+                colors={gradient.colors}
+                start={gradient.start}
+                end={gradient.end}
+                style={styles.gradientPreview}
+              />
+              <Text style={styles.gradientName}>{gradient.name}</Text>
+              {selectedGradientId === gradient.id && (
+                <View style={styles.selectedIndicator}>
+                  <Text style={styles.checkmark}>✓</Text>
+                </View>
+              )}
             </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>Plan Status</Text>
+        
+        <View style={styles.planContainer}>
+          <View style={styles.planInfo}>
+            <Text style={styles.planTitle}>
+              {isPremium ? 'Premium Plan' : 'Free Plan'}
+            </Text>
+            <Text style={styles.planDescription}>
+              {isPremium 
+                ? 'You have access to all features including secondary QR codes and custom backgrounds.'
+                : 'Upgrade to Premium for unlimited QR codes and advanced customization options.'
+              }
+            </Text>
+          </View>
+          
+          {!isPremium ? (
+            <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgrade}>
+              <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.premiumBadge}>
+              <Text style={styles.premiumBadgeText}>PREMIUM ACTIVE</Text>
+            </View>
           )}
-        </Animated.View>
-      </View>
-    </Animated.View>
+        </View>
+
+        <Text style={styles.sectionTitle}>Developer Options</Text>
+        
+        <TouchableOpacity style={styles.devOption} onPress={handlePremiumToggle}>
+          <Text style={styles.devOptionText}>
+            {isPremium ? 'Disable Premium (Test)' : 'Enable Premium (Test)'}
+          </Text>
+        </TouchableOpacity>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    paddingHorizontal: 20,
-    marginBottom: 12,
-  },
-  cardContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.1)',
-    height: 72, // Matches action cards' height
-  },
-  overlay: {
-    position: 'absolute',
-    top: -16, // Offset padding
-    left: -20, // Offset container padding
-    right: -20, // Offset container padding
-    bottom: -16, // Offset padding
-    zIndex: 100,
+    flex: 1,
+    backgroundColor: '#f5f5f5',
   },
   content: {
     flex: 1,
+    padding: 20,
   },
-  notificationCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+    marginTop: 20,
   },
-  iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
+  sliderContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
   },
-  notificationContent: {
-    flex: 1,
-  },
-  notificationTitle: {
+  sliderLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: 'white',
-    marginBottom: 1,
-  },
-  notificationSubtitle: {
-    fontSize: 13,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-  sliderCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sliderIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
-  sliderContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 12,
+    color: '#333',
+    marginBottom: 10,
   },
   slider: {
-    flex: 1,
+    width: '100%',
     height: 40,
   },
   sliderValue: {
     fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 5,
+  },
+  gradientsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 15,
+    marginBottom: 20,
+  },
+  gradientOption: {
+    width: '45%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  selectedGradient: {
+    borderColor: '#2196f3',
+  },
+  gradientPreview: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gradientName: {
+    position: 'absolute',
+    bottom: 8,
+    alignSelf: 'center',
+    fontSize: 12,
+    fontWeight: '600',
     color: 'white',
-    marginLeft: 12,
-    minWidth: 45,
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
+  },
+  selectedIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#2196f3',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkmark: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+  planContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+  },
+  planInfo: {
+    marginBottom: 15,
+  },
+  planTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  planDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  upgradeButton: {
+    backgroundColor: '#2196f3',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  upgradeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  premiumBadge: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  premiumBadgeText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  devOption: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 10,
+  },
+  devOptionText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });
