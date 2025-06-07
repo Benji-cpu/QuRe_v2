@@ -335,7 +335,7 @@ function HomeScreen() {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
-  const shouldShowTitle = !hideElementsForExport || !isPremium;
+  const shouldShowTitle = !isPremium || !hideElementsForExport;
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -384,6 +384,7 @@ function HomeScreen() {
                               onHorizontalChange={handleHorizontalOffsetChange}
                               onScaleChange={handleScaleChange}
                               visible={showPositionSlider}
+                              isExpanded={sliderExpanded}
                               onExpand={handleSliderExpand}
                               onCollapse={handleSliderCollapse}
                             />
@@ -403,6 +404,7 @@ function HomeScreen() {
                         scale={qrScale}
                         onSlotPress={handleQRSlotPress}
                         onRemoveQR={handleRemoveQR}
+                        hideEmptySlots={hideElementsForExport}
                       />
                       
                       {showSwipeIndicator && (

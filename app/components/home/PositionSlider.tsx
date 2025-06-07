@@ -12,6 +12,7 @@ interface PositionSliderProps {
   onHorizontalChange: (value: number) => void;
   onScaleChange: (value: number) => void;
   visible: boolean;
+  isExpanded: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
 }
@@ -24,12 +25,13 @@ export default function PositionSlider({
   onHorizontalChange,
   onScaleChange,
   visible,
+  isExpanded,
   onExpand,
   onCollapse
 }: PositionSliderProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
   const [animatedOpacity] = useState(new Animated.Value(0));
   const [translateY] = useState(new Animated.Value(0));
+  const [containerOpacity] = useState(new Animated.Value(1));
 
   useEffect(() => {
     if (visible) {
@@ -41,26 +43,38 @@ export default function PositionSlider({
     }
   }, [visible]);
 
-  const handleExpand = () => {
-    setIsExpanded(true);
-    onExpand?.();
-    
-    Animated.timing(translateY, {
-      toValue: -120,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  };
+  useEffect(() => {
+    if (isExpanded) {
+      Animated.parallel([
+        Animated.timing(translateY, {
+          toValue: -120,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(containerOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(containerOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [isExpanded]);
 
-  const handleCollapse = () => {
-    Animated.timing(translateY, {
-      toValue: 0,
-      duration: 300,
-      useNativeDriver: true,
-    }).start(() => {
-      setIsExpanded(false);
-      onCollapse?.();
-    });
+  const handleExpand = () => {
+    onExpand?.();
   };
 
   if (!visible) return null;
@@ -76,69 +90,71 @@ export default function PositionSlider({
         }
       ]}
     >
-      {isExpanded ? (
-        <View style={styles.expandedCard}>
-          <View style={styles.sliderHeader}>
-            <Feather name="move" size={20} color="white" />
-            <Text style={styles.sliderLabel}>Adjust Position</Text>
-          </View>
-          
-          <View style={styles.sliderRow}>
-            <Feather name="arrow-up" size={16} color="rgba(255, 255, 255, 0.6)" />
-            <Slider
-              style={styles.slider}
-              minimumValue={20}
-              maximumValue={300}
-              value={verticalValue}
-              onValueChange={onVerticalChange}
-              minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-              maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-              thumbTintColor="white"
-            />
-            <Text style={styles.sliderValue}>{Math.round(verticalValue)}</Text>
-          </View>
+      <Animated.View style={{ opacity: containerOpacity }}>
+        {isExpanded ? (
+          <View style={styles.expandedCard}>
+            <View style={styles.sliderHeader}>
+              <Feather name="move" size={20} color="white" />
+              <Text style={styles.sliderLabel}>Adjust Position</Text>
+            </View>
+            
+            <View style={styles.sliderRow}>
+              <Feather name="arrow-up" size={16} color="rgba(255, 255, 255, 0.6)" />
+              <Slider
+                style={styles.slider}
+                minimumValue={20}
+                maximumValue={300}
+                value={verticalValue}
+                onValueChange={onVerticalChange}
+                minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
+                maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                thumbTintColor="white"
+              />
+              <Text style={styles.sliderValue}>{Math.round(verticalValue)}</Text>
+            </View>
 
-          <View style={styles.sliderRow}>
-            <Feather name="arrow-left" size={16} color="rgba(255, 255, 255, 0.6)" />
-            <Slider
-              style={styles.slider}
-              minimumValue={-30}
-              maximumValue={30}
-              value={horizontalValue}
-              onValueChange={onHorizontalChange}
-              minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-              maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-              thumbTintColor="white"
-            />
-            <Text style={styles.sliderValue}>{Math.round(horizontalValue)}</Text>
-          </View>
+            <View style={styles.sliderRow}>
+              <Feather name="arrow-left" size={16} color="rgba(255, 255, 255, 0.6)" />
+              <Slider
+                style={styles.slider}
+                minimumValue={-30}
+                maximumValue={30}
+                value={horizontalValue}
+                onValueChange={onHorizontalChange}
+                minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
+                maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                thumbTintColor="white"
+              />
+              <Text style={styles.sliderValue}>{Math.round(horizontalValue)}</Text>
+            </View>
 
-          <View style={styles.sliderRow}>
-            <Feather name="maximize-2" size={16} color="rgba(255, 255, 255, 0.6)" />
-            <Slider
-              style={styles.slider}
-              minimumValue={0.7}
-              maximumValue={1.3}
-              value={scaleValue}
-              onValueChange={onScaleChange}
-              minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-              maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-              thumbTintColor="white"
-            />
-            <Text style={styles.sliderValue}>{Math.round(scaleValue * 100)}%</Text>
+            <View style={styles.sliderRow}>
+              <Feather name="maximize-2" size={16} color="rgba(255, 255, 255, 0.6)" />
+              <Slider
+                style={styles.slider}
+                minimumValue={0.7}
+                maximumValue={1.3}
+                value={scaleValue}
+                onValueChange={onScaleChange}
+                minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
+                maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                thumbTintColor="white"
+              />
+              <Text style={styles.sliderValue}>{Math.round(scaleValue * 100)}%</Text>
+            </View>
           </View>
-        </View>
-      ) : (
-        <TouchableOpacity style={styles.collapsedCard} onPress={handleExpand}>
-          <View style={styles.iconContainer}>
-            <Feather name="move" size={20} color="white" />
-          </View>
-          <View style={styles.notificationContent}>
-            <Text style={styles.notificationTitle}>Adjust QR position</Text>
-            <Text style={styles.notificationSubtitle}>Move and resize QR codes</Text>
-          </View>
-        </TouchableOpacity>
-      )}
+        ) : (
+          <TouchableOpacity style={styles.collapsedCard} onPress={handleExpand}>
+            <View style={styles.iconContainer}>
+              <Feather name="move" size={20} color="white" />
+            </View>
+            <View style={styles.notificationContent}>
+              <Text style={styles.notificationTitle}>Adjust QR position</Text>
+              <Text style={styles.notificationSubtitle}>Move and resize QR codes</Text>
+            </View>
+          </TouchableOpacity>
+        )}
+      </Animated.View>
     </Animated.View>
   );
 }
