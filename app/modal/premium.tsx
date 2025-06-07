@@ -229,14 +229,6 @@ export default function PremiumModal() {
             </Text>
           )}
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={styles.cancelButton} 
-          onPress={() => router.back()}
-          disabled={isPurchasing}
-        >
-          <Text style={styles.cancelButtonText}>Maybe Later</Text>
-        </TouchableOpacity>
       </View>
     </View>
   );
@@ -400,7 +392,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    marginBottom: 12,
   },
   upgradeButtonText: {
     color: 'white',

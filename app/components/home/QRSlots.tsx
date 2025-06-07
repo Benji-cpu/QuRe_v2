@@ -49,7 +49,9 @@ export default function QRSlots({
   };
 
   const getSlotStyle = (isLeft: boolean) => {
-    const offset = isLeft ? -horizontalOffset : horizontalOffset;
+    const maxOffset = 30;
+    const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, horizontalOffset));
+    const offset = isLeft ? -clampedOffset : clampedOffset;
     return {
       transform: [{ translateX: offset }],
     };
@@ -63,18 +65,18 @@ export default function QRSlots({
       >
         {primaryQR ? (
           <View style={styles.qrWrapper}>
+            {showActionButtons && (
+              <TouchableOpacity 
+                style={styles.removeButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onRemoveQR('primary');
+                }}
+              >
+                <Text style={styles.removeButtonText}>×</Text>
+              </TouchableOpacity>
+            )}
             <View style={styles.qrContent}>
-              {showActionButtons && (
-                <TouchableOpacity 
-                  style={styles.removeButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onRemoveQR('primary');
-                  }}
-                >
-                  <Text style={styles.removeButtonText}>×</Text>
-                </TouchableOpacity>
-              )}
               <QRCodePreview 
                 value={primaryQR.content} 
                 size={getQRSize()} 
@@ -100,18 +102,18 @@ export default function QRSlots({
         {isPremium ? (
           secondaryQR ? (
             <View style={styles.qrWrapper}>
+              {showActionButtons && (
+                <TouchableOpacity 
+                  style={styles.removeButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    onRemoveQR('secondary');
+                  }}
+                >
+                  <Text style={styles.removeButtonText}>×</Text>
+                </TouchableOpacity>
+              )}
               <View style={styles.qrContent}>
-                {showActionButtons && (
-                  <TouchableOpacity 
-                    style={styles.removeButton}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      onRemoveQR('secondary');
-                    }}
-                  >
-                    <Text style={styles.removeButtonText}>×</Text>
-                  </TouchableOpacity>
-                )}
                 <QRCodePreview 
                   value={secondaryQR.content} 
                   size={getQRSize()} 
@@ -158,11 +160,12 @@ const styles = StyleSheet.create({
   },
   qrWrapper: {
     alignItems: 'center',
+    position: 'relative',
   },
   qrContent: {
     backgroundColor: 'white',
     borderRadius: 14,
-    padding: 10,
+    padding: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -201,19 +204,20 @@ const styles = StyleSheet.create({
   },
   removeButton: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: -8,
+    right: -8,
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1,
+    zIndex: 2,
   },
   removeButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+    lineHeight: 18,
   },
 });

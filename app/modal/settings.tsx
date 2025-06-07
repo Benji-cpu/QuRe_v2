@@ -1,5 +1,4 @@
 // app/modal/settings.tsx
-import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -11,8 +10,6 @@ import { UserPreferencesService } from '../../services/UserPreferences';
 export default function SettingsModal() {
   const [selectedGradientId, setSelectedGradientId] = useState('sunset');
   const [isPremium, setIsPremium] = useState(false);
-  const [qrVerticalOffset, setQrVerticalOffset] = useState(80);
-  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -23,11 +20,8 @@ export default function SettingsModal() {
     try {
       const preferences = await UserPreferencesService.getPreferences();
       const premium = await UserPreferencesService.isPremium();
-      const onboardingComplete = await UserPreferencesService.hasCompletedOnboarding();
       setSelectedGradientId(preferences.selectedGradientId);
-      setQrVerticalOffset(preferences.qrVerticalOffset || 80);
       setIsPremium(premium);
-      setShowOnboarding(!onboardingComplete);
     } catch (error) {
       console.error('Error loading settings:', error);
     }
@@ -42,15 +36,6 @@ export default function SettingsModal() {
     }
   };
 
-  const handleVerticalOffsetChange = async (value: number) => {
-    try {
-      setQrVerticalOffset(value);
-      await UserPreferencesService.updateQRVerticalOffset(value);
-    } catch (error) {
-      console.error('Error updating vertical offset:', error);
-    }
-  };
-
   const handlePremiumToggle = async () => {
     try {
       const newStatus = !isPremium;
@@ -62,13 +47,13 @@ export default function SettingsModal() {
     }
   };
 
-  const handleToggleOnboarding = async () => {
+  const handleShowOnboarding = async () => {
     try {
-      await UserPreferencesService.setOnboardingComplete(!showOnboarding);
-      setShowOnboarding(!showOnboarding);
-      Alert.alert('Success', showOnboarding ? 'Onboarding will show on next app start' : 'Onboarding disabled');
+      await UserPreferencesService.setOnboardingComplete(false);
+      router.dismissAll();
+      router.replace('/');
     } catch (error) {
-      Alert.alert('Error', 'Failed to toggle onboarding');
+      Alert.alert('Error', 'Failed to reset onboarding');
     }
   };
 
@@ -76,26 +61,21 @@ export default function SettingsModal() {
     router.push('/modal/premium');
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionTitle}>QR Code Position</Text>
-        
-        <View style={styles.sliderContainer}>
-          <Text style={styles.sliderLabel}>Vertical Position</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={20}
-            maximumValue={150}
-            value={qrVerticalOffset}
-            onSlidingComplete={handleVerticalOffsetChange}
-            minimumTrackTintColor="#2196f3"
-            maximumTrackTintColor="#ddd"
-            thumbTintColor="#2196f3"
-          />
-          <Text style={styles.sliderValue}>{Math.round(qrVerticalOffset)}px from bottom</Text>
-        </View>
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
+          <Text style={styles.backButtonText}>‹ Back</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Settings</Text>
+        <View style={styles.backButton} />
+      </View>
 
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.sectionTitle}>Background Gradients</Text>
         
         <View style={styles.gradientsGrid}>
@@ -131,6 +111,9 @@ export default function SettingsModal() {
             <Text style={styles.planTitle}>
               {isPremium ? 'Premium Plan' : 'Free Plan'}
             </Text>
+            <Text style={styles.planStatus}>
+              Premium: <Text style={styles.planStatusValue}>{isPremium ? 'YES' : 'NO'}</Text>
+            </Text>
             <Text style={styles.planDescription}>
               {isPremium 
                 ? 'You have access to all features including secondary QR codes and custom backgrounds.'
@@ -139,14 +122,10 @@ export default function SettingsModal() {
             </Text>
           </View>
           
-          {!isPremium ? (
+          {!isPremium && (
             <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgrade}>
               <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
             </TouchableOpacity>
-          ) : (
-            <View style={styles.premiumBadge}>
-              <Text style={styles.premiumBadgeText}>PREMIUM ACTIVE</Text>
-            </View>
           )}
         </View>
 
@@ -159,10 +138,8 @@ export default function SettingsModal() {
             </Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.devOption} onPress={handleToggleOnboarding}>
-            <Text style={styles.devOptionText}>
-              {showOnboarding ? 'Hide Onboarding' : 'Show Onboarding'}
-            </Text>
+          <TouchableOpacity style={styles.devOption} onPress={handleShowOnboarding}>
+            <Text style={styles.devOptionText}>Show Onboarding</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -175,6 +152,28 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  backButton: {
+    width: 60,
+  },
+  backButtonText: {
+    fontSize: 18,
+    color: '#2196f3',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
   content: {
     flex: 1,
     padding: 20,
@@ -185,28 +184,6 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 15,
     marginTop: 20,
-  },
-  sliderContainer: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-  },
-  sliderLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 10,
-  },
-  slider: {
-    width: '100%',
-    height: 40,
-  },
-  sliderValue: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginTop: 5,
   },
   gradientsGrid: {
     flexDirection: 'row',
@@ -272,6 +249,15 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 5,
   },
+  planStatus: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 10,
+  },
+  planStatusValue: {
+    fontWeight: 'bold',
+    color: '#2196f3',
+  },
   planDescription: {
     fontSize: 14,
     color: '#666',
@@ -285,18 +271,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   upgradeButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  premiumBadge: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  premiumBadgeText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',

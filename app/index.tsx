@@ -3,7 +3,7 @@ import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Dimensions, StyleSheet, Text, View } from 'react-native';
+import { Alert, Dimensions, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -41,6 +41,7 @@ function HomeScreen() {
   const [showPositionSlider, setShowPositionSlider] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [hideElementsForExport, setHideElementsForExport] = useState(false);
+  const [sliderExpanded, setSliderExpanded] = useState(false);
   
   const gradientTransition = useSharedValue(0);
 
@@ -201,7 +202,27 @@ function HomeScreen() {
       
       await EngagementPricingService.trackAction('wallpapersExported');
       
-      Alert.alert('Success', 'Wallpaper saved to your photos!');
+      const instructions = Platform.OS === 'ios' 
+        ? '1. Open Photos app\n2. Find the wallpaper\n3. Tap Share button\n4. Select "Use as Wallpaper"\n5. Choose "Set"'
+        : '1. Open Gallery/Photos app\n2. Find the wallpaper\n3. Tap menu (3 dots)\n4. Select "Set as wallpaper"\n5. Choose "Lock screen"';
+      
+      Alert.alert(
+        'Wallpaper Saved!',
+        `Your wallpaper has been saved to photos.\n\nTo set as wallpaper:\n${instructions}`,
+        [
+          { text: 'OK', style: 'default' },
+          { 
+            text: 'Open Photos', 
+            onPress: () => {
+              if (Platform.OS === 'ios') {
+                Linking.openURL('photos-redirect://');
+              } else {
+                Linking.openURL('content://media/internal/images/media');
+              }
+            }
+          }
+        ]
+      );
     } catch (error) {
       Alert.alert('Error', 'Failed to save wallpaper');
       console.error('Export error:', error);
@@ -258,6 +279,14 @@ function HomeScreen() {
     setShowPositionSlider(true);
   };
 
+  const handleSliderExpand = () => {
+    setSliderExpanded(true);
+  };
+
+  const handleSliderCollapse = () => {
+    setSliderExpanded(false);
+  };
+
   const currentGradient = GRADIENT_PRESETS[currentGradientIndex];
   const nextGradientIndex = currentGradientIndex < GRADIENT_PRESETS.length - 1 ? currentGradientIndex + 1 : 0;
   const nextGradient = GRADIENT_PRESETS[nextGradientIndex];
@@ -278,24 +307,26 @@ function HomeScreen() {
               transition={gradientTransition}
             >
               <View style={styles.content}>
-                {!hideElementsForExport && (
+                {!hideElementsForExport && !sliderExpanded && (
                   <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
                     {!isPremium && <Text style={styles.appTitle}>QuRe</Text>}
                   </View>
                 )}
 
-                {!hideElementsForExport && <TimeDisplay currentTime={currentTime} />}
+                {!hideElementsForExport && !sliderExpanded && (
+                  <TimeDisplay currentTime={currentTime} />
+                )}
 
                 <View style={styles.middleContent}>
                   {showActionButtons && (
                     <View style={styles.actionSection}>
-                      <ActionCards 
-                        onExportWallpaper={handleExportWallpaper}
-                        onSettings={handleSettings}
-                      />
-                      {showSwipeIndicator && (
-                        <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
+                      {!sliderExpanded && (
+                        <ActionCards 
+                          onExportWallpaper={handleExportWallpaper}
+                          onSettings={handleSettings}
+                        />
                       )}
+                      
                       {showPositionSlider && (
                         <PositionSlider
                           verticalValue={qrVerticalOffset}
@@ -305,6 +336,8 @@ function HomeScreen() {
                           onHorizontalChange={handleHorizontalOffsetChange}
                           onScaleChange={handleScaleChange}
                           visible={showPositionSlider}
+                          onExpand={handleSliderExpand}
+                          onCollapse={handleSliderCollapse}
                         />
                       )}
                     </View>
@@ -323,6 +356,10 @@ function HomeScreen() {
                     onSlotPress={handleQRSlotPress}
                     onRemoveQR={handleRemoveQR}
                   />
+                  
+                  {showSwipeIndicator && (
+                    <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
+                  )}
                 </View>
               </View>
             </GradientBackground>
