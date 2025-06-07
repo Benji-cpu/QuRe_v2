@@ -57,40 +57,51 @@ export default function QRSlots({
     };
   };
 
+  const qrSize = getQRSize();
+  const containerSize = qrSize + 20;
+
+  const renderQRSlot = (qr: QRCodeData | null, slot: 'primary' | 'secondary') => {
+    if (qr) {
+      return (
+        <View style={styles.qrWrapper}>
+          <View style={[styles.qrContainer, { width: containerSize, height: containerSize }]}>
+            <QRCodePreview 
+              value={qr.content} 
+              size={qrSize} 
+              design={qr.design}
+            />
+            {showActionButtons && (
+              <TouchableOpacity 
+                style={styles.removeButton}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  onRemoveQR(slot);
+                }}
+              >
+                <Text style={styles.removeButtonText}>×</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+          <Text style={styles.qrLabel}>{qr.label}</Text>
+        </View>
+      );
+    }
+
+    return (
+      <View style={[styles.qrContainer, styles.qrPlaceholder, { width: containerSize, height: containerSize }]}>
+        <Text style={styles.qrPlaceholderIcon}>+</Text>
+        <Text style={styles.qrPlaceholderText}>CREATE QR{'\n'}CODE</Text>
+      </View>
+    );
+  };
+
   return (
     <View style={[styles.qrSlotsContainer, getContainerStyle()]}>
       <TouchableOpacity 
         style={[styles.qrSlot, getSlotStyle(true)]} 
         onPress={() => onSlotPress('primary')}
       >
-        {primaryQR ? (
-          <View style={styles.qrWrapper}>
-            {showActionButtons && (
-              <TouchableOpacity 
-                style={styles.removeButton}
-                onPress={(e) => {
-                  e.stopPropagation();
-                  onRemoveQR('primary');
-                }}
-              >
-                <Text style={styles.removeButtonText}>×</Text>
-              </TouchableOpacity>
-            )}
-            <View style={styles.qrContent}>
-              <QRCodePreview 
-                value={primaryQR.content} 
-                size={getQRSize()} 
-                design={primaryQR.design}
-              />
-            </View>
-            <Text style={styles.qrLabel}>{primaryQR.label}</Text>
-          </View>
-        ) : (
-          <View style={styles.qrPlaceholder}>
-            <Text style={styles.qrPlaceholderIcon}>+</Text>
-            <Text style={styles.qrPlaceholderText}>CREATE QR{'\n'}CODE</Text>
-          </View>
-        )}
+        {renderQRSlot(primaryQR, 'primary')}
       </TouchableOpacity>
 
       <View style={styles.qrSpacer} />
@@ -100,40 +111,13 @@ export default function QRSlots({
         onPress={() => onSlotPress('secondary')}
       >
         {isPremium ? (
-          secondaryQR ? (
-            <View style={styles.qrWrapper}>
-              {showActionButtons && (
-                <TouchableOpacity 
-                  style={styles.removeButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onRemoveQR('secondary');
-                  }}
-                >
-                  <Text style={styles.removeButtonText}>×</Text>
-                </TouchableOpacity>
-              )}
-              <View style={styles.qrContent}>
-                <QRCodePreview 
-                  value={secondaryQR.content} 
-                  size={getQRSize()} 
-                  design={secondaryQR.design}
-                />
-              </View>
-              <Text style={styles.qrLabel}>{secondaryQR.label}</Text>
-            </View>
-          ) : (
-            <View style={styles.qrPlaceholder}>
-              <Text style={styles.qrPlaceholderIcon}>+</Text>
-              <Text style={styles.qrPlaceholderText}>CREATE QR{'\n'}CODE</Text>
-            </View>
-          )
+          renderQRSlot(secondaryQR, 'secondary')
         ) : (
           <View style={styles.qrWrapper}>
-            <View style={styles.qrContent}>
+            <View style={[styles.qrContainer, { width: containerSize, height: containerSize }]}>
               <QRCodePreview 
                 value={DEFAULT_QURE_QR.content} 
-                size={getQRSize()} 
+                size={qrSize} 
                 design={DEFAULT_QURE_QR.design}
               />
             </View>
@@ -154,20 +138,21 @@ const styles = StyleSheet.create({
   },
   qrSlot: {
     flex: 1,
+    alignItems: 'center',
   },
   qrSpacer: {
     width: 40,
   },
   qrWrapper: {
     alignItems: 'center',
-    position: 'relative',
   },
-  qrContent: {
+  qrContainer: {
     backgroundColor: 'white',
     borderRadius: 14,
     padding: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
   qrLabel: {
     fontSize: 13,
@@ -180,44 +165,40 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   qrPlaceholder: {
-    height: 110,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
+    borderColor: 'rgba(255, 255, 255, 0.4)',
     borderStyle: 'dashed',
   },
   qrPlaceholderIcon: {
-    fontSize: 28,
-    color: 'white',
+    fontSize: 24,
+    color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 4,
   },
   qrPlaceholderText: {
     fontSize: 9,
     fontWeight: '700',
-    color: 'white',
+    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
     letterSpacing: 0.5,
     lineHeight: 12,
   },
   removeButton: {
     position: 'absolute',
-    top: -8,
-    right: -8,
+    top: 2,
+    right: 2,
     width: 20,
     height: 20,
     borderRadius: 10,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    backgroundColor: 'rgba(255, 255, 255, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
   },
   removeButtonText: {
-    color: 'white',
+    color: 'rgba(0, 0, 0, 0.4)',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
     lineHeight: 18,
   },
 });

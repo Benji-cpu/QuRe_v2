@@ -1,9 +1,10 @@
 // app/index.tsx
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Dimensions, Linking, Platform, StyleSheet, Text, View } from 'react-native';
+import { Alert, Animated, Dimensions, Linking, Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +23,7 @@ import TimeDisplay from './components/home/TimeDisplay';
 import Onboarding from './components/Onboarding';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const SWIPE_INDICATOR_KEY = '@qure_swipe_indicator_count';
 
 function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -42,6 +44,7 @@ function HomeScreen() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [hideElementsForExport, setHideElementsForExport] = useState(false);
   const [sliderExpanded, setSliderExpanded] = useState(false);
+  const [elementsOpacity] = useState(new Animated.Value(1));
   
   const gradientTransition = useSharedValue(0);
 
@@ -58,8 +61,10 @@ function HomeScreen() {
       setQrHorizontalOffset(preferences.qrHorizontalOffset || 0);
       setQrScale(preferences.qrScale || 1);
       setShowOnboarding(!hasCompletedOnboarding);
-      setShowSwipeIndicator(hasCompletedOnboarding);
       setShowPositionSlider(hasCompletedOnboarding);
+
+      const swipeCount = await getSwipeIndicatorCount();
+      setShowSwipeIndicator(hasCompletedOnboarding && swipeCount < 5);
 
       if (preferences.primaryQRCodeId) {
         const primaryQRData = await QRStorage.getQRCodeById(preferences.primaryQRCodeId);
@@ -78,6 +83,24 @@ function HomeScreen() {
       console.error('Error loading user data:', error);
     }
   }, []);
+
+  const getSwipeIndicatorCount = async (): Promise<number> => {
+    try {
+      const countStr = await AsyncStorage.getItem(SWIPE_INDICATOR_KEY);
+      return countStr ? parseInt(countStr) : 0;
+    } catch {
+      return 0;
+    }
+  };
+
+  const incrementSwipeIndicatorCount = async () => {
+    try {
+      const count = await getSwipeIndicatorCount();
+      await AsyncStorage.setItem(SWIPE_INDICATOR_KEY, (count + 1).toString());
+    } catch (error) {
+      console.error('Error incrementing swipe count:', error);
+    }
+  };
 
   useEffect(() => {
     loadUserData();
@@ -174,7 +197,8 @@ function HomeScreen() {
     }
   };
 
-  const handleSwipeFadeComplete = () => {
+  const handleSwipeFadeComplete = async () => {
+    await incrementSwipeIndicatorCount();
     setShowSwipeIndicator(false);
   };
 
@@ -281,10 +305,26 @@ function HomeScreen() {
 
   const handleSliderExpand = () => {
     setSliderExpanded(true);
+    Animated.timing(elementsOpacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleSliderCollapse = () => {
     setSliderExpanded(false);
+    Animated.timing(elementsOpacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleBackgroundPress = () => {
+    if (sliderExpanded) {
+      handleSliderCollapse();
+    }
   };
 
   const currentGradient = GRADIENT_PRESETS[currentGradientIndex];
@@ -295,77 +335,87 @@ function HomeScreen() {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
+  const shouldShowTitle = !hideElementsForExport || !isPremium;
+
   return (
     <GestureHandlerRootView style={styles.container}>
       <StatusBar style="light" />
-      <GestureDetector gesture={swipeGesture}>
+      <TouchableWithoutFeedback onPress={handleBackgroundPress}>
         <View style={styles.container}>
-          <View ref={wallpaperRef} collapsable={false} style={styles.wallpaperContainer}>
-            <GradientBackground
-              currentGradient={currentGradient}
-              nextGradient={nextGradient}
-              transition={gradientTransition}
-            >
-              <View style={styles.content}>
-                {!hideElementsForExport && !sliderExpanded && (
-                  <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
-                    {!isPremium && <Text style={styles.appTitle}>QuRe</Text>}
-                  </View>
-                )}
+          <GestureDetector gesture={swipeGesture}>
+            <View style={styles.container}>
+              <View ref={wallpaperRef} collapsable={false} style={styles.wallpaperContainer}>
+                <GradientBackground
+                  currentGradient={currentGradient}
+                  nextGradient={nextGradient}
+                  transition={gradientTransition}
+                >
+                  <View style={styles.content}>
+                    {shouldShowTitle && (
+                      <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
+                        <Text style={styles.appTitle}>QuRe</Text>
+                      </View>
+                    )}
 
-                {!hideElementsForExport && !sliderExpanded && (
-                  <TimeDisplay currentTime={currentTime} />
-                )}
-
-                <View style={styles.middleContent}>
-                  {showActionButtons && (
-                    <View style={styles.actionSection}>
-                      {!sliderExpanded && (
-                        <ActionCards 
-                          onExportWallpaper={handleExportWallpaper}
-                          onSettings={handleSettings}
-                        />
+                    <Animated.View style={{ opacity: elementsOpacity }}>
+                      {!hideElementsForExport && !sliderExpanded && (
+                        <TimeDisplay currentTime={currentTime} />
                       )}
-                      
-                      {showPositionSlider && (
-                        <PositionSlider
-                          verticalValue={qrVerticalOffset}
-                          horizontalValue={qrHorizontalOffset}
-                          scaleValue={qrScale}
-                          onVerticalChange={handleVerticalOffsetChange}
-                          onHorizontalChange={handleHorizontalOffsetChange}
-                          onScaleChange={handleScaleChange}
-                          visible={showPositionSlider}
-                          onExpand={handleSliderExpand}
-                          onCollapse={handleSliderCollapse}
-                        />
+                    </Animated.View>
+
+                    <View style={styles.middleContent}>
+                      {showActionButtons && (
+                        <View style={styles.actionSection}>
+                          <Animated.View style={{ opacity: elementsOpacity }}>
+                            {!sliderExpanded && (
+                              <ActionCards 
+                                onExportWallpaper={handleExportWallpaper}
+                                onSettings={handleSettings}
+                              />
+                            )}
+                          </Animated.View>
+                          
+                          {showPositionSlider && (
+                            <PositionSlider
+                              verticalValue={qrVerticalOffset}
+                              horizontalValue={qrHorizontalOffset}
+                              scaleValue={qrScale}
+                              onVerticalChange={handleVerticalOffsetChange}
+                              onHorizontalChange={handleHorizontalOffsetChange}
+                              onScaleChange={handleScaleChange}
+                              visible={showPositionSlider}
+                              onExpand={handleSliderExpand}
+                              onCollapse={handleSliderCollapse}
+                            />
+                          )}
+                        </View>
                       )}
                     </View>
-                  )}
-                </View>
 
-                <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 15 }]}>
-                  <QRSlots
-                    primaryQR={primaryQR}
-                    secondaryQR={secondaryQR}
-                    isPremium={isPremium}
-                    showActionButtons={showActionButtons}
-                    verticalOffset={qrVerticalOffset}
-                    horizontalOffset={qrHorizontalOffset}
-                    scale={qrScale}
-                    onSlotPress={handleQRSlotPress}
-                    onRemoveQR={handleRemoveQR}
-                  />
-                  
-                  {showSwipeIndicator && (
-                    <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
-                  )}
-                </View>
+                    <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 15 }]}>
+                      <QRSlots
+                        primaryQR={primaryQR}
+                        secondaryQR={secondaryQR}
+                        isPremium={isPremium}
+                        showActionButtons={showActionButtons}
+                        verticalOffset={qrVerticalOffset}
+                        horizontalOffset={qrHorizontalOffset}
+                        scale={qrScale}
+                        onSlotPress={handleQRSlotPress}
+                        onRemoveQR={handleRemoveQR}
+                      />
+                      
+                      {showSwipeIndicator && (
+                        <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
+                      )}
+                    </View>
+                  </View>
+                </GradientBackground>
               </View>
-            </GradientBackground>
-          </View>
+            </View>
+          </GestureDetector>
         </View>
-      </GestureDetector>
+      </TouchableWithoutFeedback>
     </GestureHandlerRootView>
   );
 }

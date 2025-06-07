@@ -38,6 +38,7 @@ const styles = StyleSheet.create({
   actionsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
+    height: 60,
     gap: 12,
   },
   actionCard: {
