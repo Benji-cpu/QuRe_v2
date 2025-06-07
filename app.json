@@ -36,9 +36,12 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      ["react-native-iap", {
-        "paymentProvider": "Play Store"
-      }]
+      [
+        "react-native-iap",
+        {
+          "paymentProvider": "Play Store"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -48,6 +51,10 @@
       "eas": {
         "projectId": "382a05a5-832d-4999-980f-2d14a15d4111"
       }
+    },
+    "runtimeVersion": "1.0.0",
+    "updates": {
+      "url": "https://u.expo.dev/382a05a5-832d-4999-980f-2d14a15d4111"
     }
   }
 }

@@ -1,27 +1,33 @@
+// app/modal/settings.tsx
 import Slider from '@react-native-community/slider';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { GRADIENT_PRESETS } from '../../constants/Gradients';
+import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { UserPreferencesService } from '../../services/UserPreferences';
 
 export default function SettingsModal() {
   const [selectedGradientId, setSelectedGradientId] = useState('sunset');
   const [isPremium, setIsPremium] = useState(false);
   const [qrVerticalOffset, setQrVerticalOffset] = useState(80);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     loadSettings();
+    EngagementPricingService.trackAction('settingsOpened');
   }, []);
 
   const loadSettings = async () => {
     try {
       const preferences = await UserPreferencesService.getPreferences();
       const premium = await UserPreferencesService.isPremium();
+      const onboardingComplete = await UserPreferencesService.hasCompletedOnboarding();
       setSelectedGradientId(preferences.selectedGradientId);
       setQrVerticalOffset(preferences.qrVerticalOffset || 80);
       setIsPremium(premium);
+      setShowOnboarding(!onboardingComplete);
     } catch (error) {
       console.error('Error loading settings:', error);
     }
@@ -53,6 +59,16 @@ export default function SettingsModal() {
       Alert.alert('Success', `Premium status ${newStatus ? 'enabled' : 'disabled'}`);
     } catch (error) {
       Alert.alert('Error', 'Failed to update premium status');
+    }
+  };
+
+  const handleToggleOnboarding = async () => {
+    try {
+      await UserPreferencesService.setOnboardingComplete(!showOnboarding);
+      setShowOnboarding(!showOnboarding);
+      Alert.alert('Success', showOnboarding ? 'Onboarding will show on next app start' : 'Onboarding disabled');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to toggle onboarding');
     }
   };
 
@@ -136,11 +152,19 @@ export default function SettingsModal() {
 
         <Text style={styles.sectionTitle}>Developer Options</Text>
         
-        <TouchableOpacity style={styles.devOption} onPress={handlePremiumToggle}>
-          <Text style={styles.devOptionText}>
-            {isPremium ? 'Disable Premium (Test)' : 'Enable Premium (Test)'}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.devOptionsContainer}>
+          <TouchableOpacity style={styles.devOption} onPress={handlePremiumToggle}>
+            <Text style={styles.devOptionText}>
+              {isPremium ? 'Disable Premium (Test)' : 'Enable Premium (Test)'}
+            </Text>
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.devOption} onPress={handleToggleOnboarding}>
+            <Text style={styles.devOptionText}>
+              {showOnboarding ? 'Hide Onboarding' : 'Show Onboarding'}
+            </Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
     </View>
   );
@@ -277,11 +301,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  devOptionsContainer: {
+    gap: 10,
+    marginBottom: 20,
+  },
   devOption: {
     backgroundColor: 'white',
     borderRadius: 8,
     padding: 15,
-    marginBottom: 10,
   },
   devOptionText: {
     fontSize: 16,

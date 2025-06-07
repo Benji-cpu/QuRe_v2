@@ -393,6 +393,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderTopWidth: 1,
     borderTopColor: '#eee',
+    paddingBottom: 40,
   },
   upgradeButton: {
     backgroundColor: '#2196f3',

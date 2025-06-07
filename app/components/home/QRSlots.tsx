@@ -10,9 +10,20 @@ interface QRSlotsProps {
   isPremium: boolean;
   showActionButtons: boolean;
   verticalOffset: number;
+  horizontalOffset: number;
+  scale: number;
   onSlotPress: (slot: 'primary' | 'secondary') => void;
   onRemoveQR: (slot: 'primary' | 'secondary') => void;
 }
+
+const DEFAULT_QURE_QR: QRCodeData = {
+  id: 'default-qure',
+  type: 'link',
+  label: 'QuRe',
+  data: { url: 'https://qr.io/' },
+  content: 'https://qr.io/',
+  createdAt: new Date().toISOString(),
+};
 
 export default function QRSlots({
   primaryQR,
@@ -20,13 +31,34 @@ export default function QRSlots({
   isPremium,
   showActionButtons,
   verticalOffset,
+  horizontalOffset,
+  scale,
   onSlotPress,
   onRemoveQR,
 }: QRSlotsProps) {
+  const getQRSize = () => {
+    const baseSize = 90;
+    return baseSize * scale;
+  };
+
+  const getContainerStyle = () => {
+    return {
+      marginBottom: verticalOffset,
+      paddingHorizontal: Math.max(20 - Math.abs(horizontalOffset), 10),
+    };
+  };
+
+  const getSlotStyle = (isLeft: boolean) => {
+    const offset = isLeft ? -horizontalOffset : horizontalOffset;
+    return {
+      transform: [{ translateX: offset }],
+    };
+  };
+
   return (
-    <View style={[styles.qrSlotsContainer, { marginBottom: verticalOffset }]}>
+    <View style={[styles.qrSlotsContainer, getContainerStyle()]}>
       <TouchableOpacity 
-        style={styles.qrSlot} 
+        style={[styles.qrSlot, getSlotStyle(true)]} 
         onPress={() => onSlotPress('primary')}
       >
         {primaryQR ? (
@@ -45,7 +77,7 @@ export default function QRSlots({
               )}
               <QRCodePreview 
                 value={primaryQR.content} 
-                size={90} 
+                size={getQRSize()} 
                 design={primaryQR.design}
               />
             </View>
@@ -62,35 +94,48 @@ export default function QRSlots({
       <View style={styles.qrSpacer} />
 
       <TouchableOpacity 
-        style={styles.qrSlot} 
+        style={[styles.qrSlot, getSlotStyle(false)]} 
         onPress={() => onSlotPress('secondary')}
       >
-        {secondaryQR && isPremium ? (
+        {isPremium ? (
+          secondaryQR ? (
+            <View style={styles.qrWrapper}>
+              <View style={styles.qrContent}>
+                {showActionButtons && (
+                  <TouchableOpacity 
+                    style={styles.removeButton}
+                    onPress={(e) => {
+                      e.stopPropagation();
+                      onRemoveQR('secondary');
+                    }}
+                  >
+                    <Text style={styles.removeButtonText}>×</Text>
+                  </TouchableOpacity>
+                )}
+                <QRCodePreview 
+                  value={secondaryQR.content} 
+                  size={getQRSize()} 
+                  design={secondaryQR.design}
+                />
+              </View>
+              <Text style={styles.qrLabel}>{secondaryQR.label}</Text>
+            </View>
+          ) : (
+            <View style={styles.qrPlaceholder}>
+              <Text style={styles.qrPlaceholderIcon}>+</Text>
+              <Text style={styles.qrPlaceholderText}>CREATE QR{'\n'}CODE</Text>
+            </View>
+          )
+        ) : (
           <View style={styles.qrWrapper}>
             <View style={styles.qrContent}>
-              {showActionButtons && (
-                <TouchableOpacity 
-                  style={styles.removeButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    onRemoveQR('secondary');
-                  }}
-                >
-                  <Text style={styles.removeButtonText}>×</Text>
-                </TouchableOpacity>
-              )}
               <QRCodePreview 
-                value={secondaryQR.content} 
-                size={90} 
-                design={secondaryQR.design}
+                value={DEFAULT_QURE_QR.content} 
+                size={getQRSize()} 
+                design={DEFAULT_QURE_QR.design}
               />
             </View>
-            <Text style={styles.qrLabel}>{secondaryQR.label}</Text>
-          </View>
-        ) : (
-          <View style={[styles.qrPlaceholder, !isPremium && styles.qrPlaceholderPremium]}>
-            <Text style={styles.qrPlaceholderIcon}>+</Text>
-            <Text style={styles.qrPlaceholderText}>CREATE QR{'\n'}CODE</Text>
+            <Text style={styles.qrLabel}>{DEFAULT_QURE_QR.label}</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -132,7 +177,7 @@ const styles = StyleSheet.create({
     textShadowRadius: 2,
   },
   qrPlaceholder: {
-    height: 140,
+    height: 110,
     backgroundColor: 'rgba(255, 255, 255, 0.3)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -140,10 +185,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: 'rgba(255, 255, 255, 0.5)',
     borderStyle: 'dashed',
-  },
-  qrPlaceholderPremium: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   qrPlaceholderIcon: {
     fontSize: 28,

@@ -1,4 +1,4 @@
-// app/index.tsx - Update the relevant parts
+// app/index.tsx
 import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -14,12 +14,12 @@ import { QRStorage } from '../services/QRStorage';
 import { UserPreferencesService } from '../services/UserPreferences';
 import { QRCodeData } from '../types/QRCode';
 import ActionCards from './components/home/ActionCards';
-import DevTools from './components/home/DevTools';
 import GradientBackground from './components/home/GradientBackground';
 import PositionSlider from './components/home/PositionSlider';
 import QRSlots from './components/home/QRSlots';
 import SwipeIndicator from './components/home/SwipeIndicator';
 import TimeDisplay from './components/home/TimeDisplay';
+import Onboarding from './components/Onboarding';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -35,8 +35,12 @@ function HomeScreen() {
   const [isPremium, setIsPremium] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
   const [qrVerticalOffset, setQrVerticalOffset] = useState(80);
-  const [showSwipeIndicator, setShowSwipeIndicator] = useState(true);
+  const [qrHorizontalOffset, setQrHorizontalOffset] = useState(0);
+  const [qrScale, setQrScale] = useState(1);
+  const [showSwipeIndicator, setShowSwipeIndicator] = useState(false);
   const [showPositionSlider, setShowPositionSlider] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [hideElementsForExport, setHideElementsForExport] = useState(false);
   
   const gradientTransition = useSharedValue(0);
 
@@ -44,11 +48,17 @@ function HomeScreen() {
     try {
       const preferences = await UserPreferencesService.getPreferences();
       const premium = await UserPreferencesService.isPremium();
+      const hasCompletedOnboarding = await UserPreferencesService.hasCompletedOnboarding();
       
       const gradientIndex = GRADIENT_PRESETS.findIndex(g => g.id === preferences.selectedGradientId);
       setCurrentGradientIndex(gradientIndex >= 0 ? gradientIndex : 0);
       setIsPremium(premium);
       setQrVerticalOffset(preferences.qrVerticalOffset || 80);
+      setQrHorizontalOffset(preferences.qrHorizontalOffset || 0);
+      setQrScale(preferences.qrScale || 1);
+      setShowOnboarding(!hasCompletedOnboarding);
+      setShowSwipeIndicator(hasCompletedOnboarding);
+      setShowPositionSlider(hasCompletedOnboarding);
 
       if (preferences.primaryQRCodeId) {
         const primaryQRData = await QRStorage.getQRCodeById(preferences.primaryQRCodeId);
@@ -145,14 +155,32 @@ function HomeScreen() {
     }
   };
 
+  const handleHorizontalOffsetChange = async (value: number) => {
+    try {
+      setQrHorizontalOffset(value);
+      await UserPreferencesService.updateQRHorizontalOffset(value);
+    } catch (error) {
+      console.error('Error updating horizontal offset:', error);
+    }
+  };
+
+  const handleScaleChange = async (value: number) => {
+    try {
+      setQrScale(value);
+      await UserPreferencesService.updateQRScale(value);
+    } catch (error) {
+      console.error('Error updating scale:', error);
+    }
+  };
+
   const handleSwipeFadeComplete = () => {
     setShowSwipeIndicator(false);
-    setShowPositionSlider(true);
   };
 
   const handleExportWallpaper = async () => {
     try {
       setShowActionButtons(false);
+      setHideElementsForExport(true);
       
       await new Promise(resolve => setTimeout(resolve, 100));
       
@@ -160,6 +188,7 @@ function HomeScreen() {
       if (status !== 'granted') {
         Alert.alert('Permission needed', 'Please grant permission to save photos');
         setShowActionButtons(true);
+        setHideElementsForExport(false);
         return;
       }
 
@@ -178,6 +207,7 @@ function HomeScreen() {
       console.error('Export error:', error);
     } finally {
       setShowActionButtons(true);
+      setHideElementsForExport(false);
     }
   };
 
@@ -222,16 +252,19 @@ function HomeScreen() {
     }
   };
 
-  const handleTestUpgrade = async () => {
-    const newStatus = !isPremium;
-    await UserPreferencesService.setPremium(newStatus);
-    setIsPremium(newStatus);
-    loadUserData();
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    setShowSwipeIndicator(true);
+    setShowPositionSlider(true);
   };
 
   const currentGradient = GRADIENT_PRESETS[currentGradientIndex];
   const nextGradientIndex = currentGradientIndex < GRADIENT_PRESETS.length - 1 ? currentGradientIndex + 1 : 0;
   const nextGradient = GRADIENT_PRESETS[nextGradientIndex];
+
+  if (showOnboarding) {
+    return <Onboarding onComplete={handleOnboardingComplete} />;
+  }
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -245,11 +278,13 @@ function HomeScreen() {
               transition={gradientTransition}
             >
               <View style={styles.content}>
-                <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
-                  <Text style={styles.appTitle}>QuRe</Text>
-                </View>
+                {!hideElementsForExport && (
+                  <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
+                    {!isPremium && <Text style={styles.appTitle}>QuRe</Text>}
+                  </View>
+                )}
 
-                <TimeDisplay currentTime={currentTime} />
+                {!hideElementsForExport && <TimeDisplay currentTime={currentTime} />}
 
                 <View style={styles.middleContent}>
                   {showActionButtons && (
@@ -259,79 +294,74 @@ function HomeScreen() {
                         onSettings={handleSettings}
                       />
                       {showSwipeIndicator && (
-                       <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
-                     )}
-                     {showPositionSlider && (
-                       <PositionSlider
-                         value={qrVerticalOffset}
-                         onValueChange={handleVerticalOffsetChange}
-                         visible={showPositionSlider}
-                       />
-                     )}
-                   </View>
-                 )}
-               </View>
+                        <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
+                      )}
+                      {showPositionSlider && (
+                        <PositionSlider
+                          verticalValue={qrVerticalOffset}
+                          horizontalValue={qrHorizontalOffset}
+                          scaleValue={qrScale}
+                          onVerticalChange={handleVerticalOffsetChange}
+                          onHorizontalChange={handleHorizontalOffsetChange}
+                          onScaleChange={handleScaleChange}
+                          visible={showPositionSlider}
+                        />
+                      )}
+                    </View>
+                  )}
+                </View>
 
-               <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 15 }]}>
-                 <QRSlots
-                   primaryQR={primaryQR}
-                   secondaryQR={secondaryQR}
-                   isPremium={isPremium}
-                   showActionButtons={showActionButtons}
-                   verticalOffset={qrVerticalOffset}
-                   onSlotPress={handleQRSlotPress}
-                   onRemoveQR={handleRemoveQR}
-                 />
-
-                 {showActionButtons && (
-                   <DevTools
-                     isPremium={isPremium}
-                     onTestUpgrade={handleTestUpgrade}
-                     onToggleOnboarding={() => {
-                       setShowSwipeIndicator(true);
-                       setShowPositionSlider(false);
-                     }}
-                   />
-                 )}
-               </View>
-             </View>
-           </GradientBackground>
-         </View>
-       </View>
-     </GestureDetector>
-   </GestureHandlerRootView>
- );
+                <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 15 }]}>
+                  <QRSlots
+                    primaryQR={primaryQR}
+                    secondaryQR={secondaryQR}
+                    isPremium={isPremium}
+                    showActionButtons={showActionButtons}
+                    verticalOffset={qrVerticalOffset}
+                    horizontalOffset={qrHorizontalOffset}
+                    scale={qrScale}
+                    onSlotPress={handleQRSlotPress}
+                    onRemoveQR={handleRemoveQR}
+                  />
+                </View>
+              </View>
+            </GradientBackground>
+          </View>
+        </View>
+      </GestureDetector>
+    </GestureHandlerRootView>
+  );
 }
 
 export default HomeScreen;
 
 const styles = StyleSheet.create({
- container: {
-   flex: 1,
- },
- wallpaperContainer: {
-   flex: 1,
- },
- content: {
-   flex: 1,
- },
- header: {
-   alignItems: 'center',
-   marginBottom: 20,
- },
- appTitle: {
-   fontSize: 20,
-   fontWeight: 'bold',
-   color: 'white',
-   textAlign: 'center',
- },
- middleContent: {
-   flex: 1,
- },
- actionSection: {
-   gap: 12,
- },
- bottomSection: {
-   marginTop: 'auto',
- },
+  container: {
+    flex: 1,
+  },
+  wallpaperContainer: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  appTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
+  },
+  middleContent: {
+    flex: 1,
+  },
+  actionSection: {
+    gap: 12,
+  },
+  bottomSection: {
+    marginTop: 'auto',
+  },
 });

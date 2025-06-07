@@ -13,21 +13,21 @@ export default function ActionCards({ onExportWallpaper, onSettings }: ActionCar
     <View style={styles.actionsContainer}>
       <TouchableOpacity style={styles.actionCard} onPress={onExportWallpaper}>
         <View style={styles.iconContainer}>
-          <Feather name="download" size={24} color="white" />
+          <Feather name="download" size={20} color="white" />
         </View>
         <View style={styles.actionContent}>
-          <Text style={styles.actionTitle}>Export Wallpaper</Text>
-          <Text style={styles.actionSubtitle}>Save to your photos</Text>
+          <Text style={styles.actionTitle}>Export</Text>
+          <Text style={styles.actionSubtitle}>Wallpaper</Text>
         </View>
       </TouchableOpacity>
 
       <TouchableOpacity style={styles.actionCard} onPress={onSettings}>
         <View style={styles.iconContainer}>
-          <Feather name="settings" size={24} color="white" />
+          <Feather name="settings" size={20} color="white" />
         </View>
         <View style={styles.actionContent}>
           <Text style={styles.actionTitle}>Settings</Text>
-          <Text style={styles.actionSubtitle}>Backgrounds & Plan Status</Text>
+          <Text style={styles.actionSubtitle}>& Plans</Text>
         </View>
       </TouchableOpacity>
     </View>
@@ -36,38 +36,40 @@ export default function ActionCards({ onExportWallpaper, onSettings }: ActionCar
 
 const styles = StyleSheet.create({
   actionsContainer: {
+    flexDirection: 'row',
     paddingHorizontal: 20,
     gap: 12,
   },
   actionCard: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 12,
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   iconContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: 10,
   },
   actionContent: {
     flex: 1,
   },
   actionTitle: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: 'white',
     marginBottom: 1,
   },
   actionSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: 'rgba(255, 255, 255, 0.8)',
   },
 });
