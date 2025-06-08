@@ -47,7 +47,7 @@ export default function PositionSlider({
     if (isExpanded) {
       Animated.parallel([
         Animated.timing(translateY, {
-          toValue: -120,
+          toValue: -20,
           duration: 300,
           useNativeDriver: true,
         }),

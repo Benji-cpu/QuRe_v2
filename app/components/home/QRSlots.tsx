@@ -15,6 +15,7 @@ interface QRSlotsProps {
   onSlotPress: (slot: 'primary' | 'secondary') => void;
   onRemoveQR: (slot: 'primary' | 'secondary') => void;
   hideEmptySlots?: boolean;
+  slotCount?: 1 | 2;
 }
 
 const DEFAULT_QURE_QR: QRCodeData = {
@@ -37,6 +38,7 @@ export default function QRSlots({
   onSlotPress,
   onRemoveQR,
   hideEmptySlots = false,
+  slotCount = 2,
 }: QRSlotsProps) {
   const getQRSize = () => {
     const baseSize = 90;
@@ -89,74 +91,80 @@ export default function QRSlots({
       );
     }
 
-    if (hideEmptySlots) {
-      return null;
-    }
-
     return (
-      <View style={[styles.qrContainer, styles.qrPlaceholder, { width: containerSize, height: containerSize }]}>
-        <Text style={styles.qrPlaceholderIcon}>+</Text>
-        <Text style={styles.qrPlaceholderText}>CREATE QR{'\n'}CODE</Text>
+      <View style={[styles.qrWrapper, { opacity: hideEmptySlots ? 0 : 1 }]}>
+        <View style={[styles.qrContainer, styles.qrPlaceholder, { width: containerSize, height: containerSize }]}>
+          <Text style={styles.qrPlaceholderIcon}>+</Text>
+          <Text style={styles.qrPlaceholderText}>CREATE QR{'\n'}CODE</Text>
+        </View>
       </View>
     );
   };
 
-  const shouldShowPrimary = primaryQR || !hideEmptySlots;
-  const shouldShowSecondary = isPremium && (secondaryQR || !hideEmptySlots);
-  const shouldShowDefault = !isPremium;
+  const shouldShowPrimary = true;
+  const shouldShowSecondary = isPremium || !hideEmptySlots;
+  const shouldShowSecondSlot = slotCount === 2;
+
 
   return (
     <View style={[styles.qrSlotsContainer, getContainerStyle()]}>
-      {shouldShowPrimary && (
-        <TouchableOpacity 
-          style={[styles.qrSlot, getSlotStyle(true)]} 
-          onPress={() => onSlotPress('primary')}
-        >
-          {renderQRSlot(primaryQR, 'primary')}
-        </TouchableOpacity>
-      )}
+      <TouchableOpacity 
+        style={[
+          styles.qrSlot, 
+          !shouldShowSecondSlot ? styles.centerSlot : getSlotStyle(true)
+        ]} 
+        onPress={() => onSlotPress('primary')}
+        disabled={hideEmptySlots && !primaryQR}
+      >
+        {renderQRSlot(primaryQR, 'primary')}
+      </TouchableOpacity>
 
-      {(shouldShowPrimary && (shouldShowSecondary || shouldShowDefault)) && (
-        <View style={styles.qrSpacer} />
-      )}
+      {shouldShowSecondSlot && (
+        <>
+          <View style={styles.qrSpacer} />
 
-      {(shouldShowSecondary || shouldShowDefault) && (
-        <TouchableOpacity 
-          style={[styles.qrSlot, getSlotStyle(false)]} 
-          onPress={() => onSlotPress('secondary')}
-        >
-          {isPremium ? (
-            renderQRSlot(secondaryQR, 'secondary')
-          ) : (
-            <View style={styles.qrWrapper}>
-              <View style={[styles.qrContainer, { width: containerSize, height: containerSize }]}>
-                <QRCodePreview 
-                  value={DEFAULT_QURE_QR.content} 
-                  size={qrSize} 
-                  design={DEFAULT_QURE_QR.design}
-                />
-                {showActionButtons && (
-                  <TouchableOpacity 
-                    style={styles.removeButton}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      onSlotPress('secondary');
-                    }}
-                  >
-                    <Text style={styles.removeButtonText}>×</Text>
-                  </TouchableOpacity>
-                )}
+          <TouchableOpacity 
+            style={[styles.qrSlot, getSlotStyle(false)]} 
+            onPress={() => onSlotPress('secondary')}
+            disabled={hideEmptySlots && !isPremium}
+          >
+            {isPremium ? (
+              renderQRSlot(secondaryQR, 'secondary')
+            ) : (
+              <View style={[styles.qrWrapper, { opacity: hideEmptySlots ? 0 : 1 }]}>
+                <View style={[styles.qrContainer, { width: containerSize, height: containerSize }]}>
+                  <QRCodePreview 
+                    value={DEFAULT_QURE_QR.content} 
+                    size={qrSize} 
+                    design={DEFAULT_QURE_QR.design}
+                  />
+                  {showActionButtons && (
+                    <TouchableOpacity 
+                      style={styles.removeButton}
+                      onPress={(e) => {
+                        e.stopPropagation();
+                        onSlotPress('secondary');
+                      }}
+                    >
+                      <Text style={styles.removeButtonText}>×</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <Text style={styles.qrLabel}>{DEFAULT_QURE_QR.label}</Text>
               </View>
-              <Text style={styles.qrLabel}>{DEFAULT_QURE_QR.label}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+            )}
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  centerSlot: {
+    alignItems: 'center',
+    transform: [{ translateX: 0 }], // Override any offset when single slot
+  },
   qrSlotsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,

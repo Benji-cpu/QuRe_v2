@@ -12,6 +12,7 @@ export interface UserPreferences {
   qrVerticalOffset?: number;
   qrHorizontalOffset?: number;
   qrScale?: number;
+  qrSlotCount?: 1 | 2; // Add this new field
 }
 
 export class UserPreferencesService {
@@ -22,7 +23,8 @@ export class UserPreferencesService {
         selectedGradientId: 'sunset', 
         qrVerticalOffset: 80,
         qrHorizontalOffset: 0,
-        qrScale: 1
+        qrScale: 1,
+        qrSlotCount: 2 // Default to 2 slots
       };
     } catch (error) {
       console.error('Error loading user preferences:', error);
@@ -30,8 +32,20 @@ export class UserPreferencesService {
         selectedGradientId: 'sunset', 
         qrVerticalOffset: 80,
         qrHorizontalOffset: 0,
-        qrScale: 1
+        qrScale: 1,
+        qrSlotCount: 2
       };
+    }
+  }
+
+  static async updateQRSlotCount(count: 1 | 2): Promise<void> {
+    try {
+      const preferences = await this.getPreferences();
+      preferences.qrSlotCount = count;
+      await this.savePreferences(preferences);
+    } catch (error) {
+      console.error('Error updating QR slot count:', error);
+      throw error;
     }
   }
 

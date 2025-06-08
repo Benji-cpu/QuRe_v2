@@ -1,4 +1,4 @@
-// app/modal/create.tsx - Add engagement tracking
+// app/modal/create.tsx
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -103,6 +103,12 @@ export default function CreateModal() {
       params: { selectMode: 'true', slot: slot || '' }
     });
   };
+
+  const handleDesignTabClick = () => {
+    if (!isPremium) {
+      router.push('/modal/premium');
+    }
+  };
  
   const qrContent = canSave() ? QRGenerator.generateContent(selectedType, formData) : '';
  
@@ -128,7 +134,12 @@ export default function CreateModal() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'design' && styles.activeTab]}
-          onPress={() => setActiveTab('design')}
+          onPress={() => {
+            setActiveTab('design');
+            if (!isPremium) {
+              handleDesignTabClick();
+            }
+          }}
         >
           <View style={styles.tabContent}>
             {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
@@ -167,14 +178,20 @@ export default function CreateModal() {
             />
           </>
         ) : (
-          <QRDesignForm
-            design={design}
-            onDesignChange={setDesign}
-            isPremium={isPremium}
-          />
+          <TouchableOpacity 
+            activeOpacity={isPremium ? 1 : 0.7}
+            onPress={!isPremium ? handleDesignTabClick : undefined}
+            style={{ flex: 1 }}
+          >
+            <QRDesignForm
+              design={design}
+              onDesignChange={setDesign}
+              isPremium={isPremium}
+            />
+          </TouchableOpacity>
         )}
         
-        {qrContent ? (
+        {qrContent && (activeTab === 'content' || isPremium) ? (
           <View style={styles.previewContainer}>
             <Text style={styles.previewTitle}>Preview</Text>
             <View style={styles.previewWrapper}>

@@ -1,4 +1,4 @@
-// app/modal/edit.tsx - Add engagement tracking for edits
+// app/modal/edit.tsx
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -140,6 +140,12 @@ export default function EditModal() {
     );
   };
 
+  const handleDesignTabClick = () => {
+    if (!isPremium) {
+      router.push('/modal/premium');
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -176,7 +182,12 @@ export default function EditModal() {
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.tab, activeTab === 'design' && styles.activeTab]}
-          onPress={() => setActiveTab('design')}
+          onPress={() => {
+            setActiveTab('design');
+            if (!isPremium) {
+              handleDesignTabClick();
+            }
+          }}
         >
           <View style={styles.tabContent}>
             {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
@@ -205,14 +216,20 @@ export default function EditModal() {
             />
           </>
         ) : (
-          <QRDesignForm
-            design={design}
-            onDesignChange={setDesign}
-            isPremium={isPremium}
-          />
+          <TouchableOpacity 
+            activeOpacity={isPremium ? 1 : 0.7}
+            onPress={!isPremium ? handleDesignTabClick : undefined}
+            style={{ flex: 1 }}
+          >
+            <QRDesignForm
+              design={design}
+              onDesignChange={setDesign}
+              isPremium={isPremium}
+            />
+          </TouchableOpacity>
         )}
         
-        {qrContent ? (
+        {qrContent && (activeTab === 'content' || isPremium) ? (
           <View style={styles.previewContainer}>
             <Text style={styles.previewTitle}>Preview</Text>
             <View style={styles.previewWrapper}>
@@ -318,6 +335,84 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+  },
+  typeDisplay: {
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    padding: 15,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  typeLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+  },
+  typeValue: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  typeText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  changeText: {
+    fontSize: 14,
+    color: '#2196f3',
+  },
+  previewContainer: {
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  previewTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+  },
+  previewWrapper: {
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+  },
+  footer: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 15,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  cancelButton: {
+    flex: 1,
+    paddingVertical: 15,
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
+  saveButton: {
+    flex: 1,
+    paddingVertical: 15,
+    borderRadius: 8,
+    backgroundColor: '#2196f3',
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    fontSize: 16,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  disabledButton: {
+    backgroundColor: '#ccc',
   },
   typeDisplay: {
     backgroundColor: '#fff',
