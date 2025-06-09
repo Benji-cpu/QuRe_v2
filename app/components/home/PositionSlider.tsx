@@ -1,3 +1,4 @@
+// app/components/home/PositionSlider.tsx
 import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import React, { useEffect, useState } from 'react';
@@ -14,6 +15,7 @@ interface PositionSliderProps {
   isExpanded: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
+  singleQRMode?: boolean;
 }
 
 export default function PositionSlider({ 
@@ -26,7 +28,8 @@ export default function PositionSlider({
   visible,
   isExpanded,
   onExpand,
-  onCollapse
+  onCollapse,
+  singleQRMode = false
 }: PositionSliderProps) {
   const [animatedOpacity] = useState(new Animated.Value(0));
   const [translateY] = useState(new Animated.Value(0));
@@ -76,7 +79,13 @@ export default function PositionSlider({
     onExpand?.();
   };
 
+  const getHorizontalRange = () => {
+    return singleQRMode ? { min: -100, max: 100 } : { min: -50, max: 50 };
+  };
+
   if (!visible) return null;
+
+  const horizontalRange = getHorizontalRange();
 
   return (
     <Animated.View 
@@ -116,8 +125,8 @@ export default function PositionSlider({
               <Feather name="arrow-left" size={16} color="rgba(255, 255, 255, 0.6)" />
               <Slider
                 style={styles.slider}
-                minimumValue={-50}
-                maximumValue={50}
+                minimumValue={horizontalRange.min}
+                maximumValue={horizontalRange.max}
                 value={horizontalValue}
                 onValueChange={onHorizontalChange}
                 minimumTrackTintColor="rgba(255, 255, 255, 0.8)"

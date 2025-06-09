@@ -39,6 +39,33 @@ export const QR_TYPES: QRTypeConfig[] = [
     ]
   },
   {
+    type: 'whatsapp',
+    title: 'WhatsApp',
+    icon: '💬',
+    fields: [
+      {
+        key: 'phone',
+        label: 'Phone Number',
+        required: true,
+        placeholder: '+1234567890',
+        keyboardType: 'phone-pad'
+      },
+      {
+        key: 'message',
+        label: 'Pre-filled Message (Optional)',
+        required: false,
+        placeholder: 'Hello! I saw your QR code...',
+        multiline: true
+      },
+      {
+        key: 'label',
+        label: 'Label (Optional)',
+        required: false,
+        placeholder: 'WhatsApp Chat'
+      }
+    ]
+  },
+  {
     type: 'email',
     title: 'Email',
     icon: '📧',
@@ -88,33 +115,6 @@ export const QR_TYPES: QRTypeConfig[] = [
         label: 'Label (Optional)',
         required: false,
         placeholder: 'Phone Label'
-      }
-    ]
-  },
-  {
-    type: 'sms',
-    title: 'SMS',
-    icon: '💬',
-    fields: [
-      {
-        key: 'phone',
-        label: 'Phone Number',
-        required: true,
-        placeholder: '+1234567890',
-        keyboardType: 'phone-pad'
-      },
-      {
-        key: 'message',
-        label: 'Message (Optional)',
-        required: false,
-        placeholder: 'SMS message',
-        multiline: true
-      },
-      {
-        key: 'label',
-        label: 'Label (Optional)',
-        required: false,
-        placeholder: 'SMS Label'
       }
     ]
   },

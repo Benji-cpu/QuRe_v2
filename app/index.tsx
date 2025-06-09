@@ -1,9 +1,10 @@
+// app/index.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Dimensions, Linking, Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Animated, Dimensions, Linking, Platform, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -46,6 +47,7 @@ function HomeScreen() {
   const [elementsOpacity] = useState(new Animated.Value(1));
   const [showTitle, setShowTitle] = useState(true);
   const [qrSlotMode, setQrSlotMode] = useState<'single' | 'double'>('double');
+  const [titleOpacity] = useState(new Animated.Value(1));
   
   const gradientTransition = useSharedValue(0);
 
@@ -82,6 +84,12 @@ function HomeScreen() {
       } else if (!premium) {
         setSecondaryQR(null);
       }
+
+      Animated.timing(titleOpacity, {
+        toValue: (premium && !showTitle) ? 0 : 1,
+        duration: 0,
+        useNativeDriver: true,
+      }).start();
     } catch (error) {
       console.error('Error loading user data:', error);
     }
@@ -107,8 +115,10 @@ function HomeScreen() {
 
   useEffect(() => {
     loadUserData();
-    checkForOffer();
-  }, [loadUserData]);
+    if (!showOnboarding) {
+      checkForOffer();
+    }
+  }, [loadUserData, showOnboarding]);
 
   useFocusEffect(
     useCallback(() => {
@@ -201,6 +211,22 @@ function HomeScreen() {
       await UserPreferencesService.updateQRScale(value);
     } catch (error) {
       console.error('Error updating scale:', error);
+    }
+  };
+
+  const handleTitlePress = async () => {
+    if (!isPremium) {
+      router.push('/modal/premium');
+    } else {
+      const newShowTitle = !showTitle;
+      setShowTitle(newShowTitle);
+      await UserPreferencesService.updateShowTitle(newShowTitle);
+      
+      Animated.timing(titleOpacity, {
+        toValue: newShowTitle ? 1 : 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
     }
   };
 
@@ -308,6 +334,9 @@ function HomeScreen() {
     setShowOnboarding(false);
     setShowSwipeIndicator(true);
     setShowPositionSlider(true);
+    setTimeout(() => {
+      checkForOffer();
+    }, 1000);
   };
 
   const handleSliderExpand = () => {
@@ -342,7 +371,7 @@ function HomeScreen() {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
-  const shouldShowTitle = !isPremium || (isPremium && showTitle);
+  const shouldShowTitleArea = !hideElementsForExport;
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -358,9 +387,16 @@ function HomeScreen() {
                   transition={gradientTransition}
                 >
                   <View style={styles.content}>
-                    {shouldShowTitle && !hideElementsForExport && (
+                    {shouldShowTitleArea && (
                       <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
-                        <Text style={styles.appTitle}>QuRe</Text>
+                        <Pressable onPress={handleTitlePress} style={styles.titleContainer}>
+                          <Animated.Text style={[styles.appTitle, { opacity: titleOpacity }]}>
+                            QuRe
+                          </Animated.Text>
+                          {(!isPremium || (isPremium && showTitle)) && (
+                            <Text style={styles.closeButton}>×</Text>
+                          )}
+                        </Pressable>
                       </View>
                     )}
 
@@ -394,6 +430,7 @@ function HomeScreen() {
                               isExpanded={sliderExpanded}
                               onExpand={handleSliderExpand}
                               onCollapse={handleSliderCollapse}
+                              singleQRMode={qrSlotMode === 'single'}
                             />
                           )}
                         </View>
@@ -445,12 +482,26 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 20,
+    height: 40,
+    justifyContent: 'center',
+  },
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 40,
+    paddingHorizontal: 20,
   },
   appTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: 'white',
     textAlign: 'center',
+  },
+  closeButton: {
+    fontSize: 24,
+    color: 'white',
+    marginLeft: 10,
+    lineHeight: 24,
   },
   middleContent: {
     flex: 1,

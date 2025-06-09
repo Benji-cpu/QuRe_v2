@@ -1,17 +1,17 @@
 // services/QRGenerator.ts
-import { ContactData, EmailData, LinkData, PhoneData, QRCodeType, QRCodeTypeData, SMSData, TextData } from '../types/QRCode';
+import { ContactData, EmailData, LinkData, PhoneData, QRCodeType, QRCodeTypeData, TextData, WhatsAppData } from '../types/QRCode';
 
 export class QRGenerator {
   static generateContent(type: QRCodeType, data: QRCodeTypeData): string {
     switch (type) {
       case 'link':
         return this.generateLinkContent(data as LinkData);
+      case 'whatsapp':
+        return this.generateWhatsAppContent(data as WhatsAppData);
       case 'email':
         return this.generateEmailContent(data as EmailData);
       case 'phone':
         return this.generatePhoneContent(data as PhoneData);
-      case 'sms':
-        return this.generateSMSContent(data as SMSData);
       case 'contact':
         return this.generateContactContent(data as ContactData);
       case 'text':
@@ -23,6 +23,17 @@ export class QRGenerator {
 
   private static generateLinkContent(data: LinkData): string {
     return data.url;
+  }
+
+  private static generateWhatsAppContent(data: WhatsAppData): string {
+    const cleanPhone = data.phone.replace(/[^0-9]/g, '');
+    let url = `https://wa.me/${cleanPhone}`;
+    
+    if (data.message) {
+      url += `?text=${encodeURIComponent(data.message)}`;
+    }
+    
+    return url;
   }
 
   private static generateEmailContent(data: EmailData): string {
@@ -46,14 +57,6 @@ export class QRGenerator {
 
   private static generatePhoneContent(data: PhoneData): string {
     return `tel:${data.phone}`;
-  }
-
-  private static generateSMSContent(data: SMSData): string {
-    let content = `smsto:${data.phone}`;
-    if (data.message) {
-      content += `:${data.message}`;
-    }
-    return content;
   }
 
   private static generateContactContent(data: ContactData): string {
@@ -94,12 +97,12 @@ export class QRGenerator {
         } catch {
           return linkData.url;
         }
+      case 'whatsapp':
+        return `WhatsApp: ${(data as WhatsAppData).phone}`;
       case 'email':
         return (data as EmailData).email;
       case 'phone':
         return (data as PhoneData).phone;
-      case 'sms':
-        return (data as SMSData).phone;
       case 'contact':
         const contactData = data as ContactData;
         return `${contactData.firstName} ${contactData.lastName}`;

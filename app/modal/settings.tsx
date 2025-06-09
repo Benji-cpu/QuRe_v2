@@ -1,12 +1,15 @@
+// app/modal/settings.tsx
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GRADIENT_PRESETS } from '../../constants/Gradients';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { UserPreferencesService } from '../../services/UserPreferences';
 
 export default function SettingsModal() {
+  const insets = useSafeAreaInsets();
   const [selectedGradientId, setSelectedGradientId] = useState('sunset');
   const [isPremium, setIsPremium] = useState(false);
   const [showTitle, setShowTitle] = useState(true);
@@ -91,11 +94,18 @@ export default function SettingsModal() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 120 }
+        ]}
+        keyboardShouldPersistTaps="handled"
       >
         <Text style={styles.sectionTitle}>Background Gradients</Text>
         
@@ -133,9 +143,12 @@ export default function SettingsModal() {
             onPress={() => handleShowTitleToggle(!showTitle)}
           >
             <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Show QuRe Title</Text>
+              <View style={styles.settingTitleRow}>
+                <Text style={styles.settingTitle}>Show QuRe Branding</Text>
+                {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
+              </View>
               <Text style={styles.settingDescription}>
-                {isPremium ? 'Display title on wallpaper' : 'Premium feature - Upgrade to toggle'}
+                {isPremium ? 'Display QuRe branding on wallpaper' : 'Premium feature - Upgrade to toggle'}
               </Text>
             </View>
             <Switch
@@ -149,7 +162,10 @@ export default function SettingsModal() {
           <View style={styles.settingDivider} />
 
           <View style={styles.qrModeContainer}>
-            <Text style={styles.settingTitle}>QR Code Layout</Text>
+            <View style={styles.settingTitleRow}>
+              <Text style={styles.settingTitle}>QR Code Layout</Text>
+              {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
+            </View>
             <Text style={styles.settingDescription}>
               {isPremium ? 'Choose number of QR codes' : 'Premium feature - Upgrade to customize'}
             </Text>
@@ -214,18 +230,26 @@ export default function SettingsModal() {
         <Text style={styles.sectionTitle}>Developer Options</Text>
         
         <View style={styles.devOptionsContainer}>
-          <Pressable style={styles.devOption} onPress={handlePremiumToggle}>
+          <Pressable 
+            style={styles.devOption} 
+            onPress={handlePremiumToggle}
+            android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+          >
             <Text style={styles.devOptionText}>
               {isPremium ? 'Disable Premium (Test)' : 'Enable Premium (Test)'}
             </Text>
           </Pressable>
           
-          <Pressable style={styles.devOption} onPress={handleShowOnboarding}>
+          <Pressable 
+            style={styles.devOption} 
+            onPress={handleShowOnboarding}
+            android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+          >
             <Text style={styles.devOptionText}>Show Onboarding</Text>
           </Pressable>
         </View>
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -313,16 +337,24 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: 15,
   },
+  settingTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   settingTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 4,
+  },
+  lockIcon: {
+    fontSize: 14,
   },
   settingDescription: {
     fontSize: 14,
     color: '#666',
     lineHeight: 18,
+    marginTop: 4,
   },
   settingDivider: {
     height: 1,
