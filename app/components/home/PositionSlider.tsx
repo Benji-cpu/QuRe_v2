@@ -1,8 +1,7 @@
-// app/components/home/PositionSlider.tsx
 import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import React, { useEffect, useState } from 'react';
-import { Animated, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface PositionSliderProps {
   verticalValue: number;
@@ -47,7 +46,7 @@ export default function PositionSlider({
     if (isExpanded) {
       Animated.parallel([
         Animated.timing(translateY, {
-          toValue: -20,
+          toValue: -120,
           duration: 300,
           useNativeDriver: true,
         }),
@@ -117,8 +116,8 @@ export default function PositionSlider({
               <Feather name="arrow-left" size={16} color="rgba(255, 255, 255, 0.6)" />
               <Slider
                 style={styles.slider}
-                minimumValue={-30}
-                maximumValue={30}
+                minimumValue={-50}
+                maximumValue={50}
                 value={horizontalValue}
                 onValueChange={onHorizontalChange}
                 minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
@@ -144,7 +143,7 @@ export default function PositionSlider({
             </View>
           </View>
         ) : (
-          <TouchableOpacity style={styles.collapsedCard} onPress={handleExpand}>
+          <Pressable style={styles.collapsedCard} onPress={handleExpand}>
             <View style={styles.iconContainer}>
               <Feather name="move" size={20} color="white" />
             </View>
@@ -152,7 +151,7 @@ export default function PositionSlider({
               <Text style={styles.notificationTitle}>Adjust QR position</Text>
               <Text style={styles.notificationSubtitle}>Move and resize QR codes</Text>
             </View>
-          </TouchableOpacity>
+          </Pressable>
         )}
       </Animated.View>
     </Animated.View>

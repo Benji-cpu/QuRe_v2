@@ -1,8 +1,7 @@
-// app/modal/settings.tsx
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { GRADIENT_PRESETS } from '../../constants/Gradients';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { UserPreferencesService } from '../../services/UserPreferences';
@@ -10,6 +9,8 @@ import { UserPreferencesService } from '../../services/UserPreferences';
 export default function SettingsModal() {
   const [selectedGradientId, setSelectedGradientId] = useState('sunset');
   const [isPremium, setIsPremium] = useState(false);
+  const [showTitle, setShowTitle] = useState(true);
+  const [qrSlotMode, setQrSlotMode] = useState<'single' | 'double'>('double');
 
   useEffect(() => {
     loadSettings();
@@ -22,6 +23,8 @@ export default function SettingsModal() {
       const premium = await UserPreferencesService.isPremium();
       setSelectedGradientId(preferences.selectedGradientId);
       setIsPremium(premium);
+      setShowTitle(preferences.showTitle ?? true);
+      setQrSlotMode(preferences.qrSlotMode || 'double');
     } catch (error) {
       console.error('Error loading settings:', error);
     }
@@ -33,6 +36,32 @@ export default function SettingsModal() {
       await UserPreferencesService.updateGradient(gradientId);
     } catch (error) {
       Alert.alert('Error', 'Failed to update gradient');
+    }
+  };
+
+  const handleShowTitleToggle = async (value: boolean) => {
+    if (!isPremium) {
+      router.push('/modal/premium');
+      return;
+    }
+    try {
+      setShowTitle(value);
+      await UserPreferencesService.updateShowTitle(value);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update title visibility');
+    }
+  };
+
+  const handleQRSlotModeChange = async (mode: 'single' | 'double') => {
+    if (!isPremium) {
+      router.push('/modal/premium');
+      return;
+    }
+    try {
+      setQrSlotMode(mode);
+      await UserPreferencesService.updateQRSlotMode(mode);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update QR slot mode');
     }
   };
 
@@ -63,12 +92,16 @@ export default function SettingsModal() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+      >
         <Text style={styles.sectionTitle}>Background Gradients</Text>
         
         <View style={styles.gradientsGrid}>
           {GRADIENT_PRESETS.map((gradient) => (
-            <TouchableOpacity
+            <Pressable
               key={gradient.id}
               style={[
                 styles.gradientOption,
@@ -88,8 +121,69 @@ export default function SettingsModal() {
                   <Text style={styles.checkmark}>✓</Text>
                 </View>
               )}
-            </TouchableOpacity>
+            </Pressable>
           ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>Display Settings</Text>
+        
+        <View style={styles.settingsContainer}>
+          <Pressable 
+            style={styles.settingRow} 
+            onPress={() => handleShowTitleToggle(!showTitle)}
+          >
+            <View style={styles.settingInfo}>
+              <Text style={styles.settingTitle}>Show QuRe Title</Text>
+              <Text style={styles.settingDescription}>
+                {isPremium ? 'Display title on wallpaper' : 'Premium feature - Upgrade to toggle'}
+              </Text>
+            </View>
+            <Switch
+              value={isPremium && showTitle}
+              onValueChange={handleShowTitleToggle}
+              trackColor={{ false: '#ddd', true: '#2196f3' }}
+              disabled={!isPremium}
+            />
+          </Pressable>
+
+          <View style={styles.settingDivider} />
+
+          <View style={styles.qrModeContainer}>
+            <Text style={styles.settingTitle}>QR Code Layout</Text>
+            <Text style={styles.settingDescription}>
+              {isPremium ? 'Choose number of QR codes' : 'Premium feature - Upgrade to customize'}
+            </Text>
+            <View style={styles.qrModeButtons}>
+              <Pressable
+                style={[
+                  styles.qrModeButton,
+                  qrSlotMode === 'single' && isPremium && styles.qrModeButtonActive
+                ]}
+                onPress={() => handleQRSlotModeChange('single')}
+              >
+                <Text style={[
+                  styles.qrModeButtonText,
+                  qrSlotMode === 'single' && isPremium && styles.qrModeButtonTextActive
+                ]}>
+                  Single QR
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.qrModeButton,
+                  qrSlotMode === 'double' && isPremium && styles.qrModeButtonActive
+                ]}
+                onPress={() => handleQRSlotModeChange('double')}
+              >
+                <Text style={[
+                  styles.qrModeButtonText,
+                  qrSlotMode === 'double' && isPremium && styles.qrModeButtonTextActive
+                ]}>
+                  Double QR
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
 
         <Text style={styles.sectionTitle}>Plan Status</Text>
@@ -111,24 +205,24 @@ export default function SettingsModal() {
           </View>
           
           {!isPremium && (
-            <TouchableOpacity style={styles.upgradeButton} onPress={handleUpgrade}>
+            <Pressable style={styles.upgradeButton} onPress={handleUpgrade}>
               <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
 
         <Text style={styles.sectionTitle}>Developer Options</Text>
         
         <View style={styles.devOptionsContainer}>
-          <TouchableOpacity style={styles.devOption} onPress={handlePremiumToggle}>
+          <Pressable style={styles.devOption} onPress={handlePremiumToggle}>
             <Text style={styles.devOptionText}>
               {isPremium ? 'Disable Premium (Test)' : 'Enable Premium (Test)'}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
           
-          <TouchableOpacity style={styles.devOption} onPress={handleShowOnboarding}>
+          <Pressable style={styles.devOption} onPress={handleShowOnboarding}>
             <Text style={styles.devOptionText}>Show Onboarding</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </ScrollView>
     </View>
@@ -143,6 +237,9 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
+  },
+  scrollContent: {
+    paddingBottom: 100,
   },
   sectionTitle: {
     fontSize: 20,
@@ -199,6 +296,67 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  settingsContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+  },
+  settingInfo: {
+    flex: 1,
+    marginRight: 15,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 4,
+  },
+  settingDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 18,
+  },
+  settingDivider: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginHorizontal: 20,
+  },
+  qrModeContainer: {
+    padding: 20,
+  },
+  qrModeButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  qrModeButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    alignItems: 'center',
+  },
+  qrModeButtonActive: {
+    borderColor: '#2196f3',
+    backgroundColor: '#e3f2fd',
+  },
+  qrModeButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  qrModeButtonTextActive: {
+    color: '#2196f3',
   },
   planContainer: {
     backgroundColor: 'white',

@@ -1,10 +1,9 @@
-// app/index.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Dimensions, Linking, Platform, StyleSheet, Text, TouchableOpacity, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Animated, Dimensions, Linking, Platform, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +23,6 @@ import Onboarding from './components/Onboarding';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_INDICATOR_KEY = '@qure_swipe_indicator_count';
-const HIDE_TITLE_KEY = '@qure_hide_title';
 
 function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -45,10 +43,9 @@ function HomeScreen() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [hideElementsForExport, setHideElementsForExport] = useState(false);
   const [sliderExpanded, setSliderExpanded] = useState(false);
-  const [hideTitle, setHideTitle] = useState(false);
   const [elementsOpacity] = useState(new Animated.Value(1));
-  const [timeOpacity] = useState(new Animated.Value(1));
-  const [actionOpacity] = useState(new Animated.Value(1));
+  const [showTitle, setShowTitle] = useState(true);
+  const [qrSlotMode, setQrSlotMode] = useState<'single' | 'double'>('double');
   
   const gradientTransition = useSharedValue(0);
 
@@ -57,32 +54,28 @@ function HomeScreen() {
       const preferences = await UserPreferencesService.getPreferences();
       const premium = await UserPreferencesService.isPremium();
       const hasCompletedOnboarding = await UserPreferencesService.hasCompletedOnboarding();
-      const titleHidden = await AsyncStorage.getItem(HIDE_TITLE_KEY);
       
-      // Fix: Find the correct gradient index
       const gradientIndex = GRADIENT_PRESETS.findIndex(g => g.id === preferences.selectedGradientId);
-      // Ensure we have a valid index
-      const validIndex = gradientIndex >= 0 ? gradientIndex : 0;
-      setCurrentGradientIndex(validIndex);
-      
+      setCurrentGradientIndex(gradientIndex >= 0 ? gradientIndex : 0);
       setIsPremium(premium);
       setQrVerticalOffset(preferences.qrVerticalOffset || 80);
       setQrHorizontalOffset(preferences.qrHorizontalOffset || 0);
       setQrScale(preferences.qrScale || 1);
+      setShowTitle(preferences.showTitle ?? true);
+      setQrSlotMode(preferences.qrSlotMode || 'double');
       setShowOnboarding(!hasCompletedOnboarding);
       setShowPositionSlider(hasCompletedOnboarding);
-      setHideTitle(titleHidden === 'true' && premium);
-  
+
       const swipeCount = await getSwipeIndicatorCount();
       setShowSwipeIndicator(hasCompletedOnboarding && swipeCount < 5);
-  
+
       if (preferences.primaryQRCodeId) {
         const primaryQRData = await QRStorage.getQRCodeById(preferences.primaryQRCodeId);
         setPrimaryQR(primaryQRData);
       } else {
         setPrimaryQR(null);
       }
-  
+
       if (preferences.secondaryQRCodeId && premium) {
         const secondaryQRData = await QRStorage.getQRCodeById(preferences.secondaryQRCodeId);
         setSecondaryQR(secondaryQRData);
@@ -135,11 +128,15 @@ function HomeScreen() {
   }, []);
 
   const checkForOffer = async () => {
+    if (showOnboarding) return;
+    
     try {
       const offer = await EngagementPricingService.determineOffer();
       if (offer && !isPremium) {
         setTimeout(() => {
-          router.push('/modal/premium');
+          if (!showOnboarding) {
+            router.push('/modal/premium');
+          }
         }, 2000);
       }
     } catch (error) {
@@ -315,54 +312,25 @@ function HomeScreen() {
 
   const handleSliderExpand = () => {
     setSliderExpanded(true);
-    
-    Animated.parallel([
-      Animated.timing(timeOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(actionOpacity, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      })
-    ]).start();
+    Animated.timing(elementsOpacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleSliderCollapse = () => {
     setSliderExpanded(false);
-    
-    Animated.parallel([
-      Animated.timing(timeOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }),
-      Animated.timing(actionOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      })
-    ]).start();
+    Animated.timing(elementsOpacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleBackgroundPress = () => {
     if (sliderExpanded) {
       handleSliderCollapse();
-    }
-  };
-
-  const handleTitlePress = () => {
-    router.push('/modal/premium');
-  };
-
-  const handleCloseTitlePress = async () => {
-    try {
-      await AsyncStorage.setItem(HIDE_TITLE_KEY, 'true');
-      setHideTitle(true);
-    } catch (error) {
-      console.error('Error hiding title:', error);
     }
   };
 
@@ -374,7 +342,7 @@ function HomeScreen() {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
 
-  const shouldShowTitle = !hideTitle && (!hideElementsForExport || !isPremium);
+  const shouldShowTitle = !isPremium || (isPremium && showTitle);
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -390,29 +358,13 @@ function HomeScreen() {
                   transition={gradientTransition}
                 >
                   <View style={styles.content}>
-                  {shouldShowTitle && (
-                    <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
-                      <View style={styles.titleContainer}>
-                        <TouchableOpacity onPress={handleTitlePress} activeOpacity={0.7}>
-                          <Text style={styles.appTitle}>QuRe</Text>
-                        </TouchableOpacity>
-                        {isPremium && !hideElementsForExport && (
-                          <TouchableOpacity 
-                            style={styles.closeButton} 
-                            onPress={handleCloseTitlePress}
-                            activeOpacity={0.7}
-                            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                          >
-                            <View style={styles.closeButtonInner}>
-                              <Text style={styles.closeButtonText}>×</Text>
-                            </View>
-                          </TouchableOpacity>
-                        )}
+                    {shouldShowTitle && !hideElementsForExport && (
+                      <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
+                        <Text style={styles.appTitle}>QuRe</Text>
                       </View>
-                    </View>
-                  )}
+                    )}
 
-                    <Animated.View style={{ opacity: timeOpacity }}>
+                    <Animated.View style={{ opacity: elementsOpacity }}>
                       {!hideElementsForExport && !sliderExpanded && (
                         <TimeDisplay currentTime={currentTime} />
                       )}
@@ -421,7 +373,7 @@ function HomeScreen() {
                     <View style={styles.middleContent}>
                       {showActionButtons && (
                         <View style={styles.actionSection}>
-                          <Animated.View style={{ opacity: actionOpacity }}>
+                          <Animated.View style={{ opacity: elementsOpacity }}>
                             {!sliderExpanded && (
                               <ActionCards 
                                 onExportWallpaper={handleExportWallpaper}
@@ -460,6 +412,7 @@ function HomeScreen() {
                         onSlotPress={handleQRSlotPress}
                         onRemoveQR={handleRemoveQR}
                         hideEmptySlots={hideElementsForExport}
+                        singleQRMode={qrSlotMode === 'single'}
                       />
                       
                       {showSwipeIndicator && (
@@ -493,37 +446,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 20,
   },
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    position: 'relative',
-  },
   appTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: 'white',
     textAlign: 'center',
-  },
-  closeButton: {
-    position: 'absolute',
-    right: -30,
-    top: -2,
-    padding: 4,
-  },
-  closeButtonInner: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-    lineHeight: 18,
-    marginTop: -1,
   },
   middleContent: {
     flex: 1,

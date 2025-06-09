@@ -1,4 +1,3 @@
-// services/UserPreferences.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const PREFERENCES_KEY = '@qure_user_preferences';
@@ -12,7 +11,8 @@ export interface UserPreferences {
   qrVerticalOffset?: number;
   qrHorizontalOffset?: number;
   qrScale?: number;
-  qrSlotCount?: 1 | 2; // Add this new field
+  showTitle?: boolean;
+  qrSlotMode?: 'single' | 'double';
 }
 
 export class UserPreferencesService {
@@ -24,7 +24,8 @@ export class UserPreferencesService {
         qrVerticalOffset: 80,
         qrHorizontalOffset: 0,
         qrScale: 1,
-        qrSlotCount: 2 // Default to 2 slots
+        showTitle: true,
+        qrSlotMode: 'double'
       };
     } catch (error) {
       console.error('Error loading user preferences:', error);
@@ -33,19 +34,9 @@ export class UserPreferencesService {
         qrVerticalOffset: 80,
         qrHorizontalOffset: 0,
         qrScale: 1,
-        qrSlotCount: 2
+        showTitle: true,
+        qrSlotMode: 'double'
       };
-    }
-  }
-
-  static async updateQRSlotCount(count: 1 | 2): Promise<void> {
-    try {
-      const preferences = await this.getPreferences();
-      preferences.qrSlotCount = count;
-      await this.savePreferences(preferences);
-    } catch (error) {
-      console.error('Error updating QR slot count:', error);
-      throw error;
     }
   }
 
@@ -120,6 +111,28 @@ export class UserPreferencesService {
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR scale:', error);
+      throw error;
+    }
+  }
+
+  static async updateShowTitle(show: boolean): Promise<void> {
+    try {
+      const preferences = await this.getPreferences();
+      preferences.showTitle = show;
+      await this.savePreferences(preferences);
+    } catch (error) {
+      console.error('Error updating show title:', error);
+      throw error;
+    }
+  }
+
+  static async updateQRSlotMode(mode: 'single' | 'double'): Promise<void> {
+    try {
+      const preferences = await this.getPreferences();
+      preferences.qrSlotMode = mode;
+      await this.savePreferences(preferences);
+    } catch (error) {
+      console.error('Error updating QR slot mode:', error);
       throw error;
     }
   }
