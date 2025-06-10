@@ -1,4 +1,4 @@
-// GradientBackground.tsx
+// app/components/home/GradientBackground.tsx
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { StyleSheet } from 'react-native';
@@ -20,7 +20,7 @@ export default function GradientBackground({
 }: GradientBackgroundProps) {
   const animatedStyle = useAnimatedStyle(() => {
     return {
-      opacity: interpolate(transition.value, [0, 1], [1, 0]),
+      opacity: interpolate(transition.value, [0, 1], [0, 1]),
     };
   });
 
