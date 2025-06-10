@@ -1,242 +1,254 @@
-// app/modal/create.tsx
-import { router, useLocalSearchParams } from 'expo-router';
+// app/modal/settings.tsx
+import { LinearGradient } from 'expo-linear-gradient';
+import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GRADIENT_PRESETS } from '../../constants/Gradients';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
-import { QRGenerator } from '../../services/QRGenerator';
-import { QRStorage } from '../../services/QRStorage';
 import { UserPreferencesService } from '../../services/UserPreferences';
-import { QRCodeData, QRCodeDesign, QRCodeType, QRCodeTypeData } from '../../types/QRCode';
-import QRCodePreview from '../components/QRCodePreview';
-import QRForm from '../components/QRForm';
-import QRTypeSelector from '../components/QRTypeSelector';
-import QRDesignForm from '../components/qr-design/QRDesignForm';
 
-export default function CreateModal() {
+export default function SettingsModal() {
   const insets = useSafeAreaInsets();
-  const { slot } = useLocalSearchParams<{ slot?: string }>();
-  const [selectedType, setSelectedType] = useState<QRCodeType>('link');
-  const [formData, setFormData] = useState<QRCodeTypeData>({} as QRCodeTypeData);
-  const [activeTab, setActiveTab] = useState<'content' | 'design'>('content');
-  const [design, setDesign] = useState<QRCodeDesign>({
-    color: '#000000',
-    backgroundColor: '#FFFFFF',
-    enableLinearGradient: false,
-    logoSize: 20,
-    logoMargin: 2,
-    logoBorderRadius: 0,
-  });
-  const [saving, setSaving] = useState(false);
+  const [selectedGradientId, setSelectedGradientId] = useState('sunset');
   const [isPremium, setIsPremium] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [showTitle, setShowTitle] = useState(true);
+  const [qrSlotMode, setQrSlotMode] = useState<'single' | 'double'>('double');
 
   useEffect(() => {
-    loadPremiumStatus();
-
-    const keyboardWillShow = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (e) => setKeyboardHeight(e.endCoordinates.height)
-    );
-    const keyboardWillHide = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardHeight(0)
-    );
-
-    return () => {
-      keyboardWillShow.remove();
-      keyboardWillHide.remove();
-    };
+    loadSettings();
+    EngagementPricingService.trackAction('settingsOpened');
   }, []);
 
-  const loadPremiumStatus = async () => {
-    const premium = await UserPreferencesService.isPremium();
-    setIsPremium(premium);
-  };
-
-  const canSave = () => {
-    switch (selectedType) {
-      case 'link':
-        return 'url' in formData && formData.url?.trim();
-      case 'whatsapp':
-        return 'phone' in formData && formData.phone?.trim();
-      case 'email':
-        return 'email' in formData && formData.email?.trim();
-      case 'phone':
-        return 'phone' in formData && formData.phone?.trim();
-      case 'contact':
-        return 'firstName' in formData && 'lastName' in formData && 
-               formData.firstName?.trim() && formData.lastName?.trim();
-      case 'text':
-        return 'text' in formData && formData.text?.trim();
-      default:
-        return false;
+  const loadSettings = async () => {
+    try {
+      const preferences = await UserPreferencesService.getPreferences();
+      const premium = await UserPreferencesService.isPremium();
+      setSelectedGradientId(preferences.selectedGradientId);
+      setIsPremium(premium);
+      setShowTitle(preferences.showTitle ?? true);
+      setQrSlotMode(preferences.qrSlotMode || 'double');
+    } catch (error) {
+      console.error('Error loading settings:', error);
     }
   };
 
-  const handleSave = async () => {
-    if (!canSave()) {
-      Alert.alert('Error', 'Please fill in all required fields');
+  const handleGradientSelect = async (gradientId: string) => {
+    try {
+      setSelectedGradientId(gradientId);
+      await UserPreferencesService.updateGradient(gradientId);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update gradient');
+    }
+  };
+
+  const handleShowTitleToggle = async (value: boolean) => {
+    if (!isPremium) {
+      router.push('/modal/premium');
       return;
     }
-  
-    setSaving(true);
-    
     try {
-      const content = QRGenerator.generateContent(selectedType, formData);
-      const label = QRGenerator.generateLabel(selectedType, formData);
-      
-      const qrCodeData: QRCodeData = {
-        id: Date.now().toString(),
-        type: selectedType,
-        label,
-        data: formData,
-        content,
-        createdAt: new Date().toISOString(),
-        design: isPremium ? design : undefined,
-      };
-
-      await QRStorage.saveQRCode(qrCodeData);
-      
-      await EngagementPricingService.trackAction('qrCodesCreated');
-  
-      if (slot === 'primary') {
-        await UserPreferencesService.updatePrimaryQR(qrCodeData.id);
-      } else if (slot === 'secondary') {
-        await UserPreferencesService.updateSecondaryQR(qrCodeData.id);
-      }
-  
-      router.back();
+      setShowTitle(value);
+      await UserPreferencesService.updateShowTitle(value);
     } catch (error) {
-      Alert.alert('Error', 'Failed to save QR code');
-    } finally {
-      setSaving(false);
+      Alert.alert('Error', 'Failed to update title visibility');
     }
   };
 
-  const handleSelectFromHistory = () => {
-    router.replace({
-      pathname: '/modal/history',
-      params: { selectMode: 'true', slot: slot || '' }
-    });
+  const handleQRSlotModeChange = async (mode: 'single' | 'double') => {
+    if (!isPremium) {
+      router.push('/modal/premium');
+      return;
+    }
+    try {
+      setQrSlotMode(mode);
+      await UserPreferencesService.updateQRSlotMode(mode);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update QR slot mode');
+    }
   };
- 
-  const qrContent = canSave() ? QRGenerator.generateContent(selectedType, formData) : '';
- 
+
+  const handlePremiumToggle = async () => {
+    try {
+      const newStatus = !isPremium;
+      await UserPreferencesService.setPremium(newStatus);
+      setIsPremium(newStatus);
+      Alert.alert('Success', `Premium status ${newStatus ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update premium status');
+    }
+  };
+
+  const handleShowOnboarding = async () => {
+    try {
+      await UserPreferencesService.setOnboardingComplete(false);
+      router.dismissAll();
+      router.replace('/');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to reset onboarding');
+    }
+  };
+
+  const handleUpgrade = () => {
+    router.push('/modal/premium');
+  };
+
   return (
     <KeyboardAvoidingView 
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Create QR Code</Text>
-        {slot && (
-          <Text style={styles.slotIndicator}>
-            {slot === 'primary' ? 'Primary' : 'Secondary'} Slot
-          </Text>
-        )}
-      </View>
- 
-      <View style={styles.tabsContainer}>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'content' && styles.activeTab]}
-          onPress={() => setActiveTab('content')}
-        >
-          <Text style={[styles.tabText, activeTab === 'content' && styles.activeTabText]}>
-            Content
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'design' && styles.activeTab]}
-          onPress={() => setActiveTab('design')}
-        >
-          <View style={styles.tabContent}>
-            {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
-            <Text style={[styles.tabText, activeTab === 'design' && styles.activeTabText]}>
-              Design
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </View>
- 
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ 
-          paddingBottom: Math.max(insets.bottom + 100, keyboardHeight + 100) 
-        }}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: insets.bottom + 120 }
+        ]}
         keyboardShouldPersistTaps="handled"
       >
-        {activeTab === 'content' ? (
-          <>
-            <TouchableOpacity 
-              style={styles.historyButton}
-              onPress={handleSelectFromHistory}
-            >
-              <Text style={styles.historyButtonIcon}>📋</Text>
-              <Text style={styles.historyButtonText}>Select from History</Text>
-            </TouchableOpacity>
- 
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR CREATE NEW</Text>
-              <View style={styles.dividerLine} />
-            </View>
-            
-            <QRTypeSelector
-              selectedType={selectedType}
-              onTypeSelect={setSelectedType}
-            />
-            
-            <QRForm
-              type={selectedType}
-              onDataChange={setFormData}
-            />
-          </>
-        ) : (
-          <QRDesignForm
-            design={design}
-            onDesignChange={setDesign}
-            isPremium={isPremium}
-          />
-        )}
+        <Text style={styles.sectionTitle}>Background Gradients</Text>
         
-        {qrContent ? (
-          <View style={styles.previewContainer}>
-            <Text style={styles.previewTitle}>Preview</Text>
-            <View style={styles.previewWrapper}>
-              <QRCodePreview 
-                value={qrContent} 
-                size={150} 
-                design={isPremium ? design : undefined}
+        <View style={styles.gradientsGrid}>
+          {GRADIENT_PRESETS.map((gradient) => (
+            <Pressable
+              key={gradient.id}
+              style={[
+                styles.gradientOption,
+                selectedGradientId === gradient.id && styles.selectedGradient
+              ]}
+              onPress={() => handleGradientSelect(gradient.id)}
+            >
+              <LinearGradient
+                colors={gradient.colors}
+                start={gradient.start}
+                end={gradient.end}
+                style={styles.gradientPreview}
               />
+              <Text style={styles.gradientName}>{gradient.name}</Text>
+              {selectedGradientId === gradient.id && (
+                <View style={styles.selectedIndicator}>
+                  <Text style={styles.checkmark}>✓</Text>
+                </View>
+              )}
+            </Pressable>
+          ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>Display Settings</Text>
+        
+        <View style={styles.settingsContainer}>
+          <Pressable 
+            style={styles.settingRow} 
+            onPress={() => handleShowTitleToggle(!showTitle)}
+          >
+            <View style={styles.settingInfo}>
+              <View style={styles.settingTitleRow}>
+                <Text style={styles.settingTitle}>Show QuRe Branding</Text>
+                {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
+              </View>
+              <Text style={styles.settingDescription}>
+                {isPremium ? 'Display QuRe branding on wallpaper' : 'Premium feature - Upgrade to toggle'}
+              </Text>
+            </View>
+            <Switch
+              value={isPremium && showTitle}
+              onValueChange={handleShowTitleToggle}
+              trackColor={{ false: '#ddd', true: '#2196f3' }}
+              disabled={!isPremium}
+            />
+          </Pressable>
+
+          <View style={styles.settingDivider} />
+
+          <View style={styles.qrModeContainer}>
+            <View style={styles.settingTitleRow}>
+              <Text style={styles.settingTitle}>QR Code Layout</Text>
+              {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
+            </View>
+            <Text style={styles.settingDescription}>
+              {isPremium ? 'Choose number of QR codes' : 'Premium feature - Upgrade to customize'}
+            </Text>
+            <View style={styles.qrModeButtons}>
+              <Pressable
+                style={[
+                  styles.qrModeButton,
+                  qrSlotMode === 'single' && isPremium && styles.qrModeButtonActive
+                ]}
+                onPress={() => handleQRSlotModeChange('single')}
+              >
+                <Text style={[
+                  styles.qrModeButtonText,
+                  qrSlotMode === 'single' && isPremium && styles.qrModeButtonTextActive
+                ]}>
+                  Single QR
+                </Text>
+              </Pressable>
+              <Pressable
+                style={[
+                  styles.qrModeButton,
+                  qrSlotMode === 'double' && isPremium && styles.qrModeButtonActive
+                ]}
+                onPress={() => handleQRSlotModeChange('double')}
+              >
+                <Text style={[
+                  styles.qrModeButtonText,
+                  qrSlotMode === 'double' && isPremium && styles.qrModeButtonTextActive
+                ]}>
+                  Double QR
+                </Text>
+              </Pressable>
             </View>
           </View>
-        ) : null}
-      </ScrollView>
-      
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
-        <TouchableOpacity 
-          style={styles.cancelButton} 
-          onPress={() => router.back()}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
+        </View>
+
+        <Text style={styles.sectionTitle}>Plan Status</Text>
         
-        <TouchableOpacity 
-          style={[
-            styles.saveButton,
-            (!canSave() || saving) && styles.disabledButton
-          ]} 
-          onPress={handleSave}
-          disabled={!canSave() || saving}
-        >
-          <Text style={styles.saveButtonText}>
-            {saving ? 'Saving...' : 'Save'}
-          </Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.planContainer}>
+          <View style={styles.planInfo}>
+            <Text style={styles.planTitle}>
+              {isPremium ? 'Premium Plan' : 'Free Plan'}
+            </Text>
+            <Text style={styles.planStatus}>
+              Premium: <Text style={styles.planStatusValue}>{isPremium ? 'YES' : 'NO'}</Text>
+            </Text>
+            <Text style={styles.planDescription}>
+              {isPremium 
+                ? 'You have access to all features including secondary QR codes and custom backgrounds.'
+                : 'Upgrade to Premium for unlimited QR codes and advanced customization options.'
+              }
+            </Text>
+          </View>
+          
+          {!isPremium && (
+            <Pressable style={styles.upgradeButton} onPress={handleUpgrade}>
+              <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
+            </Pressable>
+          )}
+        </View>
+
+        <Text style={styles.sectionTitle}>Developer Options</Text>
+        
+        <View style={styles.devOptionsContainer}>
+          <Pressable 
+            style={styles.devOption} 
+            onPress={handlePremiumToggle}
+            android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+          >
+            <Text style={styles.devOptionText}>
+              {isPremium ? 'Disable Premium (Test)' : 'Enable Premium (Test)'}
+            </Text>
+          </Pressable>
+          
+          <Pressable 
+            style={styles.devOption} 
+            onPress={handleShowOnboarding}
+            android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+          >
+            <Text style={styles.devOptionText}>Show Onboarding</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
@@ -246,145 +258,191 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  slotIndicator: {
-    fontSize: 14,
-    color: '#2196f3',
-    marginTop: 4,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 15,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomColor: '#2196f3',
-  },
-  tabContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#666',
-  },
-  activeTabText: {
-    color: '#2196f3',
-    fontWeight: '600',
-  },
-  lockIcon: {
-    fontSize: 14,
-  },
   content: {
     flex: 1,
     padding: 20,
   },
-  historyButton: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
+  scrollContent: {
+    paddingBottom: 100,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 15,
+    marginTop: 20,
+  },
+  gradientsGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 15,
+    marginBottom: 20,
+  },
+  gradientOption: {
+    width: '45%',
+    aspectRatio: 1,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  selectedGradient: {
+    borderColor: '#2196f3',
+  },
+  gradientPreview: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#2196f3',
-    marginBottom: 20,
   },
-  historyButtonIcon: {
-    fontSize: 24,
-    marginRight: 10,
-  },
-  historyButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2196f3',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
-  },
-  dividerText: {
-    paddingHorizontal: 15,
+  gradientName: {
+    position: 'absolute',
+    bottom: 8,
+    alignSelf: 'center',
     fontSize: 12,
-    color: '#999',
     fontWeight: '600',
+    color: 'white',
+    textShadowColor: 'rgba(0, 0, 0, 0.5)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 2,
   },
-  previewContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  previewTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
-  },
-  previewWrapper: {
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 15,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
-  },
-  saveButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
+  selectedIndicator: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     backgroundColor: '#2196f3',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  saveButtonText: {
-    fontSize: 16,
-    color: '#fff',
+  checkmark: {
+    color: 'white',
+    fontSize: 14,
     fontWeight: 'bold',
   },
-  disabledButton: {
-    backgroundColor: '#ccc',
+  settingsContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  settingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 20,
+  },
+  settingInfo: {
+    flex: 1,
+    marginRight: 15,
+  },
+  settingTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  lockIcon: {
+    fontSize: 14,
+  },
+  settingDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 18,
+    marginTop: 4,
+  },
+  settingDivider: {
+    height: 1,
+    backgroundColor: '#f0f0f0',
+    marginHorizontal: 20,
+  },
+  qrModeContainer: {
+    padding: 20,
+  },
+  qrModeButtons: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  qrModeButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    alignItems: 'center',
+  },
+  qrModeButtonActive: {
+    borderColor: '#2196f3',
+    backgroundColor: '#e3f2fd',
+  },
+  qrModeButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+  qrModeButtonTextActive: {
+    color: '#2196f3',
+  },
+  planContainer: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 20,
+  },
+  planInfo: {
+    marginBottom: 15,
+  },
+  planTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  planStatus: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 10,
+  },
+  planStatusValue: {
+    fontWeight: 'bold',
+    color: '#2196f3',
+  },
+  planDescription: {
+    fontSize: 14,
+    color: '#666',
+    lineHeight: 20,
+  },
+  upgradeButton: {
+    backgroundColor: '#2196f3',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  upgradeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  devOptionsContainer: {
+    gap: 10,
+    marginBottom: 20,
+  },
+  devOption: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 15,
+  },
+  devOptionText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
   },
 });

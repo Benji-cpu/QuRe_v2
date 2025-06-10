@@ -118,7 +118,6 @@ export default function PositionSlider({
                 maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                 thumbTintColor="white"
               />
-              <Text style={styles.sliderValue}>{Math.round(verticalValue)}</Text>
             </View>
 
             <View style={styles.sliderRow}>
@@ -133,7 +132,6 @@ export default function PositionSlider({
                 maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                 thumbTintColor="white"
               />
-              <Text style={styles.sliderValue}>{Math.round(horizontalValue)}</Text>
             </View>
 
             <View style={styles.sliderRow}>
@@ -148,7 +146,6 @@ export default function PositionSlider({
                 maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                 thumbTintColor="white"
               />
-              <Text style={styles.sliderValue}>{Math.round(scaleValue * 100)}%</Text>
             </View>
           </View>
         ) : (
