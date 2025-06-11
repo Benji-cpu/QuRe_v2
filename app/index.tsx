@@ -1,4 +1,3 @@
-// app/index.tsx
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
@@ -31,6 +30,7 @@ function HomeScreen() {
   const sessionStartTime = useRef<number>(Date.now());
   
   const [currentGradientIndex, setCurrentGradientIndex] = useState(0);
+  const [previousGradientIndex, setPreviousGradientIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [primaryQR, setPrimaryQR] = useState<QRCodeData | null>(null);
   const [secondaryQR, setSecondaryQR] = useState<QRCodeData | null>(null);
@@ -58,7 +58,9 @@ function HomeScreen() {
       const hasCompletedOnboarding = await UserPreferencesService.hasCompletedOnboarding();
       
       const gradientIndex = GRADIENT_PRESETS.findIndex(g => g.id === preferences.selectedGradientId);
-      setCurrentGradientIndex(gradientIndex >= 0 ? gradientIndex : 0);
+      const validIndex = gradientIndex >= 0 ? gradientIndex : 0;
+      setCurrentGradientIndex(validIndex);
+      setPreviousGradientIndex(validIndex);
       setIsPremium(premium);
       setQrVerticalOffset(preferences.qrVerticalOffset || 80);
       setQrHorizontalOffset(preferences.qrHorizontalOffset || 0);
@@ -155,10 +157,10 @@ function HomeScreen() {
   };
 
   const changeGradient = (newIndex: number) => {
+    setPreviousGradientIndex(currentGradientIndex);
     setCurrentGradientIndex(newIndex);
-    gradientTransition.value = withTiming(1, { duration: 200 }, () => {
-      gradientTransition.value = 0;
-    });
+    gradientTransition.value = 0;
+    gradientTransition.value = withTiming(1, { duration: 300 });
   };
 
   const swipeGesture = Gesture.Pan()
@@ -363,9 +365,8 @@ function HomeScreen() {
     }
   };
 
+  const previousGradient = GRADIENT_PRESETS[previousGradientIndex];
   const currentGradient = GRADIENT_PRESETS[currentGradientIndex];
-  const nextGradientIndex = currentGradientIndex < GRADIENT_PRESETS.length - 1 ? currentGradientIndex + 1 : 0;
-  const nextGradient = GRADIENT_PRESETS[nextGradientIndex];
 
   if (showOnboarding) {
     return <Onboarding onComplete={handleOnboardingComplete} />;
@@ -382,8 +383,8 @@ function HomeScreen() {
             <View style={styles.container}>
               <View ref={wallpaperRef} collapsable={false} style={styles.wallpaperContainer}>
                 <GradientBackground
-                  currentGradient={currentGradient}
-                  nextGradient={nextGradient}
+                  currentGradient={previousGradient}
+                  nextGradient={currentGradient}
                   transition={gradientTransition}
                 >
                   <View style={styles.content}>

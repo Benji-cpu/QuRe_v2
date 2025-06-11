@@ -1,7 +1,6 @@
-// app/components/home/GradientBackground.tsx
 import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Animated, { interpolate, useAnimatedStyle } from 'react-native-reanimated';
 import { GradientPreset } from '../../../constants/Gradients';
 
@@ -18,20 +17,30 @@ export default function GradientBackground({
   transition, 
   children 
 }: GradientBackgroundProps) {
-  const animatedStyle = useAnimatedStyle(() => {
+  const currentGradientStyle = useAnimatedStyle(() => {
     return {
-      opacity: interpolate(transition.value, [0, 1], [0, 1]),
+      opacity: interpolate(transition.value, [0, 1], [1, 0]),
+    };
+  });
+
+  const nextGradientStyle = useAnimatedStyle(() => {
+    return {
+      opacity: transition.value,
     };
   });
 
   return (
-    <LinearGradient
-      colors={currentGradient.colors as unknown as readonly [string, string, ...string[]]}
-      start={currentGradient.start}
-      end={currentGradient.end}
-      style={styles.gradient}
-    >
-      <Animated.View style={[styles.gradientOverlay, animatedStyle]}>
+    <View style={styles.container}>
+      <Animated.View style={[styles.gradientContainer, currentGradientStyle]}>
+        <LinearGradient
+          colors={currentGradient.colors as unknown as readonly [string, string, ...string[]]}
+          start={currentGradient.start}
+          end={currentGradient.end}
+          style={styles.gradient}
+        />
+      </Animated.View>
+      
+      <Animated.View style={[styles.gradientContainer, nextGradientStyle]}>
         <LinearGradient
           colors={nextGradient.colors as unknown as readonly [string, string, ...string[]]}
           start={nextGradient.start}
@@ -39,16 +48,25 @@ export default function GradientBackground({
           style={styles.gradient}
         />
       </Animated.View>
-      {children}
-    </LinearGradient>
+      
+      <View style={styles.contentContainer}>
+        {children}
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  gradientContainer: {
+    ...StyleSheet.absoluteFillObject,
+  },
   gradient: {
     flex: 1,
   },
-  gradientOverlay: {
+  contentContainer: {
     ...StyleSheet.absoluteFillObject,
   },
 });
