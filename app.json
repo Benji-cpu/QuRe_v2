@@ -2,7 +2,7 @@
   "expo": {
     "name": "QuRe",
     "slug": "QuRe",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "qure",
@@ -10,16 +10,17 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.QuRe"
+      "bundleIdentifier": "com.anonymous.QuRe",
+      "buildNumber": "2"
     },
     "android": {
-      "versionCode": 2,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.QuRe"
+      "package": "com.anonymous.QuRe",
+      "versionCode": 2
     },
     "web": {
       "bundler": "metro",
@@ -53,7 +54,7 @@
         "projectId": "382a05a5-832d-4999-980f-2d14a15d4111"
       }
     },
-    "runtimeVersion": "1.0.1",
+    "runtimeVersion": "1.0.0",
     "updates": {
       "url": "https://u.expo.dev/382a05a5-832d-4999-980f-2d14a15d4111"
     }
