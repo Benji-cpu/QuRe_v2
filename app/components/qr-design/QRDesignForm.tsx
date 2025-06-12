@@ -1,5 +1,5 @@
 // app/components/qr-design/QRDesignForm.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QRCodeDesign } from '../../../types/QRCode';
@@ -16,15 +16,22 @@ interface QRDesignFormProps {
 
 export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDesignFormProps) {
   const insets = useSafeAreaInsets();
+  const [hasShownLogoWarning, setHasShownLogoWarning] = useState(false);
   
   const updateDesign = (updates: Partial<QRCodeDesign>) => {
-    if ('logoMargin' in updates || 'logoSize' in updates || 'logoBorderRadius' in updates) {
+    if ('logo' in updates && updates.logo && !hasShownLogoWarning) {
       Alert.alert(
         'Logo Design Warning',
-        'Adding a logo or adjusting logo settings can make QR codes unreadable. Please test your QR code after making changes to ensure it still works correctly.',
+        'Adding a logo can make QR codes harder to scan. Please test your QR code after adding a logo to ensure it still works correctly.',
         [{ text: 'I Understand', style: 'default' }]
       );
+      setHasShownLogoWarning(true);
     }
+    
+    if ('linearGradient' in updates) {
+      updates.gradientDirection = [0, 0, 1, 1];
+    }
+    
     onDesignChange({ ...design, ...updates });
   };
 
@@ -49,7 +56,7 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
       <ScrollView 
         style={styles.container} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 120 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         keyboardShouldPersistTaps="handled"
       >
         <ColorPicker
@@ -69,17 +76,16 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
           <Switch
             value={design.enableLinearGradient}
             onValueChange={(enableLinearGradient) => updateDesign({ enableLinearGradient })}
-            trackColor={{ false: '#ddd', true: '#2196f3' }}
+            trackColor={{ false: '#767577', true: '#81b0ff' }}
+            thumbColor={design.enableLinearGradient ? '#2196f3' : '#f4f3f4'}
+            ios_backgroundColor="#3e3e3e"
           />
         </View>
 
         {design.enableLinearGradient && (
           <GradientPicker
             selectedGradient={design.linearGradient || ['#FF0000', '#00FF00']}
-            onGradientSelect={(linearGradient) => updateDesign({ 
-              linearGradient,
-              gradientDirection: [170, 0, 0, 0]
-            })}
+            onGradientSelect={(linearGradient) => updateDesign({ linearGradient })}
           />
         )}
 
@@ -97,6 +103,15 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
           onLogoBorderRadiusChange={(logoBorderRadius) => updateDesign({ logoBorderRadius })}
           hasLogo={!!design.logo}
         />
+        
+        {design.logo && (
+          <View style={styles.warningContainer}>
+            <Text style={styles.warningIcon}>⚠️</Text>
+            <Text style={styles.warningText}>
+              Logos can affect QR code scanning. Test your code after export.
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -142,5 +157,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
+  },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FFF3CD',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 10,
+  },
+  warningIcon: {
+    fontSize: 16,
+    marginRight: 8,
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 13,
+    color: '#856404',
+    lineHeight: 18,
   },
 });

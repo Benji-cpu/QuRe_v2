@@ -1,7 +1,8 @@
+// app/components/home/PositionSlider.tsx
 import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import React, { useEffect, useState } from 'react';
-import { Animated, Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -16,6 +17,7 @@ interface PositionSliderProps {
   isExpanded: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
+  singleQRMode?: boolean;
 }
 
 export default function PositionSlider({ 
@@ -28,7 +30,8 @@ export default function PositionSlider({
   visible,
   isExpanded,
   onExpand,
-  onCollapse
+  onCollapse,
+  singleQRMode = false
 }: PositionSliderProps) {
   const [animatedOpacity] = useState(new Animated.Value(0));
   const [translateY] = useState(new Animated.Value(0));
@@ -91,6 +94,7 @@ export default function PositionSlider({
           zIndex: isExpanded ? 100 : 1,
         }
       ]}
+      pointerEvents="box-none"
     >
       <Animated.View style={{ opacity: containerOpacity }}>
         {isExpanded ? (
@@ -143,7 +147,11 @@ export default function PositionSlider({
             </View>
           </View>
         ) : (
-          <TouchableOpacity style={styles.collapsedCard} onPress={handleExpand}>
+          <TouchableOpacity 
+            style={styles.collapsedCard} 
+            onPress={handleExpand}
+            activeOpacity={0.8}
+          >
             <View style={styles.iconContainer}>
               <Feather name="move" size={20} color="white" />
             </View>
@@ -171,6 +179,7 @@ const styles = StyleSheet.create({
     padding: 14,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
+    minHeight: 64,
   },
   iconContainer: {
     width: 36,
@@ -215,10 +224,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     marginBottom: 12,
+    height: Platform.OS === 'android' ? 40 : 32,
   },
   slider: {
     flex: 1,
-    height: 32,
+    height: Platform.OS === 'android' ? 40 : 32,
   },
   sliderValue: {
     fontSize: 13,

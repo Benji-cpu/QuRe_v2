@@ -155,6 +155,7 @@ export default function SettingsModal() {
               value={isPremium && showTitle}
               onValueChange={handleShowTitleToggle}
               trackColor={{ false: '#ddd', true: '#2196f3' }}
+              thumbColor={Platform.OS === 'android' ? '#ffffff' : undefined}
               disabled={!isPremium}
             />
           </Pressable>
@@ -227,7 +228,7 @@ export default function SettingsModal() {
           )}
         </View>
 
-        <Text style={styles.sectionTitle}>Developer Options</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Developer Options</Text>
         
         <View style={styles.devOptionsContainer}>
           <Pressable 

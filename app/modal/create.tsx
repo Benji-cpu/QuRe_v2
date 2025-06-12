@@ -1,6 +1,6 @@
 // app/modal/create.tsx
 import { router, useLocalSearchParams } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
@@ -30,6 +30,12 @@ export default function CreateModal() {
   const [saving, setSaving] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  
+  const formDataRef = useRef<QRCodeTypeData>(formData);
+  
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData]);
 
   useEffect(() => {
     loadPremiumStatus();
@@ -171,220 +177,221 @@ export default function CreateModal() {
         {activeTab === 'content' ? (
           <>
             <TouchableOpacity 
-              style={styles.historyButton}
-              onPress={handleSelectFromHistory}
-            >
-              <Text style={styles.historyButtonIcon}>📋</Text>
-              <Text style={styles.historyButtonText}>Select from History</Text>
-            </TouchableOpacity>
- 
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>OR CREATE NEW</Text>
-              <View style={styles.dividerLine} />
-            </View>
-            
-            <QRTypeSelector
-              selectedType={selectedType}
-              onTypeSelect={setSelectedType}
-            />
-            
-            <QRForm
-              type={selectedType}
-              onDataChange={setFormData}
-            />
-          </>
-        ) : (
-          <QRDesignForm
-            design={design}
-            onDesignChange={setDesign}
-            isPremium={isPremium}
-          />
-        )}
-        
-        {qrContent ? (
-          <View style={styles.previewContainer}>
-            <Text style={styles.previewTitle}>Preview</Text>
-            <View style={styles.previewWrapper}>
-              <QRCodePreview 
-                value={qrContent} 
-                size={150} 
-                design={isPremium ? design : undefined}
-              />
-            </View>
-          </View>
-        ) : null}
-      </ScrollView>
-      
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
-        <TouchableOpacity 
-          style={styles.cancelButton} 
-          onPress={() => router.back()}
-        >
-          <Text style={styles.cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[
-            styles.saveButton,
-            (!canSave() || saving) && styles.disabledButton
-          ]} 
-          onPress={handleSave}
-          disabled={!canSave() || saving}
-        >
-          <Text style={styles.saveButtonText}>
-            {saving ? 'Saving...' : 'Save'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
-  );
+             style={styles.historyButton}
+             onPress={handleSelectFromHistory}
+           >
+             <Text style={styles.historyButtonIcon}>📋</Text>
+             <Text style={styles.historyButtonText}>Select from History</Text>
+           </TouchableOpacity>
+
+           <View style={styles.divider}>
+             <View style={styles.dividerLine} />
+             <Text style={styles.dividerText}>OR CREATE NEW</Text>
+             <View style={styles.dividerLine} />
+           </View>
+           
+           <QRTypeSelector
+             selectedType={selectedType}
+             onTypeSelect={setSelectedType}
+           />
+           
+           <QRForm
+             type={selectedType}
+             initialData={formDataRef.current}
+             onDataChange={setFormData}
+           />
+         </>
+       ) : (
+         <QRDesignForm
+           design={design}
+           onDesignChange={setDesign}
+           isPremium={isPremium}
+         />
+       )}
+       
+       {qrContent ? (
+         <View style={styles.previewContainer}>
+           <Text style={styles.previewTitle}>Preview</Text>
+           <View style={styles.previewWrapper}>
+             <QRCodePreview 
+               value={qrContent} 
+               size={150} 
+               design={isPremium ? design : undefined}
+             />
+           </View>
+         </View>
+       ) : null}
+     </ScrollView>
+     
+     <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+       <TouchableOpacity 
+         style={styles.cancelButton} 
+         onPress={() => router.back()}
+       >
+         <Text style={styles.cancelButtonText}>Cancel</Text>
+       </TouchableOpacity>
+       
+       <TouchableOpacity 
+         style={[
+           styles.saveButton,
+           (!canSave() || saving) && styles.disabledButton
+         ]} 
+         onPress={handleSave}
+         disabled={!canSave() || saving}
+       >
+         <Text style={styles.saveButtonText}>
+           {saving ? 'Saving...' : 'Save'}
+         </Text>
+       </TouchableOpacity>
+     </View>
+   </KeyboardAvoidingView>
+ );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  slotIndicator: {
-    fontSize: 14,
-    color: '#2196f3',
-    marginTop: 4,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 15,
-    alignItems: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  activeTab: {
-    borderBottomColor: '#2196f3',
-  },
-  tabContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#666',
-  },
-  activeTabText: {
-    color: '#2196f3',
-    fontWeight: '600',
-  },
-  lockIcon: {
-    fontSize: 14,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  historyButton: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#2196f3',
-    marginBottom: 20,
-  },
-  historyButtonIcon: {
-    fontSize: 24,
-    marginRight: 10,
-  },
-  historyButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2196f3',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
-  },
-  dividerText: {
-    paddingHorizontal: 15,
-    fontSize: 12,
-    color: '#999',
-    fontWeight: '600',
-  },
-  previewContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  previewTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
-  },
-  previewWrapper: {
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 15,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
-  },
-  saveButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    backgroundColor: '#2196f3',
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
-  },
+ container: {
+   flex: 1,
+   backgroundColor: '#f5f5f5',
+ },
+ header: {
+   backgroundColor: '#fff',
+   paddingHorizontal: 20,
+   paddingVertical: 15,
+   borderBottomWidth: 1,
+   borderBottomColor: '#eee',
+ },
+ headerTitle: {
+   fontSize: 20,
+   fontWeight: 'bold',
+   color: '#333',
+ },
+ slotIndicator: {
+   fontSize: 14,
+   color: '#2196f3',
+   marginTop: 4,
+ },
+ tabsContainer: {
+   flexDirection: 'row',
+   backgroundColor: '#fff',
+   borderBottomWidth: 1,
+   borderBottomColor: '#eee',
+ },
+ tab: {
+   flex: 1,
+   paddingVertical: 15,
+   alignItems: 'center',
+   borderBottomWidth: 2,
+   borderBottomColor: 'transparent',
+ },
+ activeTab: {
+   borderBottomColor: '#2196f3',
+ },
+ tabContent: {
+   flexDirection: 'row',
+   alignItems: 'center',
+   gap: 5,
+ },
+ tabText: {
+   fontSize: 16,
+   fontWeight: '500',
+   color: '#666',
+ },
+ activeTabText: {
+   color: '#2196f3',
+   fontWeight: '600',
+ },
+ lockIcon: {
+   fontSize: 14,
+ },
+ content: {
+   flex: 1,
+   padding: 20,
+ },
+ historyButton: {
+   backgroundColor: '#fff',
+   borderRadius: 12,
+   padding: 20,
+   flexDirection: 'row',
+   alignItems: 'center',
+   justifyContent: 'center',
+   borderWidth: 2,
+   borderColor: '#2196f3',
+   marginBottom: 20,
+ },
+ historyButtonIcon: {
+   fontSize: 24,
+   marginRight: 10,
+ },
+ historyButtonText: {
+   fontSize: 16,
+   fontWeight: '600',
+   color: '#2196f3',
+ },
+ divider: {
+   flexDirection: 'row',
+   alignItems: 'center',
+   marginVertical: 20,
+ },
+ dividerLine: {
+   flex: 1,
+   height: 1,
+   backgroundColor: '#ddd',
+ },
+ dividerText: {
+   paddingHorizontal: 15,
+   fontSize: 12,
+   color: '#999',
+   fontWeight: '600',
+ },
+ previewContainer: {
+   marginTop: 20,
+   marginBottom: 20,
+ },
+ previewTitle: {
+   fontSize: 18,
+   fontWeight: 'bold',
+   marginBottom: 15,
+   color: '#333',
+ },
+ previewWrapper: {
+   alignItems: 'center',
+   backgroundColor: '#fff',
+   borderRadius: 10,
+   padding: 20,
+ },
+ footer: {
+   flexDirection: 'row',
+   padding: 20,
+   gap: 15,
+   backgroundColor: '#fff',
+   borderTopWidth: 1,
+   borderTopColor: '#eee',
+ },
+ cancelButton: {
+   flex: 1,
+   paddingVertical: 15,
+   borderRadius: 8,
+   backgroundColor: '#f5f5f5',
+   alignItems: 'center',
+ },
+ cancelButtonText: {
+   fontSize: 16,
+   color: '#666',
+   fontWeight: '500',
+ },
+ saveButton: {
+   flex: 1,
+   paddingVertical: 15,
+   borderRadius: 8,
+   backgroundColor: '#2196f3',
+   alignItems: 'center',
+ },
+ saveButtonText: {
+   fontSize: 16,
+   color: '#fff',
+   fontWeight: 'bold',
+ },
+ disabledButton: {
+   backgroundColor: '#ccc',
+ },
 });

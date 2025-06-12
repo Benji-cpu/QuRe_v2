@@ -1,6 +1,9 @@
+// app/components/qr-design/LogoPicker.tsx (updated)
 import * as ImagePicker from 'expo-image-picker';
-import React from 'react';
+import React, { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ICON_BASE64_MAP } from '../../../constants/IconBase64';
+import LogoIconPicker from './LogoIconPicker';
 
 interface LogoPickerProps {
   logo: string | null;
@@ -8,6 +11,8 @@ interface LogoPickerProps {
 }
 
 export default function LogoPicker({ logo, onLogoSelect }: LogoPickerProps) {
+  const [showIconPicker, setShowIconPicker] = useState(false);
+  
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -33,6 +38,13 @@ export default function LogoPicker({ logo, onLogoSelect }: LogoPickerProps) {
     );
   };
 
+  const handleIconSelect = (icon: string) => {
+    const base64Icon = ICON_BASE64_MAP[icon];
+    if (base64Icon) {
+      onLogoSelect(base64Icon);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.label}>Logo</Text>
@@ -45,12 +57,25 @@ export default function LogoPicker({ logo, onLogoSelect }: LogoPickerProps) {
             </TouchableOpacity>
           </View>
         ) : (
-          <TouchableOpacity style={styles.addLogoButton} onPress={pickImage}>
-            <Text style={styles.addLogoIcon}>+</Text>
-            <Text style={styles.addLogoText}>Add Logo</Text>
-          </TouchableOpacity>
+          <View style={styles.addLogoButtons}>
+            <TouchableOpacity style={styles.addLogoButton} onPress={pickImage}>
+              <Text style={styles.addLogoIcon}>📷</Text>
+              <Text style={styles.addLogoText}>Upload</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.addLogoButton} onPress={() => setShowIconPicker(true)}>
+              <Text style={styles.addLogoIcon}>🎨</Text>
+              <Text style={styles.addLogoText}>Icons</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
+      
+      <LogoIconPicker
+        visible={showIconPicker}
+        onClose={() => setShowIconPicker(false)}
+        onSelectIcon={handleIconSelect}
+      />
     </View>
   );
 }
@@ -97,6 +122,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     lineHeight: 20,
   },
+  addLogoButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   addLogoButton: {
     width: 80,
     height: 80,
@@ -110,11 +139,10 @@ const styles = StyleSheet.create({
   },
   addLogoIcon: {
     fontSize: 24,
-    color: '#999',
+    marginBottom: 4,
   },
   addLogoText: {
     fontSize: 12,
     color: '#999',
-    marginTop: 4,
   },
 });

@@ -1,4 +1,4 @@
-// components/QRCodePreview.tsx
+// app/components/QRCodePreview.tsx
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
@@ -26,20 +26,35 @@ export default function QRCodePreview({
   };
 
   const finalDesign = { ...defaultDesign, ...design };
+  
+  const getLogoProps = () => {
+    if (!finalDesign.logo) return undefined;
+    
+    const logoSizePixels = size * (finalDesign.logoSize || 20) / 100;
+    
+    return {
+      uri: finalDesign.logo,
+      width: logoSizePixels,
+      height: logoSizePixels,
+    };
+  };
+  
+  const gradientProps = finalDesign.enableLinearGradient && finalDesign.linearGradient ? {
+    enableLinearGradient: true,
+    linearGradient: finalDesign.linearGradient,
+    gradientDirection: finalDesign.gradientDirection || [0, 0, 1, 1],
+  } : {};
 
   return (
     <View style={[styles.container, { width: size + 10, height: size + 10 }]}>
       <QRCode 
         value={value}
         size={size}
-        color={finalDesign.color}
+        color={finalDesign.enableLinearGradient ? undefined : finalDesign.color}
         backgroundColor={finalDesign.backgroundColor}
         quietZone={0}
-        enableLinearGradient={finalDesign.enableLinearGradient}
-        linearGradient={finalDesign.linearGradient}
-        gradientDirection={finalDesign.gradientDirection}
-        logo={finalDesign.logo ? { uri: finalDesign.logo } : undefined}
-        logoSize={finalDesign.logo ? (size * (finalDesign.logoSize || 20) / 100) : undefined}
+        {...gradientProps}
+        logo={getLogoProps()}
         logoBackgroundColor={finalDesign.logoBackgroundColor}
         logoMargin={finalDesign.logoMargin}
         logoBorderRadius={finalDesign.logoBorderRadius}

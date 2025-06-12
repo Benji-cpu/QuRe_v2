@@ -1,6 +1,7 @@
+// app/components/qr-design/DesignSliders.tsx
 import Slider from '@react-native-community/slider';
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 interface DesignSlidersProps {
   logoSize: number;
@@ -35,6 +36,7 @@ export default function DesignSliders({
           onValueChange={onLogoSizeChange}
           minimumTrackTintColor="#2196f3"
           maximumTrackTintColor="#ddd"
+          thumbColor={Platform.OS === 'android' ? '#2196f3' : undefined}
         />
       </View>
 
@@ -48,6 +50,7 @@ export default function DesignSliders({
           onValueChange={onLogoMarginChange}
           minimumTrackTintColor="#2196f3"
           maximumTrackTintColor="#ddd"
+          thumbColor={Platform.OS === 'android' ? '#2196f3' : undefined}
         />
       </View>
 
@@ -61,6 +64,7 @@ export default function DesignSliders({
           onValueChange={onLogoBorderRadiusChange}
           minimumTrackTintColor="#2196f3"
           maximumTrackTintColor="#ddd"
+          thumbColor={Platform.OS === 'android' ? '#2196f3' : undefined}
         />
       </View>
     </View>
@@ -69,10 +73,10 @@ export default function DesignSliders({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 20,
+    marginBottom: 10,
   },
   sliderContainer: {
-    marginBottom: 15,
+    marginBottom: 12,
   },
   sliderLabel: {
     fontSize: 14,
@@ -81,6 +85,6 @@ const styles = StyleSheet.create({
   },
   slider: {
     width: '100%',
-    height: 40,
+    height: Platform.OS === 'android' ? 40 : 32,
   },
 });
