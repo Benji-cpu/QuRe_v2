@@ -47,9 +47,9 @@ const PRODUCT_IDS = {
     tier3: 'com.anonymous.QuRe.premium_299',
   },
   android: {
-    tier1: 'qure_premium_499',
-    tier2: 'qure_premium_399',
-    tier3: 'qure_premium_299',
+    tier1: 'com.anonymous.qure.premium_499',
+    tier2: 'com.anonymous.qure.premium_399',
+    tier3: 'com.anonymous.qure.premium_299',
   }
 };
 

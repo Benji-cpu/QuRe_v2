@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { GRADIENT_PRESETS } from '../../constants/Gradients';
-import { QRStorage } from '../../services/QRStorage';
-import { UserPreferencesService } from '../../services/UserPreferences';
-import { QRCodeData } from '../../types/QRCode';
+import { GRADIENT_PRESETS } from '../constants/Gradients';
+import { QRStorage } from '../services/QRStorage';
+import { UserPreferencesService } from '../services/UserPreferences';
+import { QRCodeData } from '../types/QRCode';
 
 export function useHomeScreenState() {
   const [currentGradientIndex, setCurrentGradientIndex] = useState(0);

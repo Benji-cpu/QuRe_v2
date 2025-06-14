@@ -1,17 +1,16 @@
-// services/IAPService.ts
 import { Platform } from 'react-native';
 import {
-    endConnection,
-    finishTransaction,
-    flushFailedPurchasesCachedAsPendingAndroid,
-    getProducts,
-    initConnection,
-    Product,
-    Purchase,
-    PurchaseError,
-    purchaseErrorListener,
-    purchaseUpdatedListener,
-    requestPurchase,
+  endConnection,
+  finishTransaction,
+  flushFailedPurchasesCachedAsPendingAndroid,
+  getProducts,
+  initConnection,
+  Product,
+  Purchase,
+  PurchaseError,
+  purchaseErrorListener,
+  purchaseUpdatedListener,
+  requestPurchase,
 } from 'react-native-iap';
 
 export class IAPService {
@@ -23,22 +22,34 @@ export class IAPService {
     if (this.isInitialized) return;
 
     try {
-      await initConnection();
+      const result = await initConnection();
       
-      // Flush any failed purchases on Android
+      if (!result) {
+        console.warn('IAP connection failed - this is normal in development/emulator');
+        return;
+      }
+      
       if (Platform.OS === 'android') {
-        await flushFailedPurchasesCachedAsPendingAndroid();
+        await flushFailedPurchasesCachedAsPendingAndroid().catch(() => {});
       }
 
       this.isInitialized = true;
       console.log('IAP initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize IAP:', error);
-      throw error;
+    } catch (error: any) {
+      if (error.message?.includes('Billing is unavailable')) {
+        console.warn('IAP not available - this is normal in development/emulator');
+      } else {
+        console.error('Failed to initialize IAP:', error);
+      }
     }
   }
 
   static async getAvailableProducts(productIds: string[]): Promise<Product[]> {
+    if (!this.isInitialized) {
+      console.warn('IAP not initialized, returning empty products');
+      return [];
+    }
+    
     try {
       const products = await getProducts({ skus: productIds });
       return products;
@@ -53,15 +64,18 @@ export class IAPService {
     onSuccess: (purchase: Purchase) => void,
     onError: (error: PurchaseError) => void
   ): Promise<void> {
+    if (!this.isInitialized) {
+      onError({ code: 'E_NOT_INITIALIZED', message: 'IAP not initialized' } as PurchaseError);
+      return;
+    }
+    
     try {
-      // Set up listeners
       this.purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase: Purchase) => {
         console.log('Purchase successful:', purchase);
         
-        // Acknowledge the purchase
         await finishTransaction({ 
           purchase, 
-          isConsumable: false // Non-consumable for premium
+          isConsumable: false
         });
         
         onSuccess(purchase);
@@ -72,7 +86,6 @@ export class IAPService {
         onError(error);
       });
 
-      // Request the purchase
       if (Platform.OS === 'ios') {
         await requestPurchase({ sku: productId });
       } else {
@@ -101,7 +114,9 @@ export class IAPService {
 
   static async disconnect(): Promise<void> {
     this.cleanup();
-    await endConnection();
-    this.isInitialized = false;
+    if (this.isInitialized) {
+      await endConnection();
+      this.isInitialized = false;
+    }
   }
 }

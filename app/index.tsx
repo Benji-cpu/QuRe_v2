@@ -164,19 +164,20 @@ function HomeScreen() {
   };
 
   const swipeGesture = Gesture.Pan()
-    .onEnd((event) => {
-      if (Math.abs(event.velocityX) > Math.abs(event.velocityY)) {
-        if (event.velocityX > 500) {
-          runOnJS(changeGradient)(
-            currentGradientIndex > 0 ? currentGradientIndex - 1 : GRADIENT_PRESETS.length - 1
-          );
-        } else if (event.velocityX < -500) {
-          runOnJS(changeGradient)(
-            currentGradientIndex < GRADIENT_PRESETS.length - 1 ? currentGradientIndex + 1 : 0
-          );
-        }
+  .enabled(!sliderExpanded)
+  .onEnd((event) => {
+    if (Math.abs(event.velocityX) > Math.abs(event.velocityY)) {
+      if (event.velocityX > 500) {
+        runOnJS(changeGradient)(
+          currentGradientIndex > 0 ? currentGradientIndex - 1 : GRADIENT_PRESETS.length - 1
+        );
+      } else if (event.velocityX < -500) {
+        runOnJS(changeGradient)(
+          currentGradientIndex < GRADIENT_PRESETS.length - 1 ? currentGradientIndex + 1 : 0
+        );
       }
-    });
+    }
+  });
 
   useEffect(() => {
     const updateGradientPreference = async () => {
