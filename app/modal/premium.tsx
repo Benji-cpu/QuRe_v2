@@ -1,4 +1,3 @@
-// app/modal/premium.tsx
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -12,6 +11,7 @@ export default function PremiumModal() {
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [insights, setInsights] = useState<any>(null);
+  const [iapAvailable, setIapAvailable] = useState(true);
 
   useEffect(() => {
     initializeScreen();
@@ -24,6 +24,7 @@ export default function PremiumModal() {
   const initializeScreen = async () => {
     try {
       await IAPService.initialize();
+      setIapAvailable(IAPService.isInitialized);
       
       const currentOffer = await EngagementPricingService.determineOffer();
       const engagementInsights = await EngagementPricingService.getEngagementInsights();
@@ -31,7 +32,7 @@ export default function PremiumModal() {
       if (!currentOffer) {
         const defaultOffer: PricingOffer = {
           price: 4.99,
-          productId: 'com.anonymous.QuRe.premium_499',
+          productId: 'qure_premium_499',
           displayPrice: '$4.99',
           trigger: 'default',
           message: 'Unlock all premium features'
@@ -45,6 +46,16 @@ export default function PremiumModal() {
       setInsights(engagementInsights);
     } catch (error) {
       console.error('Failed to initialize premium screen:', error);
+      setIapAvailable(false);
+      
+      const defaultOffer: PricingOffer = {
+        price: 4.99,
+        productId: 'qure_premium_499',
+        displayPrice: '$4.99',
+        trigger: 'default',
+        message: 'Unlock all premium features'
+      };
+      setOffer(defaultOffer);
     } finally {
       setIsLoading(false);
     }
@@ -52,6 +63,15 @@ export default function PremiumModal() {
 
   const handlePurchase = async () => {
     if (!offer) return;
+    
+    if (!iapAvailable) {
+      Alert.alert(
+        'Purchase Unavailable',
+        'In-app purchases are not available on this device. This typically happens in emulators or development builds. Please try on a real device with Google Play Store.',
+        [{ text: 'OK' }]
+      );
+      return;
+    }
     
     setIsPurchasing(true);
     
@@ -213,6 +233,15 @@ export default function PremiumModal() {
           <Text style={styles.guaranteeText}>✓ No recurring charges</Text>
           <Text style={styles.guaranteeText}>✓ Instant activation</Text>
         </View>
+
+        {!iapAvailable && (
+          <View style={styles.warningContainer}>
+            <Text style={styles.warningIcon}>ℹ️</Text>
+            <Text style={styles.warningText}>
+              In-app purchases not available in emulator. Test on a real device.
+            </Text>
+          </View>
+        )}
       </ScrollView>
       
       <View style={styles.footer}>
@@ -380,6 +409,26 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     fontWeight: '500',
   },
+  warningContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#E3F2FD',
+    margin: 20,
+    padding: 15,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+  },
+  warningIcon: {
+    fontSize: 20,
+    marginRight: 10,
+  },
+  warningText: {
+    flex: 1,
+    fontSize: 14,
+    color: '#1976D2',
+    lineHeight: 20,
+  },
   footer: {
     padding: 20,
     backgroundColor: 'white',
@@ -397,14 +446,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
-  },
-  cancelButton: {
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    color: '#666',
-    fontSize: 16,
   },
   disabledButton: {
     opacity: 0.6,

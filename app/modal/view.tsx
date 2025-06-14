@@ -86,7 +86,11 @@ export default function ViewModal() {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 120 }}
+      >
         <View style={styles.qrContainer}>
           <QRCodePreview 
             value={qrCode.content} 
@@ -114,7 +118,7 @@ export default function ViewModal() {
       <View style={[
         styles.footer, 
         { 
-          paddingBottom: Platform.OS === 'android' ? 20 : Math.max(insets.bottom, 20)
+          paddingBottom: Platform.OS === 'android' ? 50 : Math.max(insets.bottom, 50)
         }
       ]}>
         <TouchableOpacity 
@@ -242,6 +246,10 @@ const styles = StyleSheet.create({
    backgroundColor: '#fff',
    borderTopWidth: 1,
    borderTopColor: '#eee',
+   position: 'absolute',
+   bottom: 0,
+   left: 0,
+   right: 0,
  },
  closeButton: {
    flex: 1,
