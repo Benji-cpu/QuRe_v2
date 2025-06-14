@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { QR_TYPES } from '../../constants/QRTypes';
 import { QRCodeType, QRCodeTypeData } from '../../types/QRCode';
@@ -11,6 +11,7 @@ interface QRFormProps {
 
 export default function QRForm({ type, initialData, onDataChange }: QRFormProps) {
   const [formData, setFormData] = useState<Record<string, string>>({});
+  const isInitialMount = useRef(true);
 
   const typeConfig = QR_TYPES.find(t => t.type === type);
 
@@ -26,13 +27,17 @@ export default function QRForm({ type, initialData, onDataChange }: QRFormProps)
     }
   }, [initialData, type]);
 
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    onDataChange(formData as unknown as QRCodeTypeData);
+  }, [formData, onDataChange]);
+
   const updateField = useCallback((key: string, value: string) => {
-    setFormData(prev => {
-      const updated = { ...prev, [key]: value };
-      onDataChange(updated as unknown as QRCodeTypeData);
-      return updated;
-    });
-  }, [onDataChange]);
+    setFormData(prev => ({ ...prev, [key]: value }));
+  }, []);
 
   if (!typeConfig) {
     return null;

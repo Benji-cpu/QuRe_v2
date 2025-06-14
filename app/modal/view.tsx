@@ -1,7 +1,7 @@
-// app/modal/view.tsx
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QR_TYPES } from '../../constants/QRTypes';
 import { QRStorage } from '../../services/QRStorage';
 import { QRCodeData } from '../../types/QRCode';
@@ -11,6 +11,7 @@ export default function ViewModal() {
   const { id, slot } = useLocalSearchParams<{ id: string; slot?: string }>();
   const [qrCode, setQrCode] = useState<QRCodeData | null>(null);
   const [loading, setLoading] = useState(true);
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     loadQRCode();
@@ -110,7 +111,12 @@ export default function ViewModal() {
         </View>
       </ScrollView>
       
-      <View style={styles.footer}>
+      <View style={[
+        styles.footer, 
+        { 
+          paddingBottom: Platform.OS === 'android' ? 20 : Math.max(insets.bottom, 20)
+        }
+      ]}>
         <TouchableOpacity 
           style={styles.closeButton} 
           onPress={handleClose}
@@ -224,7 +230,7 @@ const styles = StyleSheet.create({
   dataContent: {
     fontSize: 14,
     color: '#666',
-    fontFamily: 'monospace',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     backgroundColor: '#f5f5f5',
     padding: 15,
     borderRadius: 8,

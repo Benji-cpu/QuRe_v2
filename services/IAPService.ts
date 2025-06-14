@@ -1,6 +1,7 @@
 import { Platform } from 'react-native';
 import {
   endConnection,
+  ErrorCode,
   finishTransaction,
   flushFailedPurchasesCachedAsPendingAndroid,
   getProducts,
@@ -65,7 +66,13 @@ export class IAPService {
     onError: (error: PurchaseError) => void
   ): Promise<void> {
     if (!this.isInitialized) {
-      onError({ code: 'E_NOT_INITIALIZED', message: 'IAP not initialized' } as PurchaseError);
+      const error: PurchaseError = {
+        code: 'E_UNKNOWN' as ErrorCode,
+        message: 'IAP not initialized',
+        name: 'IAPError',
+        productId: productId
+      };
+      onError(error);
       return;
     }
     

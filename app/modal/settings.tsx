@@ -103,7 +103,7 @@ export default function SettingsModal() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 120 }
+          { paddingBottom: insets.bottom + 30 }
         ]}
         keyboardShouldPersistTaps="handled"
       >
