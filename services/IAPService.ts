@@ -1,3 +1,4 @@
+// services/IAPService.ts
 import { Platform } from 'react-native';
 import {
   endConnection,
@@ -13,6 +14,7 @@ import {
   purchaseUpdatedListener,
   requestPurchase,
 } from 'react-native-iap';
+import { ALL_PRODUCT_IDS } from '../config/IAPConfig';
 
 export class IAPService {
   static purchaseUpdateSubscription: any = null;
@@ -45,7 +47,7 @@ export class IAPService {
     }
   }
 
-  static async getAvailableProducts(productIds: string[]): Promise<Product[]> {
+  static async getAvailableProducts(productIds: string[] = ALL_PRODUCT_IDS): Promise<Product[]> {
     if (!this.isInitialized) {
       console.warn('IAP not initialized, returning empty products');
       return [];
