@@ -43,6 +43,13 @@
         {
           "paymentProvider": "Play Store"
         }
+      ],
+      [
+        "expo-version",
+        {
+          "versionCode": "appVersionCode",
+          "versionName": "appVersion"
+        }
       ]
     ],
     "experiments": {
