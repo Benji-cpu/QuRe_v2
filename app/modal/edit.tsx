@@ -1,7 +1,8 @@
 // app/modal/edit.tsx
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { QRGenerator } from '../../services/QRGenerator';
 import { QRStorage } from '../../services/QRStorage';
@@ -12,6 +13,7 @@ import QRForm from '../components/QRForm';
 import QRDesignForm from '../components/qr-design/QRDesignForm';
 
 export default function EditModal() {
+  const insets = useSafeAreaInsets();
   const { id, slot } = useLocalSearchParams<{ id: string; slot?: string }>();
   const [qrCode, setQrCode] = useState<QRCodeData | null>(null);
   const [formData, setFormData] = useState<QRCodeTypeData>({} as QRCodeTypeData);
@@ -161,7 +163,11 @@ export default function EditModal() {
   const qrContent = canSave() ? QRGenerator.generateContent(qrCode.type, formData) : '';
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Edit QR Code</Text>
         {slot && (
@@ -198,7 +204,12 @@ export default function EditModal() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 30 }}
+        keyboardShouldPersistTaps="handled"
+      >
         {activeTab === 'content' ? (
           <>
             <TouchableOpacity style={styles.typeDisplay} onPress={handleChangeType}>
@@ -243,7 +254,7 @@ export default function EditModal() {
         ) : null}
       </ScrollView>
       
-      <View style={styles.footer}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 30 }]}>
         <TouchableOpacity 
           style={styles.cancelButton} 
           onPress={() => router.back()}
@@ -264,7 +275,7 @@ export default function EditModal() {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -353,65 +364,65 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-  },
-  typeText: {
+    },
+    typeText: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-  },
-  changeText: {
+    },
+    changeText: {
     fontSize: 14,
     color: '#2196f3',
-  },
-  previewContainer: {
+    },
+    previewContainer: {
     marginTop: 20,
-    marginBottom: 20,
-  },
-  previewTitle: {
+    marginBottom: 10,
+    },
+    previewTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 15,
     color: '#333',
-  },
-  previewWrapper: {
+    },
+    previewWrapper: {
     alignItems: 'center',
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
-  },
-  footer: {
+    },
+    footer: {
     flexDirection: 'row',
     padding: 20,
     gap: 15,
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#eee',
-  },
-  cancelButton: {
+    },
+    cancelButton: {
     flex: 1,
     paddingVertical: 15,
     borderRadius: 8,
     backgroundColor: '#f5f5f5',
     alignItems: 'center',
-  },
-  cancelButtonText: {
+    },
+    cancelButtonText: {
     fontSize: 16,
     color: '#666',
     fontWeight: '500',
-  },
-  saveButton: {
+    },
+    saveButton: {
     flex: 1,
     paddingVertical: 15,
     borderRadius: 8,
     backgroundColor: '#2196f3',
     alignItems: 'center',
-  },
-  saveButtonText: {
+    },
+    saveButtonText: {
     fontSize: 16,
     color: '#fff',
     fontWeight: 'bold',
-  },
-  disabledButton: {
+    },
+    disabledButton: {
     backgroundColor: '#ccc',
-  },
-});
+    },
+    });

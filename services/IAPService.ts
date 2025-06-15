@@ -20,6 +20,7 @@ export class IAPService {
   static purchaseUpdateSubscription: any = null;
   static purchaseErrorSubscription: any = null;
   static isInitialized = false;
+  static products: Product[] = [];
 
   static async initialize(): Promise<void> {
     if (this.isInitialized) return;
@@ -38,6 +39,8 @@ export class IAPService {
 
       this.isInitialized = true;
       console.log('IAP initialized successfully');
+      
+      await this.fetchProducts();
     } catch (error: any) {
       if (error.message?.includes('Billing is unavailable')) {
         console.warn('IAP not available - this is normal in development/emulator');
@@ -47,19 +50,28 @@ export class IAPService {
     }
   }
 
+  static async fetchProducts(): Promise<void> {
+    if (!this.isInitialized) return;
+    
+    try {
+      this.products = await getProducts({ skus: ALL_PRODUCT_IDS });
+      console.log('Products fetched:', this.products.length);
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+    }
+  }
+
   static async getAvailableProducts(productIds: string[] = ALL_PRODUCT_IDS): Promise<Product[]> {
     if (!this.isInitialized) {
       console.warn('IAP not initialized, returning empty products');
       return [];
     }
     
-    try {
-      const products = await getProducts({ skus: productIds });
-      return products;
-    } catch (error) {
-      console.error('Failed to get products:', error);
-      return [];
+    if (this.products.length === 0) {
+      await this.fetchProducts();
     }
+    
+    return this.products;
   }
 
   static async purchaseProduct(
@@ -79,6 +91,33 @@ export class IAPService {
     }
     
     try {
+      if (this.products.length === 0) {
+        await this.fetchProducts();
+        
+        if (this.products.length === 0) {
+          const error: PurchaseError = {
+            code: 'E_UNKNOWN' as ErrorCode,
+            message: 'No products available. Please try again later.',
+            name: 'IAPError',
+            productId: productId
+          };
+          onError(error);
+          return;
+        }
+      }
+
+      const product = this.products.find(p => p.productId === productId);
+      if (!product) {
+        const error: PurchaseError = {
+          code: 'E_UNKNOWN' as ErrorCode,
+          message: 'Product not found. Please try again.',
+          name: 'IAPError',
+          productId: productId
+        };
+        onError(error);
+        return;
+      }
+
       this.purchaseUpdateSubscription = purchaseUpdatedListener(async (purchase: Purchase) => {
         console.log('Purchase successful:', purchase);
         
@@ -126,6 +165,7 @@ export class IAPService {
     if (this.isInitialized) {
       await endConnection();
       this.isInitialized = false;
+      this.products = [];
     }
   }
 }

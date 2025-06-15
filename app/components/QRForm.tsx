@@ -1,5 +1,6 @@
+// app/components/QRForm.tsx
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { QR_TYPES } from '../../constants/QRTypes';
 import { QRCodeType, QRCodeTypeData } from '../../types/QRCode';
 
@@ -44,7 +45,7 @@ export default function QRForm({ type, initialData, onDataChange }: QRFormProps)
   }
 
   return (
-    <ScrollView style={styles.container}>
+    <View style={styles.container}>
       <Text style={styles.title}>
         {typeConfig.icon} {typeConfig.title} Details
       </Text>
@@ -71,7 +72,7 @@ export default function QRForm({ type, initialData, onDataChange }: QRFormProps)
           />
         </View>
       ))}
-    </ScrollView>
+    </View>
   );
 }
 
