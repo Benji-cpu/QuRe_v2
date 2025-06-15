@@ -36,7 +36,7 @@ export default function DesignSliders({
           onValueChange={onLogoSizeChange}
           minimumTrackTintColor="#2196f3"
           maximumTrackTintColor="#ddd"
-          thumbColor={Platform.OS === 'android' ? '#2196f3' : undefined}
+          thumbTintColor={Platform.OS === 'android' ? '#2196f3' : undefined}
         />
       </View>
 
@@ -50,7 +50,7 @@ export default function DesignSliders({
           onValueChange={onLogoMarginChange}
           minimumTrackTintColor="#2196f3"
           maximumTrackTintColor="#ddd"
-          thumbColor={Platform.OS === 'android' ? '#2196f3' : undefined}
+          thumbTintColor={Platform.OS === 'android' ? '#2196f3' : undefined}
         />
       </View>
 
@@ -64,7 +64,7 @@ export default function DesignSliders({
           onValueChange={onLogoBorderRadiusChange}
           minimumTrackTintColor="#2196f3"
           maximumTrackTintColor="#ddd"
-          thumbColor={Platform.OS === 'android' ? '#2196f3' : undefined}
+          thumbTintColor={Platform.OS === 'android' ? '#2196f3' : undefined}
         />
       </View>
     </View>

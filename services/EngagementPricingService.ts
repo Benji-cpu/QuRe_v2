@@ -1,5 +1,7 @@
+// services/EngagementPricingService.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
+import { PRODUCT_IDS } from '../config/IAPConfig';
 
 const ENGAGEMENT_KEY = '@qure_engagement_metrics';
 const OFFER_KEY = '@qure_offer_history';
@@ -38,19 +40,6 @@ export interface PricingOffer {
   trigger: string;
   message: string;
 }
-
-const PRODUCT_IDS = {
-  ios: {
-    tier1: 'com.anonymous.QuRe.premium_499',
-    tier2: 'com.anonymous.QuRe.premium_399',
-    tier3: 'com.anonymous.QuRe.premium_299',
-  },
-  android: {
-    tier1: 'qure_premium_499',
-    tier2: 'qure_premium_399',
-    tier3: 'qure_premium_299',
-  }
-};
 
 export class EngagementPricingService {
   static async getEngagementMetrics(): Promise<EngagementMetrics> {

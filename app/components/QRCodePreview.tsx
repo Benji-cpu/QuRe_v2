@@ -42,7 +42,7 @@ export default function QRCodePreview({
   const gradientProps = finalDesign.enableLinearGradient && finalDesign.linearGradient ? {
     enableLinearGradient: true,
     linearGradient: finalDesign.linearGradient,
-    gradientDirection: finalDesign.gradientDirection || [0, 0, 1, 1],
+    gradientDirection: (finalDesign.gradientDirection || [0, 0, 1, 1]).map(String),
   } : {};
 
   return (

@@ -120,7 +120,7 @@ export default function SettingsModal() {
               onPress={() => handleGradientSelect(gradient.id)}
             >
               <LinearGradient
-                colors={gradient.colors}
+                colors={gradient.colors as unknown as readonly [string, string, ...string[]]}
                 start={gradient.start}
                 end={gradient.end}
                 style={styles.gradientPreview}

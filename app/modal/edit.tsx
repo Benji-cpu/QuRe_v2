@@ -71,11 +71,11 @@ export default function EditModal() {
     switch (qrCode.type) {
       case 'link':
         return 'url' in formData && formData.url?.trim();
+      case 'whatsapp':
+        return 'phone' in formData && formData.phone?.trim();
       case 'email':
         return 'email' in formData && formData.email?.trim();
       case 'phone':
-        return 'phone' in formData && formData.phone?.trim();
-      case 'sms':
         return 'phone' in formData && formData.phone?.trim();
       case 'contact':
         return 'firstName' in formData && 'lastName' in formData && 
@@ -335,84 +335,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 20,
-  },
-  typeDisplay: {
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 15,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  typeLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
-  },
-  typeValue: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  typeText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  changeText: {
-    fontSize: 14,
-    color: '#2196f3',
-  },
-  previewContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  previewTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
-  },
-  previewWrapper: {
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-  },
-  footer: {
-    flexDirection: 'row',
-    padding: 20,
-    gap: 15,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  cancelButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    backgroundColor: '#f5f5f5',
-    alignItems: 'center',
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
-  },
-  saveButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 8,
-    backgroundColor: '#2196f3',
-    alignItems: 'center',
-  },
-  saveButtonText: {
-    fontSize: 16,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  disabledButton: {
-    backgroundColor: '#ccc',
   },
   typeDisplay: {
     backgroundColor: '#fff',

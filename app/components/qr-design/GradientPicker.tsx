@@ -50,7 +50,7 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
               onPress={() => onGradientSelect(gradient)}
             >
               <LinearGradient
-                colors={gradient}
+                colors={gradient as unknown as readonly [string, string, ...string[]]}
                 style={styles.gradientPreview}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
