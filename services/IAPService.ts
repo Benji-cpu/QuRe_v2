@@ -5,6 +5,7 @@ import {
   ErrorCode,
   finishTransaction,
   flushFailedPurchasesCachedAsPendingAndroid,
+  getAvailablePurchases,
   getProducts,
   initConnection,
   Product,
@@ -72,6 +73,35 @@ export class IAPService {
     }
     
     return this.products;
+  }
+
+  static async restorePurchases(): Promise<Purchase[]> {
+    if (!this.isInitialized) {
+      throw new Error('IAP not initialized');
+    }
+    
+    try {
+      const purchases = await getAvailablePurchases();
+      console.log('Restored purchases:', purchases.length);
+      
+      const validProductIds = ALL_PRODUCT_IDS;
+      const validPurchases = purchases.filter(purchase => 
+        validProductIds.includes(purchase.productId)
+      );
+      
+      if (validPurchases.length > 0) {
+        const sortedPurchases = validPurchases.sort(
+          (a, b) => (b.transactionDate || 0) - (a.transactionDate || 0)
+        );
+        
+        return sortedPurchases;
+      }
+      
+      return [];
+    } catch (error) {
+      console.error('Failed to restore purchases:', error);
+      throw error;
+    }
   }
 
   static async purchaseProduct(

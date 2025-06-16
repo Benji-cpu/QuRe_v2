@@ -2,10 +2,11 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GRADIENT_PRESETS } from '../../constants/Gradients';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
+import { IAPService } from '../../services/IAPService';
 import { UserPreferencesService } from '../../services/UserPreferences';
 
 export default function SettingsModal() {
@@ -14,6 +15,7 @@ export default function SettingsModal() {
   const [isPremium, setIsPremium] = useState(false);
   const [showTitle, setShowTitle] = useState(true);
   const [qrSlotMode, setQrSlotMode] = useState<'single' | 'double'>('double');
+  const [isRestoring, setIsRestoring] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -65,6 +67,39 @@ export default function SettingsModal() {
       await UserPreferencesService.updateQRSlotMode(mode);
     } catch (error) {
       Alert.alert('Error', 'Failed to update QR slot mode');
+    }
+  };
+
+  const handleRestorePurchase = async () => {
+    setIsRestoring(true);
+    
+    try {
+      const purchases = await IAPService.restorePurchases();
+      
+      if (purchases.length > 0) {
+        await UserPreferencesService.setPremium(true);
+        setIsPremium(true);
+        
+        Alert.alert(
+          'Purchase Restored!',
+          'Your premium purchase has been successfully restored.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'No Purchases Found',
+          'No previous purchases found to restore. If you believe this is an error, please contact support.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      Alert.alert(
+        'Restore Failed',
+        'Failed to restore purchases. Please try again later.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsRestoring(false);
     }
   };
 
@@ -226,6 +261,18 @@ export default function SettingsModal() {
               <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
             </Pressable>
           )}
+          
+          <Pressable 
+            style={[styles.restoreButton, isRestoring && styles.disabledButton]}
+            onPress={handleRestorePurchase}
+            disabled={isRestoring}
+          >
+            {isRestoring ? (
+              <ActivityIndicator color="#2196f3" />
+            ) : (
+              <Text style={styles.restoreButtonText}>Restore Purchase</Text>
+            )}
+          </Pressable>
         </View>
 
         <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Developer Options</Text>
@@ -426,11 +473,28 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     borderRadius: 8,
     alignItems: 'center',
+    marginBottom: 10,
   },
   upgradeButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  restoreButton: {
+    borderWidth: 2,
+    borderColor: '#2196f3',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  restoreButtonText: {
+    color: '#2196f3',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   devOptionsContainer: {
     gap: 10,

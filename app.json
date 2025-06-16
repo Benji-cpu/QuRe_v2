@@ -2,7 +2,7 @@
   "expo": {
     "name": "QuRe",
     "slug": "QuRe",
-    "version": "1.0.2",
+    "version": "1.0.4",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "qure",
@@ -10,8 +10,8 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.QuRe",
-      "buildNumber": "4"
+      "bundleIdentifier": "com.qure.app",
+      "buildNumber": "6"
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +19,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.anonymous.QuRe",
+      "package": "com.qure.app",
       "versionCode": 4
     },
     "web": {

@@ -87,14 +87,14 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.anonymous.QuRe'
+    namespace 'com.qure.app'
     defaultConfig {
 missingDimensionStrategy "store", "play"
-        applicationId 'com.anonymous.QuRe'
+        applicationId 'com.qure.app'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 4
-        versionName "1.0.2"
+        versionCode 6
+        versionName "1.0.4"
     }
     signingConfigs {
         debug {
