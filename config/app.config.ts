@@ -1,17 +1,19 @@
+// app.config.ts
+
 export default {
-  name: "QuRe",
-  slug: "QuRe",
-  owner: "benji000", 
-  version: "1.0.4",
+  name: "qure",
+  slug: "qure",
+  owner: "benji000",
+  version: "1.0.4", // We will match this in package.json
+  runtimeVersion: "1.0.4",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
   scheme: "qure",
   userInterfaceStyle: "automatic",
-  newArchEnabled: true,
-  runtimeVersion: "1.0.4",
+
   ios: {
     supportsTablet: true,
-    bundleIdentifier: "com.qure.app",
+    bundleIdentifier: "com.qure.app", // Using this one consistently
     buildNumber: "6"
   },
   android: {
@@ -19,49 +21,23 @@ export default {
       foregroundImage: "./assets/images/adaptive-icon.png",
       backgroundColor: "#ffffff"
     },
-    edgeToEdgeEnabled: true,
-    package: "com.qure.app",
-    versionCode: 6
-  },
-  web: {
-    bundler: "metro",
-    output: "static",
-    favicon: "./assets/images/favicon.png"
+    package: "com.qure.app", // Using this one consistently
+    versionCode: 6 
   },
   plugins: [
     "expo-router",
-    [
-      "expo-splash-screen",
-      {
-        "image": "./assets/images/splash-icon.png",
-        "imageWidth": 200,
-        "resizeMode": "contain",
-        "backgroundColor": "#2196f3"
-      }
-    ],
-    [
-      "react-native-iap",
-      {
-        "paymentProvider": "Play Store"
-      }
-    ],
-    [
-      "expo-updates",
-      {
-        "username": "benji000"
-      }
-    ]
   ],
-  experiments: {
-    typedRoutes: true
-  },
   extra: {
-    router: {},
+    router: {
+      origin: false
+    },
     eas: {
-      projectId: "3bb00633-0ef4-4ac5-918a-be69c0027772"
+      // The CORRECT, ORIGINAL project ID
+      projectId: "382a05a5-832d-4999-980f-2d14a15d4111" 
     }
   },
   updates: {
-    url: "https://u.expo.dev/3bb00633-0ef4-4ac5-918a-be69c0027772"
+    // The CORRECT URL with the ORIGINAL project ID
+    url: "https://u.expo.dev/382a05a5-832d-4999-980f-2d14a15d4111"
   }
 };

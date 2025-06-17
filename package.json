@@ -1,7 +1,7 @@
 {
   "name": "qure",
   "main": "node_modules/expo/AppEntry.js",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
