@@ -11,5 +11,8 @@
     }
   },
   "owner": "benji000",
-  "slug": "QuRe"
+  "slug": "QuRe",
+  "plugins": [
+    "expo-router"
+  ]
 }
