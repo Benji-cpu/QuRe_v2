@@ -1,0 +1,13 @@
+{
+  "android": {
+    "package": "com.benji000.qure"
+  },
+  "ios": {
+    "bundleIdentifier": "com.benji000.qure"
+  },
+  "extra": {
+    "eas": {
+      "projectId": "3bb00633-0ef4-4ac5-918a-be69c0027772"
+    }
+  }
+}

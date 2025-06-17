@@ -8,28 +8,28 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
+		326AAA4147DDE26B4A5D3CAA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 87F65B68F9DA0840D3CE87FC /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
+		5042C3099C67B6C6E43FB237 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20DFBE298D47DBC2C376703D /* ExpoModulesProvider.swift */; };
+		88D8DD30DA44B81A829BFEA5 /* libPods-qure.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 059DD32537917605A5D8CBAD /* libPods-qure.a */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		DA6482DF5537FE42126F3369 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 8A744F6225143DE4949C765E /* PrivacyInfo.xcprivacy */; };
-		E12EA84BBE836C39976CE202 /* libPods-QuRe.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 5730E3CC3A669E5D1980C709 /* libPods-QuRe.a */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
-		FC84B7C44A50346F976929F6 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 122471384EDDE9DF0ED2245F /* ExpoModulesProvider.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		122471384EDDE9DF0ED2245F /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-QuRe/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		13B07F961A680F5B00A75B9A /* QuRe.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = QuRe.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = QuRe/Images.xcassets; sourceTree = "<group>"; };
-		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = QuRe/Info.plist; sourceTree = "<group>"; };
-		5730E3CC3A669E5D1980C709 /* libPods-QuRe.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-QuRe.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		87C6F346A74413E253560E16 /* Pods-QuRe.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-QuRe.release.xcconfig"; path = "Target Support Files/Pods-QuRe/Pods-QuRe.release.xcconfig"; sourceTree = "<group>"; };
-		8A744F6225143DE4949C765E /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = QuRe/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		9344BA96CC1D1E869B344C60 /* Pods-QuRe.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-QuRe.debug.xcconfig"; path = "Target Support Files/Pods-QuRe/Pods-QuRe.debug.xcconfig"; sourceTree = "<group>"; };
-		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = QuRe/SplashScreen.storyboard; sourceTree = "<group>"; };
+		059DD32537917605A5D8CBAD /* libPods-qure.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-qure.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07F961A680F5B00A75B9A /* qure.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = qure.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = qure/Images.xcassets; sourceTree = "<group>"; };
+		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = qure/Info.plist; sourceTree = "<group>"; };
+		20DFBE298D47DBC2C376703D /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-qure/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		48E6ECDC6FCFA2217520DE77 /* Pods-qure.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-qure.release.xcconfig"; path = "Target Support Files/Pods-qure/Pods-qure.release.xcconfig"; sourceTree = "<group>"; };
+		87F65B68F9DA0840D3CE87FC /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = qure/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		993EC332F3D9C021FFF11409 /* Pods-qure.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-qure.debug.xcconfig"; path = "Target Support Files/Pods-qure/Pods-qure.debug.xcconfig"; sourceTree = "<group>"; };
+		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = qure/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
-		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = QuRe/AppDelegate.swift; sourceTree = "<group>"; };
-		F11748442D0722820044C1D9 /* QuRe-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "QuRe-Bridging-Header.h"; path = "QuRe/QuRe-Bridging-Header.h"; sourceTree = "<group>"; };
+		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = qure/AppDelegate.swift; sourceTree = "<group>"; };
+		F11748442D0722820044C1D9 /* qure-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "qure-Bridging-Header.h"; path = "qure/qure-Bridging-Header.h"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -37,34 +37,42 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				E12EA84BBE836C39976CE202 /* libPods-QuRe.a in Frameworks */,
+				88D8DD30DA44B81A829BFEA5 /* libPods-qure.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		13B07FAE1A68108700A75B9A /* QuRe */ = {
+		13B07FAE1A68108700A75B9A /* qure */ = {
 			isa = PBXGroup;
 			children = (
 				F11748412D0307B40044C1D9 /* AppDelegate.swift */,
-				F11748442D0722820044C1D9 /* QuRe-Bridging-Header.h */,
+				F11748442D0722820044C1D9 /* qure-Bridging-Header.h */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				8A744F6225143DE4949C765E /* PrivacyInfo.xcprivacy */,
+				87F65B68F9DA0840D3CE87FC /* PrivacyInfo.xcprivacy */,
 			);
-			name = QuRe;
+			name = qure;
 			sourceTree = "<group>";
 		};
 		2D16E6871FA4F8E400B85C8A /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				5730E3CC3A669E5D1980C709 /* libPods-QuRe.a */,
+				059DD32537917605A5D8CBAD /* libPods-qure.a */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		45D88F0EE58ADD0131004A00 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				B7D04F2D9AC7D014C219FCCC /* qure */,
+			);
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -77,12 +85,12 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
-				13B07FAE1A68108700A75B9A /* QuRe */,
+				13B07FAE1A68108700A75B9A /* qure */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				ECD3D459DF3EEA366FF3F4BE /* Pods */,
-				F8A47E8B8B4C2773460E80E9 /* ExpoModulesProviders */,
+				A49A4BFA7A274CF73954BEBD /* Pods */,
+				45D88F0EE58ADD0131004A00 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -92,9 +100,27 @@
 		83CBBA001A601CBA00E9B192 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				13B07F961A680F5B00A75B9A /* QuRe.app */,
+				13B07F961A680F5B00A75B9A /* qure.app */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A49A4BFA7A274CF73954BEBD /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				993EC332F3D9C021FFF11409 /* Pods-qure.debug.xcconfig */,
+				48E6ECDC6FCFA2217520DE77 /* Pods-qure.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		B7D04F2D9AC7D014C219FCCC /* qure */ = {
+			isa = PBXGroup;
+			children = (
+				20DFBE298D47DBC2C376703D /* ExpoModulesProvider.swift */,
+			);
+			name = qure;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -103,58 +129,32 @@
 				BB2F792C24A3F905000567C9 /* Expo.plist */,
 			);
 			name = Supporting;
-			path = QuRe/Supporting;
-			sourceTree = "<group>";
-		};
-		DAEDBA2B97F59597D9DFD0BF /* QuRe */ = {
-			isa = PBXGroup;
-			children = (
-				122471384EDDE9DF0ED2245F /* ExpoModulesProvider.swift */,
-			);
-			name = QuRe;
-			sourceTree = "<group>";
-		};
-		ECD3D459DF3EEA366FF3F4BE /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				9344BA96CC1D1E869B344C60 /* Pods-QuRe.debug.xcconfig */,
-				87C6F346A74413E253560E16 /* Pods-QuRe.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
-			sourceTree = "<group>";
-		};
-		F8A47E8B8B4C2773460E80E9 /* ExpoModulesProviders */ = {
-			isa = PBXGroup;
-			children = (
-				DAEDBA2B97F59597D9DFD0BF /* QuRe */,
-			);
-			name = ExpoModulesProviders;
+			path = qure/Supporting;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		13B07F861A680F5B00A75B9A /* QuRe */ = {
+		13B07F861A680F5B00A75B9A /* qure */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "QuRe" */;
+			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "qure" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				7E96AC8A7D2B269F0CC0F13D /* [Expo] Configure project */,
+				D6D26D327A2763AA80483B38 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				83F0A341E6ED8D11D2753803 /* [CP] Embed Pods Frameworks */,
+				CAF03DBD188C0C6A5CB1BB42 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
-			name = QuRe;
-			productName = QuRe;
-			productReference = 13B07F961A680F5B00A75B9A /* QuRe.app */;
+			name = qure;
+			productName = qure;
+			productReference = 13B07F961A680F5B00A75B9A /* qure.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -170,7 +170,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "QuRe" */;
+			buildConfigurationList = 83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "qure" */;
 			compatibilityVersion = "Xcode 3.2";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -183,7 +183,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				13B07F861A680F5B00A75B9A /* QuRe */,
+				13B07F861A680F5B00A75B9A /* qure */,
 			);
 		};
 /* End PBXProject section */
@@ -196,7 +196,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				DA6482DF5537FE42126F3369 /* PrivacyInfo.xcprivacy in Resources */,
+				326AAA4147DDE26B4A5D3CAA /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -233,31 +233,12 @@
 			outputFileListPaths = (
 			);
 			outputPaths = (
-				"$(DERIVED_FILE_DIR)/Pods-QuRe-checkManifestLockResult.txt",
+				"$(DERIVED_FILE_DIR)/Pods-qure-checkManifestLockResult.txt",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
-		};
-		7E96AC8A7D2B269F0CC0F13D /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-QuRe/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -265,7 +246,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-QuRe/Pods-QuRe-resources.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-qure/Pods-qure-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXUpdates/EXUpdates.bundle",
@@ -310,16 +291,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-QuRe/Pods-QuRe-resources.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-qure/Pods-qure-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		83F0A341E6ED8D11D2753803 /* [CP] Embed Pods Frameworks */ = {
+		CAF03DBD188C0C6A5CB1BB42 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-QuRe/Pods-QuRe-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-qure/Pods-qure-frameworks.sh",
 				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
 			);
 			name = "[CP] Embed Pods Frameworks";
@@ -328,8 +309,27 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-QuRe/Pods-QuRe-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-qure/Pods-qure-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
+		};
+		D6D26D327A2763AA80483B38 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-qure/expo-configure-project.sh\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -339,7 +339,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				FC84B7C44A50346F976929F6 /* ExpoModulesProvider.swift in Sources */,
+				5042C3099C67B6C6E43FB237 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -348,18 +348,18 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 9344BA96CC1D1E869B344C60 /* Pods-QuRe.debug.xcconfig */;
+			baseConfigurationReference = 993EC332F3D9C021FFF11409 /* Pods-qure.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = QuRe/QuRe.entitlements;
+				CODE_SIGN_ENTITLEMENTS = qure/qure.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"FB_SONARKIT_ENABLED=1",
 				);
-				INFOPLIST_FILE = QuRe/Info.plist;
+				INFOPLIST_FILE = qure/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -372,25 +372,25 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = com.qure.app;
-				PRODUCT_NAME = QuRe;
-				SWIFT_OBJC_BRIDGING_HEADER = "QuRe/QuRe-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = com.benji000.qure;
+				PRODUCT_NAME = qure;
+				SWIFT_OBJC_BRIDGING_HEADER = "qure/qure-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Debug;
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 87C6F346A74413E253560E16 /* Pods-QuRe.release.xcconfig */;
+			baseConfigurationReference = 48E6ECDC6FCFA2217520DE77 /* Pods-qure.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
-				CODE_SIGN_ENTITLEMENTS = QuRe/QuRe.entitlements;
+				CODE_SIGN_ENTITLEMENTS = qure/qure.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
-				INFOPLIST_FILE = QuRe/Info.plist;
+				INFOPLIST_FILE = qure/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -403,11 +403,11 @@
 					"-lc++",
 				);
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = com.qure.app;
-				PRODUCT_NAME = QuRe;
-				SWIFT_OBJC_BRIDGING_HEADER = "QuRe/QuRe-Bridging-Header.h";
+				PRODUCT_BUNDLE_IDENTIFIER = com.benji000.qure;
+				PRODUCT_NAME = qure;
+				SWIFT_OBJC_BRIDGING_HEADER = "qure/qure-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 				VERSIONING_SYSTEM = "apple-generic";
 			};
 			name = Release;
@@ -539,7 +539,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "QuRe" */ = {
+		13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "qure" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				13B07F941A680F5B00A75B9A /* Debug */,
@@ -548,7 +548,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "QuRe" */ = {
+		83CBB9FA1A601CBA00E9B192 /* Build configuration list for PBXProject "qure" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				83CBBA201A601CBA00E9B192 /* Debug */,
