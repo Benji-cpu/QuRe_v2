@@ -1,8 +1,8 @@
 // app.config.ts
 
 export default {
-  name: "qure",
-  slug: "qure",
+  name: "QuRe",
+  slug: "QuRe",
   owner: "benji000",
   version: "1.0.4", // We will match this in package.json
   runtimeVersion: "1.0.4",
@@ -21,23 +21,22 @@ export default {
       foregroundImage: "./assets/images/adaptive-icon.png",
       backgroundColor: "#ffffff"
     },
-    package: "com.qure.app", // Using this one consistently
+    package: "com.qure.app",
     versionCode: 6 
   },
   plugins: [
     "expo-router",
+    "./plugins/withReactNativeIap"
   ],
   extra: {
     router: {
       origin: false
     },
     eas: {
-      // The CORRECT, ORIGINAL project ID
       projectId: "382a05a5-832d-4999-980f-2d14a15d4111" 
     }
   },
   updates: {
-    // The CORRECT URL with the ORIGINAL project ID
     url: "https://u.expo.dev/382a05a5-832d-4999-980f-2d14a15d4111"
   }
 };
