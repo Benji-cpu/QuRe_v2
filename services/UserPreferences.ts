@@ -174,4 +174,28 @@ export class UserPreferencesService {
       throw error;
     }
   }
+
+  static async getCustomBackground(): Promise<string | null> {
+    try {
+      const data = await AsyncStorage.getItem('@qure_custom_background');
+      return data;
+    } catch (error) {
+      console.error('Error loading custom background:', error);
+      return null;
+    }
+  }
+  
+  static async setCustomBackground(uri: string | null): Promise<void> {
+    try {
+      if (uri) {
+        await AsyncStorage.setItem('@qure_custom_background', uri);
+      } else {
+        await AsyncStorage.removeItem('@qure_custom_background');
+      }
+    } catch (error) {
+      console.error('Error setting custom background:', error);
+      throw error;
+    }
+  }
 }
+
