@@ -1,8 +1,9 @@
 // app/components/home/PositionSlider.tsx
 import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Dimensions, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -36,6 +37,7 @@ export default function PositionSlider({
   const [animatedOpacity] = useState(new Animated.Value(0));
   const [translateY] = useState(new Animated.Value(0));
   const [containerOpacity] = useState(new Animated.Value(1));
+  const slidersRef = useRef<View>(null);
 
   useEffect(() => {
     if (visible) {
@@ -82,6 +84,18 @@ export default function PositionSlider({
     onExpand?.();
   };
 
+  const containerGesture = Gesture.Tap()
+    .onEnd(() => {
+      if (isExpanded && onCollapse) {
+        onCollapse();
+      }
+    })
+    .runOnJS(true);
+
+  const getMaxHorizontalOffset = () => {
+    return singleQRMode ? 80 : 30;
+  };
+
   if (!visible) return null;
 
   return (
@@ -98,54 +112,65 @@ export default function PositionSlider({
     >
       <Animated.View style={{ opacity: containerOpacity }}>
         {isExpanded ? (
-          <View style={styles.expandedCard}>
-            <View style={styles.sliderHeader}>
-              <Feather name="move" size={20} color="white" />
-              <Text style={styles.sliderLabel}>Adjust Position</Text>
-            </View>
-            
-            <View style={styles.sliderRow}>
-              <Feather name="arrow-up" size={16} color="rgba(255, 255, 255, 0.6)" />
-              <Slider
-                style={styles.slider}
-                minimumValue={20}
-                maximumValue={300}
-                value={verticalValue}
-                onValueChange={onVerticalChange}
-                minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-                maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-                thumbTintColor="white"
-              />
-            </View>
+          <GestureDetector gesture={containerGesture}>
+            <View style={styles.expandedCard}>
+              <TouchableOpacity 
+                activeOpacity={1}
+                style={styles.sliderContent}
+                onPress={(e) => e.stopPropagation()}
+              >
+                <View style={styles.sliderHeader}>
+                  <Feather name="move" size={20} color="white" />
+                  <Text style={styles.sliderLabel}>Adjust Position</Text>
+                </View>
+                
+                <View style={styles.sliderRow}>
+                  <Feather name="arrow-up" size={16} color="rgba(255, 255, 255, 0.6)" />
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={20}
+                    maximumValue={300}
+                    value={verticalValue}
+                    onValueChange={onVerticalChange}
+                    minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
+                    maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                    thumbTintColor="white"
+                  />
+                  <Text style={styles.sliderValue}>{Math.round(verticalValue)}</Text>
+                </View>
 
-            <View style={styles.sliderRow}>
-              <Feather name="arrow-left" size={16} color="rgba(255, 255, 255, 0.6)" />
-              <Slider
-                style={styles.slider}
-                minimumValue={-30}
-                maximumValue={30}
-                value={horizontalValue}
-                onValueChange={onHorizontalChange}
-                minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-                maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-                thumbTintColor="white"
-              />
-            </View>
+                <View style={styles.sliderRow}>
+                  <Feather name="arrow-left" size={16} color="rgba(255, 255, 255, 0.6)" />
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={-getMaxHorizontalOffset()}
+                    maximumValue={getMaxHorizontalOffset()}
+                    value={horizontalValue}
+                    onValueChange={onHorizontalChange}
+                    minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
+                    maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                    thumbTintColor="white"
+                  />
+                  <Text style={styles.sliderValue}>{Math.round(horizontalValue)}</Text>
+                </View>
 
-            <View style={styles.sliderRow}>
-              <Feather name="maximize-2" size={16} color="rgba(255, 255, 255, 0.6)" />
-              <Slider
-                style={styles.slider}
-                minimumValue={0.7}
-                maximumValue={1.3}
-                value={scaleValue}
-                onValueChange={onScaleChange}
-                minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-                maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-                thumbTintColor="white"
-              />
+                <View style={styles.sliderRow}>
+                  <Feather name="maximize-2" size={16} color="rgba(255, 255, 255, 0.6)" />
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={0.7}
+                    maximumValue={1.3}
+                    value={scaleValue}
+                    onValueChange={onScaleChange}
+                    minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
+                    maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                    thumbTintColor="white"
+                  />
+                  <Text style={styles.sliderValue}>{scaleValue.toFixed(2)}</Text>
+                </View>
+              </TouchableOpacity>
             </View>
-          </View>
+          </GestureDetector>
         ) : (
           <TouchableOpacity 
             style={styles.collapsedCard} 
@@ -206,6 +231,9 @@ const styles = StyleSheet.create({
   expandedCard: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderRadius: 12,
+    overflow: 'hidden',
+  },
+  sliderContent: {
     padding: 20,
   },
   sliderHeader: {

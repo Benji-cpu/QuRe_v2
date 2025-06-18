@@ -39,6 +39,26 @@ export const QR_TYPES: QRTypeConfig[] = [
     ]
   },
   {
+    type: 'instagram',
+    title: 'Instagram',
+    icon: '📸',
+    fields: [
+      {
+        key: 'username',
+        label: 'Instagram Username',
+        required: true,
+        placeholder: '@username (without @)',
+        keyboardType: 'default'
+      },
+      {
+        key: 'label',
+        label: 'Label (Optional)',
+        required: false,
+        placeholder: 'Follow me on Instagram'
+      }
+    ]
+  },
+  {
     type: 'whatsapp',
     title: 'WhatsApp',
     icon: '💬',
@@ -154,26 +174,6 @@ export const QR_TYPES: QRTypeConfig[] = [
         label: 'Label (Optional)',
         required: false,
         placeholder: 'Contact Label'
-      }
-    ]
-  },
-  {
-    type: 'text',
-    title: 'Text',
-    icon: '📝',
-    fields: [
-      {
-        key: 'text',
-        label: 'Text Content',
-        required: true,
-        placeholder: 'Enter your text here',
-        multiline: true
-      },
-      {
-        key: 'label',
-        label: 'Label (Optional)',
-        required: false,
-        placeholder: 'Text Label'
       }
     ]
   }

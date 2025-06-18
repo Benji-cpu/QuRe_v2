@@ -1,11 +1,13 @@
 // services/QRGenerator.ts
-import { ContactData, EmailData, LinkData, PhoneData, QRCodeType, QRCodeTypeData, TextData, WhatsAppData } from '../types/QRCode';
+import { ContactData, EmailData, InstagramData, LinkData, PhoneData, QRCodeType, QRCodeTypeData, WhatsAppData } from '../types/QRCode';
 
 export class QRGenerator {
   static generateContent(type: QRCodeType, data: QRCodeTypeData): string {
     switch (type) {
       case 'link':
         return this.generateLinkContent(data as LinkData);
+      case 'instagram':
+        return this.generateInstagramContent(data as InstagramData);
       case 'whatsapp':
         return this.generateWhatsAppContent(data as WhatsAppData);
       case 'email':
@@ -14,8 +16,6 @@ export class QRGenerator {
         return this.generatePhoneContent(data as PhoneData);
       case 'contact':
         return this.generateContactContent(data as ContactData);
-      case 'text':
-        return this.generateTextContent(data as TextData);
       default:
         throw new Error(`Unsupported QR code type: ${type}`);
     }
@@ -23,6 +23,11 @@ export class QRGenerator {
 
   private static generateLinkContent(data: LinkData): string {
     return data.url;
+  }
+
+  private static generateInstagramContent(data: InstagramData): string {
+    const username = data.username.replace('@', '');
+    return `https://instagram.com/${username}`;
   }
 
   private static generateWhatsAppContent(data: WhatsAppData): string {
@@ -80,10 +85,6 @@ export class QRGenerator {
     return vcard.join('\n');
   }
 
-  private static generateTextContent(data: TextData): string {
-    return data.text;
-  }
-
   static generateLabel(type: QRCodeType, data: QRCodeTypeData): string {
     if ('label' in data && data.label) {
       return data.label;
@@ -97,6 +98,9 @@ export class QRGenerator {
         } catch {
           return linkData.url;
         }
+      case 'instagram':
+        const igData = data as InstagramData;
+        return `@${igData.username.replace('@', '')}`;
       case 'whatsapp':
         return `WhatsApp: ${(data as WhatsAppData).phone}`;
       case 'email':
@@ -106,11 +110,6 @@ export class QRGenerator {
       case 'contact':
         const contactData = data as ContactData;
         return `${contactData.firstName} ${contactData.lastName}`;
-      case 'text':
-        const textData = data as TextData;
-        return textData.text.length > 20 ? 
-          textData.text.substring(0, 20) + '...' : 
-          textData.text;
       default:
         return 'QR Code';
     }

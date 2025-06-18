@@ -1,5 +1,5 @@
 // app/components/QRForm.tsx
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { QR_TYPES } from '../../constants/QRTypes';
 import { QRCodeType, QRCodeTypeData } from '../../types/QRCode';
@@ -13,10 +13,11 @@ interface QRFormProps {
 export default function QRForm({ type, initialData, onDataChange }: QRFormProps) {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const isInitialMount = useRef(true);
+  const timeoutRef = useRef<NodeJS.Timeout>();
 
   const typeConfig = QR_TYPES.find(t => t.type === type);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (initialData) {
       const newFormData: Record<string, string> = {};
       Object.entries(initialData).forEach(([key, value]) => {
@@ -26,18 +27,31 @@ export default function QRForm({ type, initialData, onDataChange }: QRFormProps)
     } else {
       setFormData({});
     }
-  }, [initialData, type]);
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    onDataChange(formData as unknown as QRCodeTypeData);
-  }, [formData, onDataChange]);
+    isInitialMount.current = true;
+  }, [type]);
 
   const updateField = useCallback((key: string, value: string) => {
-    setFormData(prev => ({ ...prev, [key]: value }));
+    setFormData(prev => {
+      const updated = { ...prev, [key]: value };
+      
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+      
+      timeoutRef.current = setTimeout(() => {
+        onDataChange(updated as unknown as QRCodeTypeData);
+      }, 300);
+      
+      return updated;
+    });
+  }, [onDataChange]);
+
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
   }, []);
 
   if (!typeConfig) {

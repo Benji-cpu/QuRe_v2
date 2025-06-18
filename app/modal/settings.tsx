@@ -1,8 +1,9 @@
-// app/modal/settings.tsx
+import { Feather } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GRADIENT_PRESETS } from '../../constants/Gradients';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
@@ -16,6 +17,7 @@ export default function SettingsModal() {
   const [showTitle, setShowTitle] = useState(true);
   const [qrSlotMode, setQrSlotMode] = useState<'single' | 'double'>('double');
   const [isRestoring, setIsRestoring] = useState(false);
+  const [customBackground, setCustomBackground] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -30,6 +32,9 @@ export default function SettingsModal() {
       setIsPremium(premium);
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
+      
+      const customBg = await UserPreferencesService.getCustomBackground();
+      setCustomBackground(customBg);
     } catch (error) {
       console.error('Error loading settings:', error);
     }
@@ -67,6 +72,42 @@ export default function SettingsModal() {
       await UserPreferencesService.updateQRSlotMode(mode);
     } catch (error) {
       Alert.alert('Error', 'Failed to update QR slot mode');
+    }
+  };
+
+  const handleUploadBackground = async () => {
+    if (!isPremium) {
+      router.push('/modal/premium');
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [9, 16],
+        quality: 1,
+        base64: false,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        
+        if (asset.width < asset.height * 0.5 || asset.width > asset.height * 0.7) {
+          Alert.alert(
+            'Invalid Image Dimensions',
+            'Please select a portrait image (9:16 ratio recommended)',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+        
+        await UserPreferencesService.setCustomBackground(asset.uri);
+        setCustomBackground(asset.uri);
+        Alert.alert('Success', 'Custom background uploaded successfully');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to upload background');
     }
   };
 
@@ -168,6 +209,39 @@ export default function SettingsModal() {
               )}
             </Pressable>
           ))}
+        </View>
+
+        <Text style={styles.sectionTitle}>Custom Background</Text>
+
+        <View style={styles.customBackgroundContainer}>
+          <TouchableOpacity 
+            style={[styles.uploadButton, !isPremium && styles.lockedButton]}
+            onPress={handleUploadBackground}
+          >
+            <Feather name="upload" size={20} color={isPremium ? "#2196f3" : "#999"} />
+            <Text style={[styles.uploadButtonText, !isPremium && styles.lockedButtonText]}>
+              Upload Custom Background
+            </Text>
+            {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
+          </TouchableOpacity>
+          
+          {customBackground && (
+            <View style={styles.customBackgroundPreview}>
+              <Image 
+                source={{ uri: customBackground }} 
+                style={styles.backgroundThumbnail}
+              />
+              <TouchableOpacity
+                style={styles.removeBackgroundButton}
+                onPress={async () => {
+                  await UserPreferencesService.setCustomBackground(null);
+                  setCustomBackground(null);
+                }}
+              >
+                <Text style={styles.removeButtonText}>Remove</Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
 
         <Text style={styles.sectionTitle}>Display Settings</Text>
@@ -369,6 +443,58 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
+  customBackgroundContainer: {
+    marginBottom: 20,
+  },
+  uploadButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 2,
+    borderColor: '#2196f3',
+    borderStyle: 'dashed',
+  },
+  lockedButton: {
+    borderColor: '#ddd',
+    backgroundColor: '#f5f5f5',
+  },
+  uploadButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#2196f3',
+  },
+  lockedButtonText: {
+    color: '#999',
+  },
+  lockIcon: {
+    fontSize: 14,
+    marginLeft: 5,
+  },
+  customBackgroundPreview: {
+    marginTop: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  backgroundThumbnail: {
+    width: 80,
+    height: 140,
+    borderRadius: 8,
+  },
+  removeBackgroundButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: '#f44336',
+  },
+  removeButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
   settingsContainer: {
     backgroundColor: 'white',
     borderRadius: 12,
@@ -394,9 +520,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-  },
-  lockIcon: {
-    fontSize: 14,
   },
   settingDescription: {
     fontSize: 14,

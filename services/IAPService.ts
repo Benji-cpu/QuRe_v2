@@ -72,8 +72,14 @@ export class IAPService {
       await this.fetchProducts();
     }
     
+    // The products returned by react-native-iap already include localized pricing
+    // product.localizedPrice - formatted price string (e.g., "$4.99", "£3.99")
+    // product.currency - currency code (e.g., "USD", "GBP")
+    // product.price - numeric price value
+    
     return this.products;
   }
+  
 
   static async restorePurchases(): Promise<Purchase[]> {
     if (!this.isInitialized) {

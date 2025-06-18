@@ -22,18 +22,23 @@ export interface QRCodeDesign {
   logoBorderRadius?: number;
 }
 
-export type QRCodeType = 'link' | 'whatsapp' | 'email' | 'phone' | 'contact' | 'text';
+export type QRCodeType = 'link' | 'instagram' | 'whatsapp' | 'email' | 'phone' | 'contact';
 
 export type QRCodeTypeData = 
   | LinkData 
+  | InstagramData
   | WhatsAppData
   | EmailData 
   | PhoneData 
-  | ContactData 
-  | TextData;
+  | ContactData;
 
 export interface LinkData {
   url: string;
+  label?: string;
+}
+
+export interface InstagramData {
+  username: string;
   label?: string;
 }
 
@@ -60,10 +65,5 @@ export interface ContactData {
   lastName: string;
   phone?: string;
   email?: string;
-  label?: string;
-}
-
-export interface TextData {
-  text: string;
   label?: string;
 }
