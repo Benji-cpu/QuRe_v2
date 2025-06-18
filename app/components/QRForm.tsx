@@ -13,7 +13,7 @@ interface QRFormProps {
 export default function QRForm({ type, initialData, onDataChange }: QRFormProps) {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const isInitialMount = useRef(true);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const typeConfig = QR_TYPES.find(t => t.type === type);
 

@@ -1,9 +1,10 @@
+import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Dimensions, Linking, Platform, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Animated, BackHandler, Dimensions, Linking, Platform, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -48,6 +49,7 @@ function HomeScreen() {
   const [showTitle, setShowTitle] = useState(true);
   const [qrSlotMode, setQrSlotMode] = useState<'single' | 'double'>('double');
   const [titleOpacity] = useState(new Animated.Value(1));
+  const [showExportPreview, setShowExportPreview] = useState(false);
   
   const gradientTransition = useSharedValue(0);
 
@@ -239,17 +241,19 @@ function HomeScreen() {
   };
 
   const handleExportWallpaper = async () => {
+    setShowActionButtons(false);
+    setHideElementsForExport(true);
+    setShowExportPreview(true);
+  };
+
+  const handleSaveWallpaper = async () => {
     try {
-      setShowActionButtons(false);
-      setHideElementsForExport(true);
-      
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission needed', 'Please grant permission to save photos');
         setShowActionButtons(true);
         setHideElementsForExport(false);
+        setShowExportPreview(false);
         return;
       }
 
@@ -259,38 +263,72 @@ function HomeScreen() {
       });
 
       await MediaLibrary.saveToLibraryAsync(uri);
-      
       await EngagementPricingService.trackAction('wallpapersExported');
-      
-      const instructions = Platform.OS === 'ios' 
-        ? '1. Open Photos app\n2. Find the wallpaper\n3. Tap Share button\n4. Select "Use as Wallpaper"\n5. Choose "Set"'
-        : '1. Open Gallery/Photos app\n2. Find the wallpaper\n3. Tap menu (3 dots)\n4. Select "Set as wallpaper"\n5. Choose "Lock screen"';
-      
+      setShowExportPreview(false);
+      setShowActionButtons(true);
+      setHideElementsForExport(false);
+      showSaveInstructions();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save wallpaper');
+      console.error('Export error:', error);
+      setShowActionButtons(true);
+      setHideElementsForExport(false);
+      setShowExportPreview(false);
+    }
+  };
+
+  const showSaveInstructions = () => {
+    if (Platform.OS === 'android') {
+      Alert.alert(
+        'Wallpaper Saved!',
+        'Your wallpaper has been saved to Gallery.\n\nTo set as wallpaper:\n1. Open Gallery app\n2. Find the wallpaper\n3. Tap menu (3 dots)\n4. Select "Set as wallpaper"\n5. Choose "Lock screen"',
+        [
+          { text: 'OK', style: 'default' },
+          {
+            text: 'Open Gallery',
+            onPress: () => {
+              Linking.openURL('content://media/internal/images/media').catch(() => {
+                Alert.alert('Could not open Gallery', 'Please open your Gallery app manually');
+              });
+            },
+          },
+        ]
+      );
+    } else {
+      const instructions = '1. Open Photos app\n2. Find the wallpaper\n3. Tap Share button\n4. Select "Use as Wallpaper"\n5. Choose "Set"';
       Alert.alert(
         'Wallpaper Saved!',
         `Your wallpaper has been saved to photos.\n\nTo set as wallpaper:\n${instructions}`,
         [
           { text: 'OK', style: 'default' },
-          { 
-            text: 'Open Photos', 
+          {
+            text: 'Open Photos',
             onPress: () => {
-              if (Platform.OS === 'ios') {
-                Linking.openURL('photos-redirect://');
-              } else {
-                Linking.openURL('content://media/internal/images/media');
-              }
-            }
-          }
+              Linking.openURL('photos-redirect://');
+            },
+          },
         ]
       );
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save wallpaper');
-      console.error('Export error:', error);
-    } finally {
-      setShowActionButtons(true);
-      setHideElementsForExport(false);
     }
   };
+
+  useEffect(() => {
+    const backAction = () => {
+      if (sliderExpanded) {
+        handleSliderCollapse();
+        return true;
+      }
+      if (showExportPreview) {
+        setShowExportPreview(false);
+        setShowActionButtons(true);
+        setHideElementsForExport(false);
+        return true;
+      }
+      return false;
+    };
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+    return () => backHandler.remove();
+  }, [sliderExpanded, showExportPreview]);
 
   const handleSettings = async () => {
     await EngagementPricingService.trackAction('settingsOpened');
@@ -458,6 +496,28 @@ function HomeScreen() {
                         <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
                       )}
                     </View>
+
+                    {showExportPreview && (
+                      <View style={[styles.exportControls, { bottom: insets.bottom + 20 }]}> 
+                        <Pressable
+                          style={styles.exportBackButton}
+                          onPress={() => {
+                            setShowExportPreview(false);
+                            setShowActionButtons(true);
+                            setHideElementsForExport(false);
+                          }}
+                        >
+                          <Feather name="arrow-left" size={24} color="white" />
+                        </Pressable>
+                        <Pressable
+                          style={styles.exportSaveButton}
+                          onPress={handleSaveWallpaper}
+                        >
+                          <Feather name="download" size={20} color="white" />
+                          <Text style={styles.exportSaveText}>Save Wallpaper</Text>
+                        </Pressable>
+                      </View>
+                    )}
                   </View>
                 </GradientBackground>
               </View>
@@ -513,5 +573,38 @@ const styles = StyleSheet.create({
   },
   bottomSection: {
     marginTop: 'auto',
+  },
+  exportControls: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 16,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    zIndex: 100,
+    borderRadius: 16,
+  },
+  exportBackButton: {
+    padding: 10,
+    borderRadius: 50,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginRight: 12,
+  },
+  exportSaveButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#4F8EF7',
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 50,
+  },
+  exportSaveText: {
+    color: 'white',
+    fontWeight: 'bold',
+    marginLeft: 8,
+    fontSize: 16,
   },
 });
