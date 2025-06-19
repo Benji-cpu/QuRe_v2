@@ -23,7 +23,10 @@ export default {
       backgroundColor: "#ffffff"
     },
     package: "com.qure.app",
-    versionCode: 6
+    versionCode: 6,
+    missingDimensionStrategy: {
+      store: "play"
+    }
   },
   
   web: {
@@ -46,9 +49,7 @@ export default {
     [
       "react-native-iap",
       {
-        "android": {
-          "missingDimensionStrategy": ["store", "play"]
-        }
+        "paymentProvider": "Play Store"
       }
     ]
   ],

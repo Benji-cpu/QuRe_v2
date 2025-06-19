@@ -49,7 +49,9 @@
     "react-native-view-shot": "^4.0.3",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
-    "expo-updates": "~0.28.15"
+    "expo-updates": "~0.28.15",
+    "@expo/config-plugins": "~10.0.0",
+    "@expo/prebuild-config": "~9.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
