@@ -13,6 +13,7 @@
   "owner": "benji000",
   "slug": "QuRe",
   "plugins": [
-    "expo-router"
+    "expo-router",
+    "expo-web-browser"
   ]
 }

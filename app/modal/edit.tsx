@@ -82,8 +82,8 @@ export default function EditModal() {
       case 'contact':
         return 'firstName' in formData && 'lastName' in formData && 
                formData.firstName?.trim() && formData.lastName?.trim();
-      case 'text':
-        return 'text' in formData && formData.text?.trim();
+      case 'instagram':
+        return 'username' in formData && formData.username?.trim();
       default:
         return false;
     }
