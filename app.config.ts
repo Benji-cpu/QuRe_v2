@@ -22,7 +22,7 @@ export default {
       foregroundImage: "./assets/images/adaptive-icon.png",
       backgroundColor: "#ffffff"
     },
-    package: "com.qure.app",
+    package: "com.anonymous.QuRe",
     versionCode: 6,
     missingDimensionStrategy: {
       store: "play"
