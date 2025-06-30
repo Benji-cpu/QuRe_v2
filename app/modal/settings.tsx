@@ -248,10 +248,7 @@ export default function SettingsModal() {
                 router.push('/modal/premium');
                 return;
               }
-              if (!customBackground) {
-                Alert.alert('No Custom Background', 'Please upload a custom background first');
-                return;
-              }
+              // Premium users can always access custom photo tab
               setBackgroundType('custom');
               await UserPreferencesService.updateBackgroundType('custom');
             }}
