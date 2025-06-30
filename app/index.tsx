@@ -4,7 +4,7 @@ import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, BackHandler, Dimensions, Linking, Platform, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View } from 'react-native';
+import { Alert, Animated, BackHandler, Dimensions, Linking, Platform, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -30,6 +30,21 @@ function HomeScreen() {
   const wallpaperRef = useRef<View>(null);
   const sessionStartTime = useRef<number>(Date.now());
   
+  const { height: screenHeight } = useWindowDimensions();
+  
+  const convertToPercentageBasedOffset = (fixedValue: number): number => {
+    const oldMin = 20;
+    const oldMax = 300;
+    const oldRange = oldMax - oldMin;
+    const normalizedValue = (fixedValue - oldMin) / oldRange;
+    
+    const newMin = screenHeight * 0.02;
+    const newMax = screenHeight * 0.4;
+    const newRange = newMax - newMin;
+    
+    return newMin + (normalizedValue * newRange);
+  };
+  
   const [currentGradientIndex, setCurrentGradientIndex] = useState(0);
   const [previousGradientIndex, setPreviousGradientIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -37,7 +52,7 @@ function HomeScreen() {
   const [secondaryQR, setSecondaryQR] = useState<QRCodeData | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
-  const [qrVerticalOffset, setQrVerticalOffset] = useState(80);
+  const [qrVerticalOffset, setQrVerticalOffset] = useState(() => convertToPercentageBasedOffset(80));
   const [qrHorizontalOffset, setQrHorizontalOffset] = useState(0);
   const [qrScale, setQrScale] = useState(1);
   const [showSwipeIndicator, setShowSwipeIndicator] = useState(false);
@@ -64,7 +79,10 @@ function HomeScreen() {
       setCurrentGradientIndex(validIndex);
       setPreviousGradientIndex(validIndex);
       setIsPremium(premium);
-      setQrVerticalOffset(preferences.qrVerticalOffset || 80);
+      
+      const verticalOffset = preferences.qrVerticalOffset || 80;
+      setQrVerticalOffset(convertToPercentageBasedOffset(verticalOffset));
+      
       setQrHorizontalOffset(preferences.qrHorizontalOffset || 0);
       setQrScale(preferences.qrScale || 1);
       setShowTitle(preferences.showTitle ?? true);
@@ -97,7 +115,7 @@ function HomeScreen() {
     } catch (error) {
       console.error('Error loading user data:', error);
     }
-  }, []);
+  }, [screenHeight]);
 
   const getSwipeIndicatorCount = async (): Promise<number> => {
     try {

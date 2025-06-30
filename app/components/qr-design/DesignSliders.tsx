@@ -1,7 +1,7 @@
 // app/components/qr-design/DesignSliders.tsx
 import Slider from '@react-native-community/slider';
 import React from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 interface DesignSlidersProps {
   logoSize: number;
@@ -24,10 +24,20 @@ export default function DesignSliders({
 }: DesignSlidersProps) {
   if (!hasLogo) return null;
 
+  // Use window dimensions for responsive design
+  const { width: screenWidth } = useWindowDimensions();
+  
+  // Responsive scaling functions
+  const scale = screenWidth / 375; // Base width of iPhone X
+  const scaleFont = (size: number) => Math.round(size * Math.min(scale, 1.2));
+  const scaleSpacing = (size: number) => Math.round(size * scale);
+
   return (
-    <View style={styles.container}>
-      <View style={styles.sliderContainer}>
-        <Text style={styles.sliderLabel}>Logo Size: {Math.round(logoSize)}%</Text>
+    <View style={[styles.container, { marginBottom: scaleSpacing(10) }]}>
+      <View style={[styles.sliderContainer, { marginBottom: scaleSpacing(12) }]}>
+        <Text style={[styles.sliderLabel, { fontSize: scaleFont(14), marginBottom: scaleSpacing(5) }]}>
+          Logo Size: {Math.round(logoSize)}%
+        </Text>
         <Slider
           style={styles.slider}
           minimumValue={10}
@@ -40,8 +50,10 @@ export default function DesignSliders({
         />
       </View>
 
-      <View style={styles.sliderContainer}>
-        <Text style={styles.sliderLabel}>Logo Margin: {Math.round(logoMargin)}</Text>
+      <View style={[styles.sliderContainer, { marginBottom: scaleSpacing(12) }]}>
+        <Text style={[styles.sliderLabel, { fontSize: scaleFont(14), marginBottom: scaleSpacing(5) }]}>
+          Logo Margin: {Math.round(logoMargin)}
+        </Text>
         <Slider
           style={styles.slider}
           minimumValue={0}
@@ -54,8 +66,10 @@ export default function DesignSliders({
         />
       </View>
 
-      <View style={styles.sliderContainer}>
-        <Text style={styles.sliderLabel}>Logo Corner Radius: {Math.round(logoBorderRadius)}</Text>
+      <View style={[styles.sliderContainer, { marginBottom: scaleSpacing(12) }]}>
+        <Text style={[styles.sliderLabel, { fontSize: scaleFont(14), marginBottom: scaleSpacing(5) }]}>
+          Logo Corner Radius: {Math.round(logoBorderRadius)}
+        </Text>
         <Slider
           style={styles.slider}
           minimumValue={0}
@@ -73,15 +87,13 @@ export default function DesignSliders({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 10,
+    // Dynamic margin handled inline
   },
   sliderContainer: {
-    marginBottom: 12,
+    // Dynamic margin handled inline
   },
   sliderLabel: {
-    fontSize: 14,
     color: '#666',
-    marginBottom: 5,
   },
   slider: {
     width: '100%',
