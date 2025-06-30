@@ -16,7 +16,7 @@ export default function ActionCards({ onExportWallpaper, onSettings }: ActionCar
           <Feather name="download" size={20} color="white" />
         </View>
         <View style={styles.actionContent}>
-          <Text style={styles.actionTitle}>Export</Text>
+          <Text style={styles.actionTitle}>Save</Text>
           <Text style={styles.actionSubtitle}>Wallpaper</Text>
         </View>
       </TouchableOpacity>

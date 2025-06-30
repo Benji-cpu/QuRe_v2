@@ -65,6 +65,7 @@ function HomeScreen() {
   const [qrSlotMode, setQrSlotMode] = useState<'single' | 'double'>('double');
   const [titleOpacity] = useState(new Animated.Value(1));
   const [showExportPreview, setShowExportPreview] = useState(false);
+  const [exportOverlayOpacity] = useState(new Animated.Value(0));
   
   const gradientTransition = useSharedValue(0);
 
@@ -262,6 +263,13 @@ function HomeScreen() {
     setShowActionButtons(false);
     setHideElementsForExport(true);
     setShowExportPreview(true);
+    
+    // Animate in the export overlay
+    Animated.timing(exportOverlayOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleSaveWallpaper = async () => {
@@ -269,9 +277,15 @@ function HomeScreen() {
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== 'granted') {
         Alert.alert('Permission needed', 'Please grant permission to save photos');
-        setShowActionButtons(true);
-        setHideElementsForExport(false);
-        setShowExportPreview(false);
+        Animated.timing(exportOverlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowActionButtons(true);
+          setHideElementsForExport(false);
+          setShowExportPreview(false);
+        });
         return;
       }
 
@@ -282,16 +296,30 @@ function HomeScreen() {
 
       await MediaLibrary.saveToLibraryAsync(uri);
       await EngagementPricingService.trackAction('wallpapersExported');
-      setShowExportPreview(false);
-      setShowActionButtons(true);
-      setHideElementsForExport(false);
-      showSaveInstructions();
+      
+      // Animate out before resetting
+      Animated.timing(exportOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setShowExportPreview(false);
+        setShowActionButtons(true);
+        setHideElementsForExport(false);
+        showSaveInstructions();
+      });
     } catch (error) {
       Alert.alert('Error', 'Failed to save wallpaper');
       console.error('Export error:', error);
-      setShowActionButtons(true);
-      setHideElementsForExport(false);
-      setShowExportPreview(false);
+      Animated.timing(exportOverlayOpacity, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => {
+        setShowActionButtons(true);
+        setHideElementsForExport(false);
+        setShowExportPreview(false);
+      });
     }
   };
 
@@ -337,16 +365,22 @@ function HomeScreen() {
         return true;
       }
       if (showExportPreview) {
-        setShowExportPreview(false);
-        setShowActionButtons(true);
-        setHideElementsForExport(false);
+        Animated.timing(exportOverlayOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }).start(() => {
+          setShowExportPreview(false);
+          setShowActionButtons(true);
+          setHideElementsForExport(false);
+        });
         return true;
       }
       return false;
     };
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
     return () => backHandler.remove();
-  }, [sliderExpanded, showExportPreview]);
+  }, [sliderExpanded, showExportPreview, exportOverlayOpacity]);
 
   const handleSettings = async () => {
     await EngagementPricingService.trackAction('settingsOpened');
@@ -522,25 +556,43 @@ function HomeScreen() {
                   </View>
 
                   {showExportPreview && (
-                    <View style={[styles.exportControls, { bottom: insets.bottom + 20 }]}> 
-                      <Pressable
-                        style={styles.exportBackButton}
-                        onPress={() => {
-                          setShowExportPreview(false);
-                          setShowActionButtons(true);
-                          setHideElementsForExport(false);
-                        }}
-                      >
-                        <Feather name="arrow-left" size={24} color="white" />
-                      </Pressable>
-                      <Pressable
-                        style={styles.exportSaveButton}
-                        onPress={handleSaveWallpaper}
-                      >
-                        <Feather name="download" size={20} color="white" />
-                        <Text style={styles.exportSaveText}>Save Wallpaper</Text>
-                      </Pressable>
-                    </View>
+                    <Animated.View 
+                      style={[
+                        styles.exportControls, 
+                        { bottom: insets.bottom + 20, opacity: exportOverlayOpacity }
+                      ]}
+                    > 
+                      <View style={styles.exportControlsContent}>
+                        <Text style={styles.exportPreviewTitle}>Wallpaper Preview</Text>
+                        <Text style={styles.exportPreviewSubtitle}>How your wallpaper will look</Text>
+                        <View style={styles.exportButtons}>
+                          <Pressable
+                            style={styles.exportCancelButton}
+                            onPress={() => {
+                              Animated.timing(exportOverlayOpacity, {
+                                toValue: 0,
+                                duration: 200,
+                                useNativeDriver: true,
+                              }).start(() => {
+                                setShowExportPreview(false);
+                                setShowActionButtons(true);
+                                setHideElementsForExport(false);
+                              });
+                            }}
+                          >
+                            <Feather name="x" size={20} color="white" />
+                            <Text style={styles.exportButtonText}>Cancel</Text>
+                          </Pressable>
+                          <Pressable
+                            style={styles.exportSaveButton}
+                            onPress={handleSaveWallpaper}
+                          >
+                            <Feather name="check" size={20} color="white" />
+                            <Text style={styles.exportButtonText}>Save</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    </Animated.View>
                   )}
                 </View>
               </GradientBackground>
@@ -602,32 +654,55 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
     paddingVertical: 16,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+    backgroundColor: 'rgba(0,0,0,0.8)',
     zIndex: 100,
     borderRadius: 16,
+    marginHorizontal: 20,
   },
-  exportBackButton: {
-    padding: 10,
-    borderRadius: 50,
+  exportControlsContent: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  exportPreviewTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 4,
+  },
+  exportPreviewSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginBottom: 20,
+  },
+  exportButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  exportCancelButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.1)',
-    marginRight: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 25,
+    gap: 8,
   },
   exportSaveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#4F8EF7',
-    paddingHorizontal: 18,
+    paddingHorizontal: 24,
     paddingVertical: 10,
-    borderRadius: 50,
+    borderRadius: 25,
+    gap: 8,
   },
-  exportSaveText: {
+  exportButtonText: {
     color: 'white',
-    fontWeight: 'bold',
-    marginLeft: 8,
+    fontWeight: '600',
     fontSize: 16,
   },
 });
