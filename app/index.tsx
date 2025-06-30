@@ -4,7 +4,7 @@ import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, BackHandler, Dimensions, Linking, Platform, Pressable, StyleSheet, Text, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, BackHandler, Dimensions, Linking, Platform, Pressable, StyleSheet, Text, ToastAndroid, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -308,8 +308,10 @@ function HomeScreen() {
         return;
       }
 
+      // Use JPEG on Android to avoid PNG decoding issues in Gallery
+      const captureFormat = Platform.OS === 'android' ? 'jpg' : 'png';
       const uri = await captureRef(wallpaperRef, {
-        format: 'png',
+        format: captureFormat,
         quality: 1,
       });
 
@@ -344,6 +346,13 @@ function HomeScreen() {
 
   const showSaveInstructions = () => {
     if (Platform.OS === 'android') {
+      // Show a toast message that stays on screen for several seconds
+      ToastAndroid.showWithGravity(
+        'Wallpaper saved! Open Gallery › Downloads (or "QuRe") to set it.',
+        ToastAndroid.LONG,
+        ToastAndroid.CENTER
+      );
+      
       Alert.alert(
         'Wallpaper Saved!',
         'Your wallpaper has been saved to Gallery.\n\nTo set as wallpaper:\n1. Open Gallery app\n2. Find the wallpaper\n3. Tap menu (3 dots)\n4. Select "Set as wallpaper"\n5. Choose "Lock screen"',
@@ -352,7 +361,7 @@ function HomeScreen() {
           {
             text: 'Open Gallery',
             onPress: () => {
-              Linking.openURL('content://media/internal/images/media').catch(() => {
+              Linking.openURL('content://media/external/images/media').catch(() => {
                 Alert.alert('Could not open Gallery', 'Please open your Gallery app manually');
               });
             },

@@ -1,13 +1,16 @@
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { PurchaseError } from 'react-native-iap';
+import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Product, PurchaseError } from 'react-native-iap';
+import { PRODUCT_IDS } from '../../config/IAPConfig';
 import { EngagementPricingService, PricingOffer } from '../../services/EngagementPricingService';
 import { IAPService } from '../../services/IAPService';
 import { UserPreferencesService } from '../../services/UserPreferences';
 
 export default function PremiumModal() {
   const [offer, setOffer] = useState<PricingOffer | null>(null);
+  const [baseProduct, setBaseProduct] = useState<Product | null>(null); // tier1 (normal price)
+  const [offerProduct, setOfferProduct] = useState<Product | null>(null); // current offer
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [insights, setInsights] = useState<any>(null);
@@ -22,9 +25,15 @@ export default function PremiumModal() {
   }, []);
 
   const initializeScreen = async () => {
+    const platform = Platform.OS as 'ios' | 'android';
+    const normalPid = PRODUCT_IDS[platform].tier1;
+    
     try {
       await IAPService.initialize();
       setIapAvailable(IAPService.isInitialized);
+
+      /* fetch all products with locale-aware pricing */
+      const products = await IAPService.getAvailableProducts();
       
       const currentOffer = await EngagementPricingService.determineOffer();
       const engagementInsights = await EngagementPricingService.getEngagementInsights();
@@ -32,7 +41,7 @@ export default function PremiumModal() {
       if (!currentOffer) {
         const defaultOffer: PricingOffer = {
           price: 4.99,
-          productId: 'qure_premium_499',
+          productId: normalPid,
           displayPrice: '$4.99',
           trigger: 'default',
           message: 'Unlock all premium features'
@@ -42,6 +51,15 @@ export default function PremiumModal() {
         setOffer(currentOffer);
         await EngagementPricingService.recordOfferShown(currentOffer);
       }
+
+      /* map store products to UI */
+      setBaseProduct(products.find(p => p.productId === normalPid) || null);
+      if (currentOffer) {
+        setOfferProduct(products.find(p => p.productId === currentOffer.productId) || null);
+      } else {
+        // For default offer, the offer product is the same as base product
+        setOfferProduct(products.find(p => p.productId === normalPid) || null);
+      }
       
       setInsights(engagementInsights);
     } catch (error) {
@@ -50,7 +68,7 @@ export default function PremiumModal() {
       
       const defaultOffer: PricingOffer = {
         price: 4.99,
-        productId: 'qure_premium_499',
+        productId: normalPid,
         displayPrice: '$4.99',
         trigger: 'default',
         message: 'Unlock all premium features'
@@ -145,6 +163,10 @@ export default function PremiumModal() {
   const getSpecialMessage = () => {
     if (!offer || !insights) return null;
 
+    if (offer.trigger === 'launch_discount') {
+      return 'Limited-time launch offer! Get premium features at a special discounted price.';
+    }
+
     if (offer.trigger === 'secondary_slot') {
       return 'We noticed you tried to add a second QR code. Unlock this feature now!';
     }
@@ -204,24 +226,30 @@ export default function PremiumModal() {
           <View style={styles.priceCard}>
             <Text style={styles.priceTitle}>One-Time Purchase</Text>
             
-            {offer && offer.price < 4.99 && (
+            {offer && offerProduct && baseProduct && offerProduct.price < baseProduct.price && (
               <View style={styles.discountBadge}>
                 <Text style={styles.discountText}>SPECIAL PRICE</Text>
               </View>
             )}
             
             <View style={styles.priceRow}>
-              {offer && offer.price < 4.99 && (
-                <Text style={styles.originalPrice}>$4.99</Text>
+              {offerProduct && baseProduct && offerProduct.price < baseProduct.price && (
+                <Text style={styles.originalPrice}>{baseProduct.localizedPrice}</Text>
               )}
-              <Text style={styles.priceAmount}>{offer?.displayPrice || '$4.99'}</Text>
+              <Text style={styles.priceAmount}>
+                {offerProduct?.localizedPrice || offer?.displayPrice || baseProduct?.localizedPrice || '$4.99'}
+              </Text>
             </View>
             
             <Text style={styles.pricePeriod}>lifetime access</Text>
             
-            {offer && offer.price < 4.99 && (
+            {offerProduct && baseProduct && offerProduct.price < baseProduct.price && (
               <Text style={styles.savingsText}>
-                Save ${(4.99 - offer.price).toFixed(2)} with this offer!
+                {(() => {
+                  const diff = (Number(baseProduct.price) - Number(offerProduct.price)).toFixed(2);
+                  const symbol = (baseProduct.localizedPrice || '').replace(/[\d.,\s]/g, '') || '$';
+                  return `Save ${symbol}${diff} with this offer!`;
+                })()}
               </Text>
             )}
           </View>
@@ -254,7 +282,7 @@ export default function PremiumModal() {
             <ActivityIndicator color="white" />
           ) : (
             <Text style={styles.upgradeButtonText}>
-              Unlock Premium - {offer?.displayPrice || '$4.99'}
+              Unlock Premium - {offerProduct?.localizedPrice || offer?.displayPrice || baseProduct?.localizedPrice || '$4.99'}
             </Text>
           )}
         </TouchableOpacity>

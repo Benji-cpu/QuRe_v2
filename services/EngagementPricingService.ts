@@ -119,6 +119,22 @@ export class EngagementPricingService {
 
   static async determineOffer(): Promise<PricingOffer | null> {
     try {
+      /* ----------------------------------------------------------
+         Global launch-discount (remove after the launch period)
+         ---------------------------------------------------------- */
+      const LAUNCH_DISCOUNT_END = new Date('2025-07-31');   // <-- adjust / remote-config later
+      const platform = Platform.OS as 'ios' | 'android';
+
+      if (Date.now() < LAUNCH_DISCOUNT_END.getTime()) {
+        return {
+          price: 3.99,                                     // numeric fallback
+          productId: PRODUCT_IDS[platform].tier2,          // tier below normal
+          displayPrice: '$3.99',                           // will be replaced by UI with
+          trigger: 'launch_discount',                      //   store-formatted price
+          message: 'Limited-time launch offer – unlock all premium features'
+        };
+      }
+
       const metrics = await this.getEngagementMetrics();
       const history = await this.getOfferHistory();
 
@@ -136,7 +152,6 @@ export class EngagementPricingService {
       }
 
       const engagementScore = this.calculateEngagementScore(metrics);
-      const platform = Platform.OS as 'ios' | 'android';
 
       if (metrics.secondarySlotAttempts >= 2 && !this.hasSeenTrigger(history, 'secondary_slot')) {
         return {
