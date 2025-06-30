@@ -434,115 +434,120 @@ function HomeScreen() {
   return (
     <GestureHandlerRootView style={styles.container}>
       <StatusBar style="light" />
-      <TouchableWithoutFeedback onPress={handleBackgroundPress}>
-        <View style={styles.container}>
-          <GestureDetector gesture={swipeGesture}>
-            <View style={styles.container}>
-              <View ref={wallpaperRef} collapsable={false} style={styles.wallpaperContainer}>
-                <GradientBackground
-                  currentGradient={previousGradient}
-                  nextGradient={currentGradient}
-                  transition={gradientTransition}
-                >
-                  <View style={styles.content}>
-                    {shouldShowTitleArea && (
-                      <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
-                        <Pressable onPress={handleTitlePress} style={styles.titleContainer}>
-                          <Animated.Text style={[styles.appTitle, { opacity: titleOpacity }]}>
-                            QuRe
-                          </Animated.Text>
-                          {(!isPremium || (isPremium && showTitle)) && (
-                            <Text style={styles.closeButton}>×</Text>
-                          )}
-                        </Pressable>
-                      </View>
+      <View style={styles.container}>
+        <GestureDetector gesture={swipeGesture}>
+          <View style={styles.container}>
+            <View ref={wallpaperRef} collapsable={false} style={styles.wallpaperContainer}>
+              <GradientBackground
+                currentGradient={previousGradient}
+                nextGradient={currentGradient}
+                transition={gradientTransition}
+              >
+                {/* Background touch handler - only active when sliders are expanded */}
+                {sliderExpanded && (
+                  <TouchableWithoutFeedback onPress={handleBackgroundPress}>
+                    <View style={StyleSheet.absoluteFillObject} />
+                  </TouchableWithoutFeedback>
+                )}
+                
+                <View style={styles.content}>
+                  {shouldShowTitleArea && (
+                    <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
+                      <Pressable onPress={handleTitlePress} style={styles.titleContainer}>
+                        <Animated.Text style={[styles.appTitle, { opacity: titleOpacity }]}>
+                          QuRe
+                        </Animated.Text>
+                        {(!isPremium || (isPremium && showTitle)) && (
+                          <Text style={styles.closeButton}>×</Text>
+                        )}
+                      </Pressable>
+                    </View>
+                  )}
+
+                  <Animated.View style={{ opacity: elementsOpacity }}>
+                    {!hideElementsForExport && !sliderExpanded && (
+                      <TimeDisplay currentTime={currentTime} />
                     )}
+                  </Animated.View>
 
-                    <Animated.View style={{ opacity: elementsOpacity }}>
-                      {!hideElementsForExport && !sliderExpanded && (
-                        <TimeDisplay currentTime={currentTime} />
-                      )}
-                    </Animated.View>
-
-                    <View style={styles.middleContent}>
-                      {showActionButtons && (
-                        <View style={styles.actionSection}>
-                          <Animated.View style={{ opacity: elementsOpacity }}>
-                            {!sliderExpanded && (
-                              <ActionCards 
-                                onExportWallpaper={handleExportWallpaper}
-                                onSettings={handleSettings}
-                              />
-                            )}
-                          </Animated.View>
-                          
-                          {showPositionSlider && (
-                            <PositionSlider
-                              verticalValue={qrVerticalOffset}
-                              horizontalValue={qrHorizontalOffset}
-                              scaleValue={qrScale}
-                              onVerticalChange={handleVerticalOffsetChange}
-                              onHorizontalChange={handleHorizontalOffsetChange}
-                              onScaleChange={handleScaleChange}
-                              visible={showPositionSlider}
-                              isExpanded={sliderExpanded}
-                              onExpand={handleSliderExpand}
-                              onCollapse={handleSliderCollapse}
-                              singleQRMode={qrSlotMode === 'single'}
+                  <View style={styles.middleContent}>
+                    {showActionButtons && (
+                      <View style={styles.actionSection}>
+                        <Animated.View style={{ opacity: elementsOpacity }}>
+                          {!sliderExpanded && (
+                            <ActionCards 
+                              onExportWallpaper={handleExportWallpaper}
+                              onSettings={handleSettings}
                             />
                           )}
-                        </View>
-                      )}
-                    </View>
-
-                    <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 15 }]}>
-                      <QRSlots
-                        primaryQR={primaryQR}
-                        secondaryQR={secondaryQR}
-                        isPremium={isPremium}
-                        showActionButtons={showActionButtons}
-                        verticalOffset={qrVerticalOffset}
-                        horizontalOffset={qrHorizontalOffset}
-                        scale={qrScale}
-                        onSlotPress={handleQRSlotPress}
-                        onRemoveQR={handleRemoveQR}
-                        hideEmptySlots={hideElementsForExport}
-                        singleQRMode={qrSlotMode === 'single'}
-                      />
-                      
-                      {showSwipeIndicator && (
-                        <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
-                      )}
-                    </View>
-
-                    {showExportPreview && (
-                      <View style={[styles.exportControls, { bottom: insets.bottom + 20 }]}> 
-                        <Pressable
-                          style={styles.exportBackButton}
-                          onPress={() => {
-                            setShowExportPreview(false);
-                            setShowActionButtons(true);
-                            setHideElementsForExport(false);
-                          }}
-                        >
-                          <Feather name="arrow-left" size={24} color="white" />
-                        </Pressable>
-                        <Pressable
-                          style={styles.exportSaveButton}
-                          onPress={handleSaveWallpaper}
-                        >
-                          <Feather name="download" size={20} color="white" />
-                          <Text style={styles.exportSaveText}>Save Wallpaper</Text>
-                        </Pressable>
+                        </Animated.View>
+                        
+                        {showPositionSlider && (
+                          <PositionSlider
+                            verticalValue={qrVerticalOffset}
+                            horizontalValue={qrHorizontalOffset}
+                            scaleValue={qrScale}
+                            onVerticalChange={handleVerticalOffsetChange}
+                            onHorizontalChange={handleHorizontalOffsetChange}
+                            onScaleChange={handleScaleChange}
+                            visible={showPositionSlider}
+                            isExpanded={sliderExpanded}
+                            onExpand={handleSliderExpand}
+                            onCollapse={handleSliderCollapse}
+                            singleQRMode={qrSlotMode === 'single'}
+                          />
+                        )}
                       </View>
                     )}
                   </View>
-                </GradientBackground>
-              </View>
+
+                  <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 15 }]}>
+                    <QRSlots
+                      primaryQR={primaryQR}
+                      secondaryQR={secondaryQR}
+                      isPremium={isPremium}
+                      showActionButtons={showActionButtons}
+                      verticalOffset={qrVerticalOffset}
+                      horizontalOffset={qrHorizontalOffset}
+                      scale={qrScale}
+                      onSlotPress={handleQRSlotPress}
+                      onRemoveQR={handleRemoveQR}
+                      hideEmptySlots={hideElementsForExport}
+                      singleQRMode={qrSlotMode === 'single'}
+                    />
+                    
+                    {showSwipeIndicator && (
+                      <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
+                    )}
+                  </View>
+
+                  {showExportPreview && (
+                    <View style={[styles.exportControls, { bottom: insets.bottom + 20 }]}> 
+                      <Pressable
+                        style={styles.exportBackButton}
+                        onPress={() => {
+                          setShowExportPreview(false);
+                          setShowActionButtons(true);
+                          setHideElementsForExport(false);
+                        }}
+                      >
+                        <Feather name="arrow-left" size={24} color="white" />
+                      </Pressable>
+                      <Pressable
+                        style={styles.exportSaveButton}
+                        onPress={handleSaveWallpaper}
+                      >
+                        <Feather name="download" size={20} color="white" />
+                        <Text style={styles.exportSaveText}>Save Wallpaper</Text>
+                      </Pressable>
+                    </View>
+                  )}
+                </View>
+              </GradientBackground>
             </View>
-          </GestureDetector>
-        </View>
-      </TouchableWithoutFeedback>
+          </View>
+        </GestureDetector>
+      </View>
     </GestureHandlerRootView>
   );
 }

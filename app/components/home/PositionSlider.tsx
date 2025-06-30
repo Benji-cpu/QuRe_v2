@@ -3,7 +3,7 @@ import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Gesture } from 'react-native-gesture-handler';
 
 interface PositionSliderProps {
   verticalValue: number;
@@ -128,69 +128,65 @@ export default function PositionSlider({
           marginBottom: scaleSpacing(12),
         }
       ]}
-      pointerEvents="box-none"
+      pointerEvents={isExpanded ? "auto" : "box-none"}
     >
       <Animated.View style={{ opacity: containerOpacity }}>
         {isExpanded ? (
-          <GestureDetector gesture={containerGesture}>
-            <View style={[styles.expandedCard, { borderRadius: scaleSpacing(12) }]}>
-              <TouchableOpacity 
-                activeOpacity={1}
-                style={[styles.sliderContent, { padding: scaleSpacing(20) }]}
-                onPress={(e) => e.stopPropagation()}
-              >
-                <View style={[styles.sliderHeader, { marginBottom: scaleSpacing(16) }]}>
-                  <Feather name="move" size={scaleFont(20)} color="white" />
-                  <Text style={[styles.sliderLabel, { fontSize: scaleFont(16) }]}>Adjust Position</Text>
-                </View>
-                
-                <View style={[styles.sliderRow, { marginBottom: scaleSpacing(12) }]}>
-                  <Feather name="arrow-up" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
-                  <Slider
-                    style={styles.slider}
-                    minimumValue={verticalRange.minValue}
-                    maximumValue={verticalRange.maxValue}
-                    value={verticalValue}
-                    onValueChange={onVerticalChange}
-                    minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-                    maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-                    thumbTintColor="white"
-                  />
-                  <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{Math.round(verticalValue)}</Text>
-                </View>
+          <View style={[styles.expandedCard, { borderRadius: scaleSpacing(12) }]}>
+            <View 
+              style={[styles.sliderContent, { padding: scaleSpacing(20) }]}
+            >
+              <View style={[styles.sliderHeader, { marginBottom: scaleSpacing(16) }]}>
+                <Feather name="move" size={scaleFont(20)} color="white" />
+                <Text style={[styles.sliderLabel, { fontSize: scaleFont(16) }]}>Adjust Position</Text>
+              </View>
+              
+              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(12) }]}>
+                <Feather name="arrow-up" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
+                <Slider
+                  style={styles.slider}
+                  minimumValue={verticalRange.minValue}
+                  maximumValue={verticalRange.maxValue}
+                  value={verticalValue}
+                  onValueChange={onVerticalChange}
+                  minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
+                  maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                  thumbTintColor="white"
+                />
+                <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{Math.round(verticalValue)}</Text>
+              </View>
 
-                <View style={[styles.sliderRow, { marginBottom: scaleSpacing(12) }]}>
-                  <Feather name="arrow-left" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
-                  <Slider
-                    style={styles.slider}
-                    minimumValue={-getMaxHorizontalOffset()}
-                    maximumValue={getMaxHorizontalOffset()}
-                    value={horizontalValue}
-                    onValueChange={onHorizontalChange}
-                    minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-                    maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-                    thumbTintColor="white"
-                  />
-                  <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{Math.round(horizontalValue)}</Text>
-                </View>
+              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(12) }]}>
+                <Feather name="arrow-left" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
+                <Slider
+                  style={styles.slider}
+                  minimumValue={-getMaxHorizontalOffset()}
+                  maximumValue={getMaxHorizontalOffset()}
+                  value={horizontalValue}
+                  onValueChange={onHorizontalChange}
+                  minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
+                  maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                  thumbTintColor="white"
+                />
+                <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{Math.round(horizontalValue)}</Text>
+              </View>
 
-                <View style={[styles.sliderRow, { marginBottom: scaleSpacing(12) }]}>
-                  <Feather name="maximize-2" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
-                  <Slider
-                    style={styles.slider}
-                    minimumValue={0.7}
-                    maximumValue={1.3}
-                    value={scaleValue}
-                    onValueChange={onScaleChange}
-                    minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-                    maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
-                    thumbTintColor="white"
-                  />
-                  <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{scaleValue.toFixed(2)}</Text>
-                </View>
-              </TouchableOpacity>
+              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(12) }]}>
+                <Feather name="maximize-2" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
+                <Slider
+                  style={styles.slider}
+                  minimumValue={0.7}
+                  maximumValue={1.3}
+                  value={scaleValue}
+                  onValueChange={onScaleChange}
+                  minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
+                  maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                  thumbTintColor="white"
+                />
+                <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{scaleValue.toFixed(2)}</Text>
+              </View>
             </View>
-          </GestureDetector>
+          </View>
         ) : (
           <TouchableOpacity 
             style={[
