@@ -554,49 +554,50 @@ function HomeScreen() {
                       <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
                     )}
                   </View>
-
-                  {showExportPreview && (
-                    <Animated.View 
-                      style={[
-                        styles.exportControls, 
-                        { bottom: insets.bottom + 20, opacity: exportOverlayOpacity }
-                      ]}
-                    > 
-                      <View style={styles.exportControlsContent}>
-                        <Text style={styles.exportPreviewTitle}>Wallpaper Preview</Text>
-                        <Text style={styles.exportPreviewSubtitle}>How your wallpaper will look</Text>
-                        <View style={styles.exportButtons}>
-                          <Pressable
-                            style={styles.exportCancelButton}
-                            onPress={() => {
-                              Animated.timing(exportOverlayOpacity, {
-                                toValue: 0,
-                                duration: 200,
-                                useNativeDriver: true,
-                              }).start(() => {
-                                setShowExportPreview(false);
-                                setShowActionButtons(true);
-                                setHideElementsForExport(false);
-                              });
-                            }}
-                          >
-                            <Feather name="x" size={20} color="white" />
-                            <Text style={styles.exportButtonText}>Cancel</Text>
-                          </Pressable>
-                          <Pressable
-                            style={styles.exportSaveButton}
-                            onPress={handleSaveWallpaper}
-                          >
-                            <Feather name="check" size={20} color="white" />
-                            <Text style={styles.exportButtonText}>Save</Text>
-                          </Pressable>
-                        </View>
-                      </View>
-                    </Animated.View>
-                  )}
                 </View>
               </GradientBackground>
             </View>
+            
+            {/* Export preview controls - moved outside wallpaperRef */}
+            {showExportPreview && (
+              <Animated.View 
+                style={[
+                  styles.exportControls, 
+                  { bottom: insets.bottom + 20, opacity: exportOverlayOpacity }
+                ]}
+              > 
+                <View style={styles.exportControlsContent}>
+                  <Text style={styles.exportPreviewTitle}>Wallpaper Preview</Text>
+                  <Text style={styles.exportPreviewSubtitle}>How your wallpaper will look</Text>
+                  <View style={styles.exportButtons}>
+                    <Pressable
+                      style={styles.exportCancelButton}
+                      onPress={() => {
+                        Animated.timing(exportOverlayOpacity, {
+                          toValue: 0,
+                          duration: 200,
+                          useNativeDriver: true,
+                        }).start(() => {
+                          setShowExportPreview(false);
+                          setShowActionButtons(true);
+                          setHideElementsForExport(false);
+                        });
+                      }}
+                    >
+                      <Feather name="x" size={20} color="white" />
+                      <Text style={styles.exportButtonText}>Cancel</Text>
+                    </Pressable>
+                    <Pressable
+                      style={styles.exportSaveButton}
+                      onPress={handleSaveWallpaper}
+                    >
+                      <Feather name="check" size={20} color="white" />
+                      <Text style={styles.exportButtonText}>Save</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              </Animated.View>
+            )}
           </View>
         </GestureDetector>
       </View>
