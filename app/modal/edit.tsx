@@ -207,7 +207,7 @@ export default function EditModal() {
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 30 }}
+        contentContainerStyle={{ paddingBottom: 100 }}
         keyboardShouldPersistTaps="handled"
       >
         {activeTab === 'content' ? (
@@ -254,7 +254,7 @@ export default function EditModal() {
         ) : null}
       </ScrollView>
       
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 30 }]}>
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
         <TouchableOpacity 
           style={styles.cancelButton} 
           onPress={() => router.back()}
@@ -397,7 +397,10 @@ const styles = StyleSheet.create({
       backgroundColor: '#fff',
       borderTopWidth: 1,
       borderTopColor: '#eee',
-      marginTop: 20,
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
     },
     cancelButton: {
     flex: 1,

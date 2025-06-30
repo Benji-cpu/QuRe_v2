@@ -73,8 +73,6 @@ export default function CreateModal() {
       case 'contact':
         return 'firstName' in formData && 'lastName' in formData && 
                formData.firstName?.trim() && formData.lastName?.trim();
-      case 'text':
-        return 'text' in formData && formData.text?.trim();
       default:
         return false;
     }
@@ -170,7 +168,7 @@ export default function CreateModal() {
         style={styles.content} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ 
-          paddingBottom: Math.max(insets.bottom + 100, keyboardHeight + 100) 
+          paddingBottom: keyboardHeight > 0 ? keyboardHeight + 20 : 40
         }}
         keyboardShouldPersistTaps="handled"
       >
@@ -223,7 +221,7 @@ export default function CreateModal() {
        ) : null}
      </ScrollView>
      
-     <View style={[styles.footer, { paddingBottom: insets.bottom + 20 }]}>
+     <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
        <TouchableOpacity 
          style={styles.cancelButton} 
          onPress={() => router.back()}
@@ -366,7 +364,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    marginTop: 20,
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
   },
  cancelButton: {
    flex: 1,

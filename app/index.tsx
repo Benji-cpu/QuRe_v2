@@ -66,6 +66,8 @@ function HomeScreen() {
   const [titleOpacity] = useState(new Animated.Value(1));
   const [showExportPreview, setShowExportPreview] = useState(false);
   const [exportOverlayOpacity] = useState(new Animated.Value(0));
+  const [customBackground, setCustomBackground] = useState<string | null>(null);
+  const [backgroundType, setBackgroundType] = useState<'gradient' | 'custom'>('gradient');
   
   const gradientTransition = useSharedValue(0);
 
@@ -88,8 +90,25 @@ function HomeScreen() {
       setQrScale(preferences.qrScale || 1);
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
+      
+      // Force gradient mode for non-premium users
+      if (!premium && preferences.backgroundType === 'custom') {
+        setBackgroundType('gradient');
+        await UserPreferencesService.updateBackgroundType('gradient');
+      } else {
+        setBackgroundType(preferences.backgroundType || 'gradient');
+      }
+      
       setShowOnboarding(!hasCompletedOnboarding);
       setShowPositionSlider(hasCompletedOnboarding);
+
+      // Load custom background only for premium users
+      if (premium) {
+        const customBg = await UserPreferencesService.getCustomBackground();
+        setCustomBackground(customBg);
+      } else {
+        setCustomBackground(null);
+      }
 
       const swipeCount = await getSwipeIndicatorCount();
       setShowSwipeIndicator(hasCompletedOnboarding && swipeCount < 5);
@@ -185,7 +204,7 @@ function HomeScreen() {
   };
 
   const swipeGesture = Gesture.Pan()
-  .enabled(!sliderExpanded)
+  .enabled(!sliderExpanded && backgroundType === 'gradient')
   .onEnd((event) => {
     if (Math.abs(event.velocityX) > Math.abs(event.velocityY)) {
       if (event.velocityX > 500) {
@@ -476,6 +495,8 @@ function HomeScreen() {
                 currentGradient={previousGradient}
                 nextGradient={currentGradient}
                 transition={gradientTransition}
+                customBackground={customBackground}
+                backgroundType={backgroundType}
               >
                 {/* Background touch handler - only active when sliders are expanded */}
                 {sliderExpanded && (

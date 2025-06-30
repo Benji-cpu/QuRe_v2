@@ -13,6 +13,7 @@ export interface UserPreferences {
   qrScale?: number;
   showTitle?: boolean;
   qrSlotMode?: 'single' | 'double';
+  backgroundType?: 'gradient' | 'custom';
 }
 
 export class UserPreferencesService {
@@ -25,7 +26,8 @@ export class UserPreferencesService {
         qrHorizontalOffset: 0,
         qrScale: 1,
         showTitle: true,
-        qrSlotMode: 'double'
+        qrSlotMode: 'double',
+        backgroundType: 'gradient'
       };
     } catch (error) {
       console.error('Error loading user preferences:', error);
@@ -35,7 +37,8 @@ export class UserPreferencesService {
         qrHorizontalOffset: 0,
         qrScale: 1,
         showTitle: true,
-        qrSlotMode: 'double'
+        qrSlotMode: 'double',
+        backgroundType: 'gradient'
       };
     }
   }
@@ -194,6 +197,17 @@ export class UserPreferencesService {
       }
     } catch (error) {
       console.error('Error setting custom background:', error);
+      throw error;
+    }
+  }
+
+  static async updateBackgroundType(type: 'gradient' | 'custom'): Promise<void> {
+    try {
+      const preferences = await this.getPreferences();
+      preferences.backgroundType = type;
+      await this.savePreferences(preferences);
+    } catch (error) {
+      console.error('Error updating background type:', error);
       throw error;
     }
   }

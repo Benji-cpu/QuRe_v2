@@ -18,6 +18,7 @@ export default function SettingsModal() {
   const [qrSlotMode, setQrSlotMode] = useState<'single' | 'double'>('double');
   const [isRestoring, setIsRestoring] = useState(false);
   const [customBackground, setCustomBackground] = useState<string | null>(null);
+  const [backgroundType, setBackgroundType] = useState<'gradient' | 'custom'>('gradient');
 
   useEffect(() => {
     loadSettings();
@@ -33,6 +34,14 @@ export default function SettingsModal() {
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
       
+      // Force gradient mode for non-premium users
+      if (!premium && preferences.backgroundType === 'custom') {
+        setBackgroundType('gradient');
+        await UserPreferencesService.updateBackgroundType('gradient');
+      } else {
+        setBackgroundType(preferences.backgroundType || 'gradient');
+      }
+      
       const customBg = await UserPreferencesService.getCustomBackground();
       setCustomBackground(customBg);
     } catch (error) {
@@ -44,6 +53,11 @@ export default function SettingsModal() {
     try {
       setSelectedGradientId(gradientId);
       await UserPreferencesService.updateGradient(gradientId);
+      // Automatically switch to gradient mode when selecting a gradient
+      if (backgroundType !== 'gradient') {
+        setBackgroundType('gradient');
+        await UserPreferencesService.updateBackgroundType('gradient');
+      }
     } catch (error) {
       Alert.alert('Error', 'Failed to update gradient');
     }
@@ -82,10 +96,15 @@ export default function SettingsModal() {
     }
 
     try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant permission to access your photos');
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [9, 16],
+        allowsEditing: false,
         quality: 1,
         base64: false,
       });
@@ -93,20 +112,33 @@ export default function SettingsModal() {
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
         
-        if (asset.width < asset.height * 0.5 || asset.width > asset.height * 0.7) {
-          Alert.alert(
-            'Invalid Image Dimensions',
-            'Please select a portrait image (9:16 ratio recommended)',
-            [{ text: 'OK' }]
-          );
-          return;
-        }
-        
+        // Store the image and switch to custom background mode
         await UserPreferencesService.setCustomBackground(asset.uri);
         setCustomBackground(asset.uri);
-        Alert.alert('Success', 'Custom background uploaded successfully');
+        setBackgroundType('custom');
+        await UserPreferencesService.updateBackgroundType('custom');
+        
+        // Calculate aspect ratio for informational purposes
+        const imageAspectRatio = asset.width / asset.height;
+        const screenAspectRatio = 9 / 16; // Portrait orientation
+        
+        // Allow some tolerance (±20%) for aspect ratio
+        const tolerance = 0.20;
+        const minRatio = screenAspectRatio * (1 - tolerance);
+        const maxRatio = screenAspectRatio * (1 + tolerance);
+        
+        if (imageAspectRatio < minRatio || imageAspectRatio > maxRatio) {
+          Alert.alert(
+            'Image Set Successfully',
+            `Your custom background has been set! Note: The image aspect ratio (${(imageAspectRatio).toFixed(2)}) differs from the ideal portrait ratio (0.56). The image will be scaled to fit.`,
+            [{ text: 'OK' }]
+          );
+        } else {
+          Alert.alert('Success', 'Custom background set successfully!');
+        }
       }
     } catch (error) {
+      console.error('Error uploading background:', error);
       Alert.alert('Error', 'Failed to upload background');
     }
   };
@@ -183,66 +215,157 @@ export default function SettingsModal() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.sectionTitle}>Background Gradients</Text>
+        <Text style={styles.sectionTitle}>Background</Text>
         
-        <View style={styles.gradientsGrid}>
-          {GRADIENT_PRESETS.map((gradient) => (
-            <Pressable
-              key={gradient.id}
-              style={[
-                styles.gradientOption,
-                selectedGradientId === gradient.id && styles.selectedGradient
-              ]}
-              onPress={() => handleGradientSelect(gradient.id)}
-            >
-              <LinearGradient
-                colors={gradient.colors as unknown as readonly [string, string, ...string[]]}
-                start={gradient.start}
-                end={gradient.end}
-                style={styles.gradientPreview}
-              />
-              <Text style={styles.gradientName}>{gradient.name}</Text>
-              {selectedGradientId === gradient.id && (
-                <View style={styles.selectedIndicator}>
-                  <Text style={styles.checkmark}>✓</Text>
-                </View>
-              )}
-            </Pressable>
-          ))}
-        </View>
-
-        <Text style={styles.sectionTitle}>Custom Background</Text>
-
-        <View style={styles.customBackgroundContainer}>
-          <TouchableOpacity 
-            style={[styles.uploadButton, !isPremium && styles.lockedButton]}
-            onPress={handleUploadBackground}
+        {/* Background Type Switcher - Make it more prominent */}
+        <View style={styles.backgroundTypeSwitcher}>
+          <Pressable
+            style={[
+              styles.backgroundTypeButton,
+              backgroundType === 'gradient' && styles.backgroundTypeButtonActive
+            ]}
+            onPress={async () => {
+              setBackgroundType('gradient');
+              await UserPreferencesService.updateBackgroundType('gradient');
+            }}
           >
-            <Feather name="upload" size={20} color={isPremium ? "#2196f3" : "#999"} />
-            <Text style={[styles.uploadButtonText, !isPremium && styles.lockedButtonText]}>
-              Upload Custom Background
+            <Feather name="grid" size={20} color={backgroundType === 'gradient' ? "#2196f3" : "#666"} />
+            <Text style={[
+              styles.backgroundTypeButtonText,
+              backgroundType === 'gradient' && styles.backgroundTypeButtonTextActive
+            ]}>
+              Gradients
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[
+              styles.backgroundTypeButton,
+              backgroundType === 'custom' && isPremium && styles.backgroundTypeButtonActive,
+              !isPremium && styles.backgroundTypeButtonLocked
+            ]}
+            onPress={async () => {
+              if (!isPremium) {
+                router.push('/modal/premium');
+                return;
+              }
+              if (!customBackground) {
+                Alert.alert('No Custom Background', 'Please upload a custom background first');
+                return;
+              }
+              setBackgroundType('custom');
+              await UserPreferencesService.updateBackgroundType('custom');
+            }}
+          >
+            <Feather name="image" size={20} color={backgroundType === 'custom' && isPremium ? "#2196f3" : "#666"} />
+            <Text style={[
+              styles.backgroundTypeButtonText,
+              backgroundType === 'custom' && isPremium && styles.backgroundTypeButtonTextActive,
+              !isPremium && styles.backgroundTypeButtonTextLocked
+            ]}>
+              Custom Photo
             </Text>
             {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
-          </TouchableOpacity>
-          
-          {customBackground && (
-            <View style={styles.customBackgroundPreview}>
-              <Image 
-                source={{ uri: customBackground }} 
-                style={styles.backgroundThumbnail}
-              />
-              <TouchableOpacity
-                style={styles.removeBackgroundButton}
-                onPress={async () => {
-                  await UserPreferencesService.setCustomBackground(null);
-                  setCustomBackground(null);
-                }}
-              >
-                <Text style={styles.removeButtonText}>Remove</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          </Pressable>
         </View>
+
+        {/* Upload button - Only visible in custom photo mode for premium users */}
+        {backgroundType === 'custom' && isPremium && (
+          <View style={styles.customBackgroundContainer}>
+            <TouchableOpacity 
+              style={styles.uploadButton}
+              onPress={handleUploadBackground}
+            >
+              <Feather name="upload" size={20} color="#2196f3" />
+              <Text style={styles.uploadButtonText}>
+                {customBackground ? 'Change Custom Background' : 'Upload Custom Background'}
+              </Text>
+            </TouchableOpacity>
+            
+            <Text style={styles.uploadHint}>
+              For best results, use a portrait image
+            </Text>
+          </View>
+        )}
+
+        {backgroundType === 'gradient' ? (
+          <>
+            <Text style={styles.subsectionTitle}>Select Gradient</Text>
+            <View style={styles.gradientsGrid}>
+              {GRADIENT_PRESETS.map((gradient) => (
+                <Pressable
+                  key={gradient.id}
+                  style={[
+                    styles.gradientOption,
+                    selectedGradientId === gradient.id && styles.selectedGradient
+                  ]}
+                  onPress={() => handleGradientSelect(gradient.id)}
+                >
+                  <LinearGradient
+                    colors={gradient.colors as unknown as readonly [string, string, ...string[]]}
+                    start={gradient.start}
+                    end={gradient.end}
+                    style={styles.gradientPreview}
+                  />
+                  <Text style={styles.gradientName}>{gradient.name}</Text>
+                  {selectedGradientId === gradient.id && (
+                    <View style={styles.selectedIndicator}>
+                      <Text style={styles.checkmark}>✓</Text>
+                    </View>
+                  )}
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : (
+          <>
+            <Text style={styles.subsectionTitle}>Current Background</Text>
+            {customBackground ? (
+              <View style={styles.customBackgroundLarge}>
+                <Image 
+                  source={{ uri: customBackground }} 
+                  style={styles.backgroundLargeThumbnail}
+                  resizeMode="cover"
+                />
+                <View style={styles.customBackgroundActions}>
+                  <TouchableOpacity
+                    style={styles.replaceButton}
+                    onPress={handleUploadBackground}
+                  >
+                    <Feather name="refresh-cw" size={16} color="#2196f3" />
+                    <Text style={styles.replaceButtonText}>Replace</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={async () => {
+                      Alert.alert(
+                        'Remove Custom Background',
+                        'Are you sure you want to remove your custom background?',
+                        [
+                          { text: 'Cancel', style: 'cancel' },
+                          { 
+                            text: 'Remove', 
+                            style: 'destructive',
+                            onPress: async () => {
+                              await UserPreferencesService.setCustomBackground(null);
+                              setCustomBackground(null);
+                              setBackgroundType('gradient');
+                              await UserPreferencesService.updateBackgroundType('gradient');
+                            }
+                          }
+                        ]
+                      );
+                    }}
+                  >
+                    <Feather name="trash-2" size={16} color="#f44336" />
+                    <Text style={styles.removeButtonText}>Remove</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <Text style={styles.noBackgroundText}>No custom background uploaded</Text>
+            )}
+          </>
+        )}
 
         <Text style={styles.sectionTitle}>Display Settings</Text>
         
@@ -632,5 +755,103 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+  },
+  backgroundTypeSwitcher: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  backgroundTypeButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#ddd',
+    backgroundColor: 'white',
+    position: 'relative',
+  },
+  backgroundTypeButtonActive: {
+    borderColor: '#2196f3',
+    backgroundColor: '#e3f2fd',
+  },
+  backgroundTypeButtonLocked: {
+    borderColor: '#ddd',
+    backgroundColor: '#f5f5f5',
+    opacity: 0.7,
+  },
+  backgroundTypeButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#666',
+  },
+  backgroundTypeButtonTextActive: {
+    color: '#2196f3',
+  },
+  backgroundTypeButtonTextLocked: {
+    color: '#999',
+  },
+  subsectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#555',
+    marginBottom: 10,
+  },
+  customBackgroundLarge: {
+    marginBottom: 20,
+  },
+  backgroundLargeThumbnail: {
+    width: '100%',
+    height: 200,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  customBackgroundActions: {
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: 'center',
+  },
+  replaceButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#2196f3',
+  },
+  replaceButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2196f3',
+  },
+  removeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#f44336',
+  },
+  uploadHint: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  noBackgroundText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
