@@ -361,9 +361,25 @@ function HomeScreen() {
           {
             text: 'Open Gallery',
             onPress: () => {
-              Linking.openURL('content://media/external/images/media').catch(() => {
-                Alert.alert('Could not open Gallery', 'Please open your Gallery app manually');
-              });
+              // Try multiple approaches to open gallery
+              const galleryIntents = [
+                'android.intent.action.VIEW',
+                'android.intent.action.PICK',
+              ];
+              
+              // First try to open the gallery with a standard intent
+              Linking.openURL('intent://gallery#Intent;action=android.intent.action.VIEW;type=image/*;end')
+                .catch(() => {
+                  // If that fails, try to open with a simpler intent
+                  return Linking.openURL('intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.APP_GALLERY;end');
+                })
+                .catch(() => {
+                  // As a last resort, try the photos picker
+                  return Linking.openURL('intent:#Intent;action=android.intent.action.GET_CONTENT;type=image/*;end');
+                })
+                .catch(() => {
+                  Alert.alert('Could not open Gallery', 'Please open your Gallery app manually');
+                });
             },
           },
         ]

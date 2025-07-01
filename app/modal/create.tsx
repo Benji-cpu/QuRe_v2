@@ -131,7 +131,7 @@ export default function CreateModal() {
     <KeyboardAvoidingView 
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -20}
     >
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Create QR Code</Text>
@@ -168,7 +168,8 @@ export default function CreateModal() {
         style={styles.content} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ 
-          paddingBottom: keyboardHeight > 0 ? keyboardHeight + 20 : 40
+          padding: 20,
+          paddingBottom: keyboardHeight > 0 ? 20 : 40
         }}
         keyboardShouldPersistTaps="handled"
       >
@@ -221,7 +222,7 @@ export default function CreateModal() {
        ) : null}
      </ScrollView>
      
-     <View style={[styles.footer, { paddingBottom: insets.bottom + 10 }]}>
+     <View style={[styles.footer, { paddingBottom: insets.bottom || 10 }]}>
        <TouchableOpacity 
          style={styles.cancelButton} 
          onPress={() => router.back()}
@@ -303,7 +304,6 @@ const styles = StyleSheet.create({
  },
  content: {
    flex: 1,
-   padding: 20,
  },
  historyButton: {
    backgroundColor: '#fff',
