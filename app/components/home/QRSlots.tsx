@@ -1,6 +1,6 @@
 import { Feather } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { QRCodeData } from '../../../types/QRCode';
 import QRCodePreview from '../QRCodePreview';
 
@@ -9,8 +9,8 @@ interface QRSlotsProps {
   secondaryQR: QRCodeData | null;
   isPremium: boolean;
   showActionButtons: boolean;
-  verticalOffset: number;
-  horizontalOffset: number;
+  verticalOffset: number;  // Now expects percentage (0-100)
+  horizontalOffset: number;  // Now expects percentage (-50 to 50)
   scale: number;
   onSlotPress: (slot: 'primary' | 'secondary') => void;
   onRemoveQR: (slot: 'primary' | 'secondary') => void;
@@ -41,6 +41,11 @@ export default function QRSlots({
   singleQRMode = false,
 }: QRSlotsProps) {
   const [showInstructions, setShowInstructions] = useState(false);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  
+  // Convert percentage values to pixels
+  const verticalOffsetPixels = (verticalOffset / 100) * screenHeight;
+  const horizontalOffsetPixels = (horizontalOffset / 100) * screenWidth;
 
   const getQRSize = () => {
     const baseSize = singleQRMode ? 120 : 90;
@@ -49,19 +54,20 @@ export default function QRSlots({
 
   const getContainerStyle = () => {
     return {
-      marginBottom: verticalOffset,
-      paddingHorizontal: singleQRMode ? 20 : Math.max(20 - Math.abs(horizontalOffset), 10),
+      marginBottom: verticalOffsetPixels,
+      paddingHorizontal: singleQRMode ? 20 : Math.max(20 - Math.abs(horizontalOffsetPixels), 10),
     };
   };
 
   const getSlotStyle = (isLeft: boolean) => {
     if (singleQRMode) {
       return {
-        transform: [{ translateX: horizontalOffset }],
+        transform: [{ translateX: horizontalOffsetPixels }],
       };
     }
-    const maxOffset = 30;
-    const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, horizontalOffset));
+    // For double mode, limit the offset to prevent overlap
+    const maxOffsetPixels = screenWidth * 0.2; // 20% of screen width
+    const clampedOffset = Math.max(-maxOffsetPixels, Math.min(maxOffsetPixels, horizontalOffsetPixels));
     const offset = isLeft ? -clampedOffset : clampedOffset;
     return {
       transform: [{ translateX: offset }],

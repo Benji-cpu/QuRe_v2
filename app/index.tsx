@@ -30,7 +30,7 @@ function HomeScreen() {
   const wallpaperRef = useRef<View>(null);
   const sessionStartTime = useRef<number>(Date.now());
   
-  const { height: screenHeight } = useWindowDimensions();
+  const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   
   const convertToPercentageBasedOffset = (fixedValue: number): number => {
     const oldMin = 20;
@@ -38,11 +38,11 @@ function HomeScreen() {
     const oldRange = oldMax - oldMin;
     const normalizedValue = (fixedValue - oldMin) / oldRange;
     
-    const newMin = screenHeight * 0.02;
-    const newMax = screenHeight * 0.4;
-    const newRange = newMax - newMin;
-    
-    return newMin + (normalizedValue * newRange);
+    return normalizedValue * 100;
+  };
+  
+  const percentageToPixels = (percentage: number, dimension: number): number => {
+    return (percentage / 100) * dimension;
   };
   
   const [currentGradientIndex, setCurrentGradientIndex] = useState(0);
@@ -52,8 +52,8 @@ function HomeScreen() {
   const [secondaryQR, setSecondaryQR] = useState<QRCodeData | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
-  const [qrVerticalOffset, setQrVerticalOffset] = useState(() => convertToPercentageBasedOffset(80));
-  const [qrHorizontalOffset, setQrHorizontalOffset] = useState(0);
+  const [qrVerticalOffsetPercentage, setQrVerticalOffsetPercentage] = useState(20);
+  const [qrHorizontalOffsetPercentage, setQrHorizontalOffsetPercentage] = useState(0);
   const [qrScale, setQrScale] = useState(1);
   const [showSwipeIndicator, setShowSwipeIndicator] = useState(false);
   const [showPositionSlider, setShowPositionSlider] = useState(false);
@@ -84,14 +84,17 @@ function HomeScreen() {
       setIsPremium(premium);
       
       const verticalOffset = preferences.qrVerticalOffset || 80;
-      setQrVerticalOffset(convertToPercentageBasedOffset(verticalOffset));
+      if (verticalOffset > 100) {
+        setQrVerticalOffsetPercentage(convertToPercentageBasedOffset(verticalOffset));
+      } else {
+        setQrVerticalOffsetPercentage(verticalOffset);
+      }
       
-      setQrHorizontalOffset(preferences.qrHorizontalOffset || 0);
+      setQrHorizontalOffsetPercentage(preferences.qrHorizontalOffset || 0);
       setQrScale(preferences.qrScale || 1);
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
       
-      // Force gradient mode for non-premium users
       if (!premium && preferences.backgroundType === 'custom') {
         setBackgroundType('gradient');
         await UserPreferencesService.updateBackgroundType('gradient');
@@ -102,7 +105,6 @@ function HomeScreen() {
       setShowOnboarding(!hasCompletedOnboarding);
       setShowPositionSlider(hasCompletedOnboarding);
 
-      // Load custom background only for premium users
       if (premium) {
         const customBg = await UserPreferencesService.getCustomBackground();
         setCustomBackground(customBg);
@@ -232,7 +234,7 @@ function HomeScreen() {
 
   const handleVerticalOffsetChange = async (value: number) => {
     try {
-      setQrVerticalOffset(value);
+      setQrVerticalOffsetPercentage(value);
       await UserPreferencesService.updateQRVerticalOffset(value);
     } catch (error) {
       console.error('Error updating vertical offset:', error);
@@ -241,7 +243,7 @@ function HomeScreen() {
 
   const handleHorizontalOffsetChange = async (value: number) => {
     try {
-      setQrHorizontalOffset(value);
+      setQrHorizontalOffsetPercentage(value);
       await UserPreferencesService.updateQRHorizontalOffset(value);
     } catch (error) {
       console.error('Error updating horizontal offset:', error);
@@ -283,7 +285,6 @@ function HomeScreen() {
     setHideElementsForExport(true);
     setShowExportPreview(true);
     
-    // Animate in the export overlay
     Animated.timing(exportOverlayOpacity, {
       toValue: 1,
       duration: 300,
@@ -308,7 +309,6 @@ function HomeScreen() {
         return;
       }
 
-      // Use JPEG on Android to avoid PNG decoding issues in Gallery
       const captureFormat = Platform.OS === 'android' ? 'jpg' : 'png';
       const uri = await captureRef(wallpaperRef, {
         format: captureFormat,
@@ -318,7 +318,6 @@ function HomeScreen() {
       await MediaLibrary.saveToLibraryAsync(uri);
       await EngagementPricingService.trackAction('wallpapersExported');
       
-      // Animate out before resetting
       Animated.timing(exportOverlayOpacity, {
         toValue: 0,
         duration: 200,
@@ -346,7 +345,6 @@ function HomeScreen() {
 
   const showSaveInstructions = () => {
     if (Platform.OS === 'android') {
-      // Show a toast message that stays on screen for several seconds
       ToastAndroid.showWithGravity(
         'Wallpaper saved! Open Gallery › Downloads (or "QuRe") to set it.',
         ToastAndroid.LONG,
@@ -354,28 +352,24 @@ function HomeScreen() {
       );
       
       Alert.alert(
-        'Wallpaper Saved! ✓',
+        'Wallpaper Saved!',
         'Your wallpaper has been saved to Gallery.\n\nTo set as wallpaper:\n1. Open Gallery app\n2. Find the wallpaper (usually in Downloads or QuRe folder)\n3. Tap menu (3 dots)\n4. Select "Set as wallpaper"\n5. Choose "Lock screen"',
         [
           { text: 'OK', style: 'default' },
           {
-            text: 'Open Gallery',
+            text: 'Set as Wallpaper',
             onPress: async () => {
-              // Try to open the Downloads folder in a file manager
               try {
-                // First, try to open the Downloads directory with a file manager
-                await Linking.openURL('content://com.android.externalstorage.documents/document/primary%3ADownload');
-              } catch {
+                await Linking.openURL('intent:#Intent;action=android.intent.action.SET_WALLPAPER;end');
+              } catch (error) {
                 try {
-                  // If that fails, try opening Pictures directory
-                  await Linking.openURL('content://com.android.externalstorage.documents/document/primary%3APictures');
+                  await Linking.openURL('intent:#Intent;action=android.intent.action.CHOOSER;type=image/*;end');
                 } catch {
-                  try {
-                    // Last resort: try to open file manager with intent
-                    await Linking.openURL('intent:#Intent;action=android.intent.action.VIEW;type=vnd.android.document/directory;end');
-                  } catch {
-                    Alert.alert('Could not open Gallery', 'Please open your Gallery or Files app manually');
-                  }
+                  Alert.alert(
+                    'Could not open wallpaper chooser', 
+                    'Please set the wallpaper manually:\n1. Open your Gallery app\n2. Find the saved wallpaper\n3. Set it as your wallpaper',
+                    [{ text: 'OK' }]
+                  );
                 }
               }
             },
@@ -521,7 +515,6 @@ function HomeScreen() {
                 customBackground={customBackground}
                 backgroundType={backgroundType}
               >
-                {/* Background touch handler - only active when sliders are expanded */}
                 {sliderExpanded && (
                   <TouchableWithoutFeedback onPress={handleBackgroundPress}>
                     <View style={StyleSheet.absoluteFillObject} />
@@ -562,8 +555,8 @@ function HomeScreen() {
                         
                         {showPositionSlider && (
                           <PositionSlider
-                            verticalValue={qrVerticalOffset}
-                            horizontalValue={qrHorizontalOffset}
+                            verticalValue={qrVerticalOffsetPercentage}
+                            horizontalValue={qrHorizontalOffsetPercentage}
                             scaleValue={qrScale}
                             onVerticalChange={handleVerticalOffsetChange}
                             onHorizontalChange={handleHorizontalOffsetChange}
@@ -585,8 +578,8 @@ function HomeScreen() {
                       secondaryQR={secondaryQR}
                       isPremium={isPremium}
                       showActionButtons={showActionButtons}
-                      verticalOffset={qrVerticalOffset}
-                      horizontalOffset={qrHorizontalOffset}
+                      verticalOffset={qrVerticalOffsetPercentage}
+                      horizontalOffset={qrHorizontalOffsetPercentage}
                       scale={qrScale}
                       onSlotPress={handleQRSlotPress}
                       onRemoveQR={handleRemoveQR}
@@ -602,7 +595,6 @@ function HomeScreen() {
               </GradientBackground>
             </View>
             
-            {/* Export preview controls - moved outside wallpaperRef */}
             {showExportPreview && (
               <Animated.View 
                 style={[

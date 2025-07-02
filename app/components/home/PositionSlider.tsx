@@ -6,11 +6,11 @@ import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View, useWindow
 import { Gesture } from 'react-native-gesture-handler';
 
 interface PositionSliderProps {
-  verticalValue: number;
-  horizontalValue: number;
+  verticalValue: number;  // Now expects percentage (0-100)
+  horizontalValue: number;  // Now expects percentage (-50 to 50)
   scaleValue: number;
-  onVerticalChange: (value: number) => void;
-  onHorizontalChange: (value: number) => void;
+  onVerticalChange: (value: number) => void;  // Will receive percentage
+  onHorizontalChange: (value: number) => void;  // Will receive percentage
   onScaleChange: (value: number) => void;
   visible: boolean;
   isExpanded: boolean;
@@ -44,6 +44,15 @@ export default function PositionSlider({
   const scale = screenWidth / 375; // Base width of iPhone X
   const scaleFont = (size: number) => Math.round(size * Math.min(scale, 1.2));
   const scaleSpacing = (size: number) => Math.round(size * scale);
+  
+  // Convert pixel values to percentages for display
+  const pixelsToPercentage = (pixels: number, dimension: number): number => {
+    return (pixels / dimension) * 100;
+  };
+  
+  // Get current percentage values
+  const verticalPercentage = pixelsToPercentage(verticalValue, screenHeight);
+  const horizontalPercentage = pixelsToPercentage(horizontalValue, screenWidth);
 
   useEffect(() => {
     if (visible) {
@@ -99,22 +108,33 @@ export default function PositionSlider({
     })
     .runOnJS(true);
 
-  const getMaxHorizontalOffset = () => {
-    // Scale horizontal offset based on screen width
-    const baseOffset = singleQRMode ? 80 : 30;
-    return Math.round(baseOffset * (screenWidth / 375));
-  };
-
-  // Get dynamic vertical range based on screen height
+  // Get slider ranges
   const getVerticalRange = () => {
-    const minValue = Math.round(screenHeight * 0.02); // 2% of screen height
-    const maxValue = Math.round(screenHeight * 0.4); // 40% of screen height
-    return { minValue, maxValue };
+    // Percentage-based range: 2% to 50% from bottom
+    return { minValue: 2, maxValue: 50 };
+  };
+  
+  const getHorizontalRange = () => {
+    // For single QR mode: allow more movement (-45% to 45%)
+    // For double QR mode: limited movement (-20% to 20%)
+    const maxPercentage = singleQRMode ? 45 : 20;
+    return { minValue: -maxPercentage, maxValue: maxPercentage };
+  };
+  
+  const getScaleRange = () => {
+    // For single QR mode: allow smaller size (0.5 to 1.5)
+    // For double QR mode: more limited (0.7 to 1.3)
+    if (singleQRMode) {
+      return { minValue: 0.5, maxValue: 1.5 };
+    }
+    return { minValue: 0.7, maxValue: 1.3 };
   };
 
   if (!visible) return null;
 
   const verticalRange = getVerticalRange();
+  const horizontalRange = getHorizontalRange();
+  const scaleRange = getScaleRange();
 
   return (
     <Animated.View 
@@ -147,36 +167,36 @@ export default function PositionSlider({
                   style={styles.slider}
                   minimumValue={verticalRange.minValue}
                   maximumValue={verticalRange.maxValue}
-                  value={verticalValue}
+                  value={verticalPercentage}
                   onValueChange={onVerticalChange}
                   minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
                   maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                   thumbTintColor="white"
                 />
-                <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{Math.round(verticalValue)}</Text>
+                <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{Math.round(verticalPercentage)}%</Text>
               </View>
 
               <View style={[styles.sliderRow, { marginBottom: scaleSpacing(12) }]}>
                 <Feather name="arrow-left" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
                 <Slider
                   style={styles.slider}
-                  minimumValue={-getMaxHorizontalOffset()}
-                  maximumValue={getMaxHorizontalOffset()}
-                  value={horizontalValue}
+                  minimumValue={horizontalRange.minValue}
+                  maximumValue={horizontalRange.maxValue}
+                  value={horizontalPercentage}
                   onValueChange={onHorizontalChange}
                   minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
                   maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                   thumbTintColor="white"
                 />
-                <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{Math.round(horizontalValue)}</Text>
+                <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{Math.round(horizontalPercentage)}%</Text>
               </View>
 
               <View style={[styles.sliderRow, { marginBottom: scaleSpacing(12) }]}>
                 <Feather name="maximize-2" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
                 <Slider
                   style={styles.slider}
-                  minimumValue={0.7}
-                  maximumValue={1.3}
+                  minimumValue={scaleRange.minValue}
+                  maximumValue={scaleRange.maxValue}
                   value={scaleValue}
                   onValueChange={onScaleChange}
                   minimumTrackTintColor="rgba(255, 255, 255, 0.8)"

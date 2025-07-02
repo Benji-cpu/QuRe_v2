@@ -8,8 +8,8 @@ export interface UserPreferences {
   selectedGradientId: string;
   primaryQRCodeId?: string;
   secondaryQRCodeId?: string;
-  qrVerticalOffset?: number;
-  qrHorizontalOffset?: number;
+  qrVerticalOffset?: number;  // Now stores percentage (0-100)
+  qrHorizontalOffset?: number;  // Now stores percentage (-50 to 50)
   qrScale?: number;
   showTitle?: boolean;
   qrSlotMode?: 'single' | 'double';
@@ -20,21 +20,33 @@ export class UserPreferencesService {
   static async getPreferences(): Promise<UserPreferences> {
     try {
       const data = await AsyncStorage.getItem(PREFERENCES_KEY);
-      return data ? JSON.parse(data) : { 
+      const preferences = data ? JSON.parse(data) : { 
         selectedGradientId: 'sunset', 
-        qrVerticalOffset: 80,
-        qrHorizontalOffset: 0,
+        qrVerticalOffset: 20,  // Default 20% from bottom
+        qrHorizontalOffset: 0,  // Default centered
         qrScale: 1,
         showTitle: true,
         qrSlotMode: 'double',
         backgroundType: 'gradient'
       };
+      
+      // Migrate old pixel-based values to percentage-based
+      if (preferences.qrVerticalOffset && preferences.qrVerticalOffset > 100) {
+        // This is an old pixel-based value, convert to percentage
+        const oldMin = 20;
+        const oldMax = 300;
+        const oldRange = oldMax - oldMin;
+        const normalizedValue = (preferences.qrVerticalOffset - oldMin) / oldRange;
+        preferences.qrVerticalOffset = normalizedValue * 100;
+      }
+      
+      return preferences;
     } catch (error) {
       console.error('Error loading user preferences:', error);
       return { 
         selectedGradientId: 'sunset', 
-        qrVerticalOffset: 80,
-        qrHorizontalOffset: 0,
+        qrVerticalOffset: 20,  // Default 20% from bottom
+        qrHorizontalOffset: 0,  // Default centered
         qrScale: 1,
         showTitle: true,
         qrSlotMode: 'double',
