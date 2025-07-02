@@ -1,7 +1,7 @@
 // app/modal/create.tsx
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
-import { Alert, Keyboard, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { QRGenerator } from '../../services/QRGenerator';
@@ -29,7 +29,6 @@ export default function CreateModal() {
   });
   const [saving, setSaving] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   
   const formDataRef = useRef<QRCodeTypeData>(formData);
   
@@ -39,20 +38,6 @@ export default function CreateModal() {
 
   useEffect(() => {
     loadPremiumStatus();
-
-    const keyboardWillShow = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
-      (e) => setKeyboardHeight(e.endCoordinates.height)
-    );
-    const keyboardWillHide = Keyboard.addListener(
-      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
-      () => setKeyboardHeight(0)
-    );
-
-    return () => {
-      keyboardWillShow.remove();
-      keyboardWillHide.remove();
-    };
   }, []);
 
   const loadPremiumStatus = async () => {
@@ -131,7 +116,7 @@ export default function CreateModal() {
     <KeyboardAvoidingView 
       style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : -20}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Create QR Code</Text>
@@ -169,7 +154,7 @@ export default function CreateModal() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ 
           padding: 20,
-          paddingBottom: keyboardHeight > 0 ? 20 : 40
+          paddingBottom: 20 + insets.bottom
         }}
         keyboardShouldPersistTaps="handled"
       >
@@ -364,10 +349,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#eee',
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
   },
  cancelButton: {
    flex: 1,

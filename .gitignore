@@ -4,6 +4,10 @@
 /ios
 /android
 
+# Android build files
+*.aab
+*.apk
+
 # dependencies
 node_modules/
 
