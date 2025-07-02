@@ -74,6 +74,10 @@ export default function QRSlots({
   const renderQRSlot = (qr: QRCodeData | null, slot: 'primary' | 'secondary', isDefaultQuRe: boolean = false) => {
     if (qr || isDefaultQuRe) {
       const displayQR = qr || DEFAULT_QURE_QR;
+      // Check if the QR has a user-provided label
+      // For default QuRe QR, always show the label
+      const hasCustomLabel = isDefaultQuRe || (displayQR.data && 'label' in displayQR.data && displayQR.data.label);
+      
       return (
         <View style={styles.qrWrapper}>
           <View style={[styles.qrContainer, { width: containerSize, height: containerSize }]}>
@@ -94,7 +98,7 @@ export default function QRSlots({
               </TouchableOpacity>
             )}
           </View>
-          <Text style={styles.qrLabel}>{displayQR.label}</Text>
+          {hasCustomLabel && <Text style={styles.qrLabel}>{displayQR.label}</Text>}
         </View>
       );
     }

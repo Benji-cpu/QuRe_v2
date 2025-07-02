@@ -103,12 +103,7 @@ export default function CreateModal() {
     }
   };
 
-  const handleSelectFromHistory = () => {
-    router.replace({
-      pathname: '/modal/history',
-      params: { selectMode: 'true', slot: slot || '' }
-    });
-  };
+
  
   const qrContent = canSave() ? QRGenerator.generateContent(selectedType, formData) : '';
  
@@ -160,38 +155,24 @@ export default function CreateModal() {
       >
         {activeTab === 'content' ? (
           <>
-            <TouchableOpacity 
-             style={styles.historyButton}
-             onPress={handleSelectFromHistory}
-           >
-             <Text style={styles.historyButtonIcon}>📋</Text>
-             <Text style={styles.historyButtonText}>Select from History</Text>
-           </TouchableOpacity>
-
-           <View style={styles.divider}>
-             <View style={styles.dividerLine} />
-             <Text style={styles.dividerText}>OR CREATE NEW</Text>
-             <View style={styles.dividerLine} />
-           </View>
-           
-           <QRTypeSelector
-             selectedType={selectedType}
-             onTypeSelect={setSelectedType}
-           />
-           
-           <QRForm
-             type={selectedType}
-             initialData={formDataRef.current}
-             onDataChange={setFormData}
-           />
-         </>
-       ) : (
-         <QRDesignForm
-           design={design}
-           onDesignChange={setDesign}
-           isPremium={isPremium}
-         />
-       )}
+            <QRTypeSelector
+              selectedType={selectedType}
+              onTypeSelect={setSelectedType}
+            />
+            
+            <QRForm
+              type={selectedType}
+              initialData={formDataRef.current}
+              onDataChange={setFormData}
+            />
+          </>
+        ) : (
+          <QRDesignForm
+            design={design}
+            onDesignChange={setDesign}
+            isPremium={isPremium}
+          />
+        )}
        
        {qrContent ? (
          <View style={styles.previewContainer}>
@@ -289,42 +270,6 @@ const styles = StyleSheet.create({
  },
  content: {
    flex: 1,
- },
- historyButton: {
-   backgroundColor: '#fff',
-   borderRadius: 12,
-   padding: 20,
-   flexDirection: 'row',
-   alignItems: 'center',
-   justifyContent: 'center',
-   borderWidth: 2,
-   borderColor: '#2196f3',
-   marginBottom: 20,
- },
- historyButtonIcon: {
-   fontSize: 24,
-   marginRight: 10,
- },
- historyButtonText: {
-   fontSize: 16,
-   fontWeight: '600',
-   color: '#2196f3',
- },
- divider: {
-   flexDirection: 'row',
-   alignItems: 'center',
-   marginVertical: 20,
- },
- dividerLine: {
-   flex: 1,
-   height: 1,
-   backgroundColor: '#ddd',
- },
- dividerText: {
-   paddingHorizontal: 15,
-   fontSize: 12,
-   color: '#999',
-   fontWeight: '600',
  },
  previewContainer: {
    marginTop: 20,

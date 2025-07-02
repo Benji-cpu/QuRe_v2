@@ -315,8 +315,7 @@ function HomeScreen() {
         quality: 1,
       });
 
-      const savedAsset = await MediaLibrary.saveToLibraryAsync(uri);
-      const savedAssetUri: string | undefined = (savedAsset as any).localUri || (savedAsset as any).uri;
+      await MediaLibrary.saveToLibraryAsync(uri);
       await EngagementPricingService.trackAction('wallpapersExported');
       
       // Animate out before resetting
@@ -328,7 +327,7 @@ function HomeScreen() {
         setShowExportPreview(false);
         setShowActionButtons(true);
         setHideElementsForExport(false);
-        showSaveInstructions(savedAssetUri);
+        showSaveInstructions();
       });
     } catch (error) {
       Alert.alert('Error', 'Failed to save wallpaper');
@@ -345,7 +344,7 @@ function HomeScreen() {
     }
   };
 
-  const showSaveInstructions = (savedUri?: string) => {
+  const showSaveInstructions = () => {
     if (Platform.OS === 'android') {
       // Show a toast message that stays on screen for several seconds
       ToastAndroid.showWithGravity(
@@ -356,20 +355,32 @@ function HomeScreen() {
       
       Alert.alert(
         'Wallpaper Saved! ✓',
-        'Your wallpaper has been saved to your device.\n\nTo set as wallpaper:\n1. Tap "Open" below, or open your Gallery/Photos app\n2. Look in "Downloads" or "QuRe" folder if needed\n3. Select the wallpaper\n4. Tap menu (3 dots) → "Set as wallpaper"\n5. Choose "Lock screen" or "Home screen"',
+        'Your wallpaper has been saved to Gallery.\n\nTo set as wallpaper:\n1. Open Gallery app\n2. Find the wallpaper (usually in Downloads or QuRe folder)\n3. Tap menu (3 dots)\n4. Select "Set as wallpaper"\n5. Choose "Lock screen"',
         [
-          savedUri
-            ? {
-                text: 'Open',
-                onPress: () => {
-                  Linking.openURL(savedUri!).catch(() => {
-                    Alert.alert('Could not open image', 'Please open your Gallery app manually');
-                  });
-                },
+          { text: 'OK', style: 'default' },
+          {
+            text: 'Open Gallery',
+            onPress: async () => {
+              // Try to open the Downloads folder in a file manager
+              try {
+                // First, try to open the Downloads directory with a file manager
+                await Linking.openURL('content://com.android.externalstorage.documents/document/primary%3ADownload');
+              } catch {
+                try {
+                  // If that fails, try opening Pictures directory
+                  await Linking.openURL('content://com.android.externalstorage.documents/document/primary%3APictures');
+                } catch {
+                  try {
+                    // Last resort: try to open file manager with intent
+                    await Linking.openURL('intent:#Intent;action=android.intent.action.VIEW;type=vnd.android.document/directory;end');
+                  } catch {
+                    Alert.alert('Could not open Gallery', 'Please open your Gallery or Files app manually');
+                  }
+                }
               }
-            : undefined,
-          { text: 'Got it!', style: 'default' },
-        ].filter(Boolean) as any
+            },
+          },
+        ]
       );
     } else {
       const instructions = '1. Open Photos app\n2. Find the wallpaper\n3. Tap Share button\n4. Select "Use as Wallpaper"\n5. Choose "Set"';
