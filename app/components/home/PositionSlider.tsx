@@ -6,12 +6,15 @@ import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View, useWindow
 import { Gesture } from 'react-native-gesture-handler';
 
 interface PositionSliderProps {
-  verticalValue: number;  // Now expects percentage (0-100)
-  horizontalValue: number;  // Now expects percentage (-50 to 50)
+  verticalValue: number;  // Percentage (0-100)
+  horizontalValue: number;  // Percentage (-50 to 50)
   scaleValue: number;
   onVerticalChange: (value: number) => void;  // Will receive percentage
   onHorizontalChange: (value: number) => void;  // Will receive percentage
   onScaleChange: (value: number) => void;
+  onVerticalChangeEnd?: (value: number) => void;
+  onHorizontalChangeEnd?: (value: number) => void;
+  onScaleChangeEnd?: (value: number) => void;
   visible: boolean;
   isExpanded: boolean;
   onExpand?: () => void;
@@ -26,6 +29,9 @@ export default function PositionSlider({
   onVerticalChange, 
   onHorizontalChange,
   onScaleChange,
+  onVerticalChangeEnd,
+  onHorizontalChangeEnd,
+  onScaleChangeEnd,
   visible,
   isExpanded,
   onExpand,
@@ -44,15 +50,6 @@ export default function PositionSlider({
   const scale = screenWidth / 375; // Base width of iPhone X
   const scaleFont = (size: number) => Math.round(size * Math.min(scale, 1.2));
   const scaleSpacing = (size: number) => Math.round(size * scale);
-  
-  // Convert pixel values to percentages for display
-  const pixelsToPercentage = (pixels: number, dimension: number): number => {
-    return (pixels / dimension) * 100;
-  };
-  
-  // Get current percentage values
-  const verticalPercentage = pixelsToPercentage(verticalValue, screenHeight);
-  const horizontalPercentage = pixelsToPercentage(horizontalValue, screenWidth);
 
   useEffect(() => {
     if (visible) {
@@ -108,17 +105,43 @@ export default function PositionSlider({
     })
     .runOnJS(true);
 
-  // Get slider ranges
+  // Get slider ranges with bounds checking for QR size
   const getVerticalRange = () => {
-    // Percentage-based range: 2% to 50% from bottom
-    return { minValue: 2, maxValue: 50 };
+    // Calculate QR container size in pixels
+    const baseSize = singleQRMode ? 120 : 90;
+    const qrSize = baseSize * scaleValue;
+    const containerSize = qrSize + 20;
+    
+    // Calculate safe range to prevent cropping
+    // Min: Small margin from bottom (QR codes start from bottom)
+    const minPercent = 0; // Allow QR to be at the very bottom
+    
+    // Max: Prevent QR from going too high (leave space for UI)
+    // The percentage represents how far up from the bottom
+    const maxSafePixels = screenHeight * 0.6; // Allow up to 60% of screen height
+    const maxPercent = (maxSafePixels / screenHeight) * 100;
+    
+    return { minValue: minPercent, maxValue: maxPercent };
   };
   
   const getHorizontalRange = () => {
-    // For single QR mode: allow more movement (-45% to 45%)
-    // For double QR mode: limited movement (-20% to 20%)
-    const maxPercentage = singleQRMode ? 45 : 20;
-    return { minValue: -maxPercentage, maxValue: maxPercentage };
+    // Calculate QR container size in pixels
+    const baseSize = singleQRMode ? 120 : 90;
+    const qrSize = baseSize * scaleValue;
+    const containerSize = qrSize + 20;
+
+    if (singleQRMode) {
+      const maxSafePixels = (screenWidth - containerSize) / 2 - 10; // 10px padding
+      const maxPercent = (maxSafePixels / screenWidth) * 100;
+      return { minValue: -maxPercent, maxValue: maxPercent };
+    }
+
+    // Double mode: each slot lives in half of the screen minus spacer
+    const halfWidth = screenWidth / 2;
+    const spacer = Math.max(40, qrSize * 0.3);
+    const maxSafePixels = halfWidth - containerSize - spacer / 2 - 10;
+    const maxPercent = (maxSafePixels / screenWidth) * 100;
+    return { minValue: -maxPercent, maxValue: maxPercent };
   };
   
   const getScaleRange = () => {
@@ -161,37 +184,37 @@ export default function PositionSlider({
                 <Text style={[styles.sliderLabel, { fontSize: scaleFont(16) }]}>Adjust Position</Text>
               </View>
               
-              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(12) }]}>
+              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(16) }]}>
                 <Feather name="arrow-up" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
                 <Slider
                   style={styles.slider}
                   minimumValue={verticalRange.minValue}
                   maximumValue={verticalRange.maxValue}
-                  value={verticalPercentage}
+                  value={verticalValue}
                   onValueChange={onVerticalChange}
+                  onSlidingComplete={onVerticalChangeEnd}
                   minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
                   maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                   thumbTintColor="white"
                 />
-                <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{Math.round(verticalPercentage)}%</Text>
               </View>
 
-              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(12) }]}>
+              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(16) }]}>
                 <Feather name="arrow-left" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
                 <Slider
                   style={styles.slider}
                   minimumValue={horizontalRange.minValue}
                   maximumValue={horizontalRange.maxValue}
-                  value={horizontalPercentage}
+                  value={horizontalValue}
                   onValueChange={onHorizontalChange}
+                  onSlidingComplete={onHorizontalChangeEnd}
                   minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
                   maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                   thumbTintColor="white"
                 />
-                <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{Math.round(horizontalPercentage)}%</Text>
               </View>
 
-              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(12) }]}>
+              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(8) }]}>
                 <Feather name="maximize-2" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
                 <Slider
                   style={styles.slider}
@@ -199,11 +222,11 @@ export default function PositionSlider({
                   maximumValue={scaleRange.maxValue}
                   value={scaleValue}
                   onValueChange={onScaleChange}
+                  onSlidingComplete={onScaleChangeEnd}
                   minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
                   maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                   thumbTintColor="white"
                 />
-                <Text style={[styles.sliderValue, { fontSize: scaleFont(13) }]}>{scaleValue.toFixed(2)}</Text>
               </View>
             </View>
           </View>
@@ -294,10 +317,5 @@ const styles = StyleSheet.create({
   slider: {
     flex: 1,
     height: Platform.OS === 'android' ? 40 : 32,
-  },
-  sliderValue: {
-    color: 'white',
-    minWidth: 45,
-    textAlign: 'right',
   },
 });

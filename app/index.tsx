@@ -29,6 +29,7 @@ function HomeScreen() {
   const insets = useSafeAreaInsets();
   const wallpaperRef = useRef<View>(null);
   const sessionStartTime = useRef<number>(Date.now());
+  const updateThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
   
@@ -232,32 +233,41 @@ function HomeScreen() {
     updateGradientPreference();
   }, [currentGradientIndex]);
 
-  const handleVerticalOffsetChange = async (value: number) => {
-    try {
+  const handleVerticalOffsetChange = useCallback((value: number) => {
+    // Throttle updates to prevent jitter (16ms = ~60fps)
+    if (updateThrottleRef.current) {
+      clearTimeout(updateThrottleRef.current);
+    }
+    
+    updateThrottleRef.current = setTimeout(() => {
       setQrVerticalOffsetPercentage(value);
-      await UserPreferencesService.updateQRVerticalOffset(value);
-    } catch (error) {
-      console.error('Error updating vertical offset:', error);
-    }
-  };
+      updateThrottleRef.current = null;
+    }, 16);
+  }, []);
 
-  const handleHorizontalOffsetChange = async (value: number) => {
-    try {
+  const handleHorizontalOffsetChange = useCallback((value: number) => {
+    // Throttle updates to prevent jitter
+    if (updateThrottleRef.current) {
+      clearTimeout(updateThrottleRef.current);
+    }
+    
+    updateThrottleRef.current = setTimeout(() => {
       setQrHorizontalOffsetPercentage(value);
-      await UserPreferencesService.updateQRHorizontalOffset(value);
-    } catch (error) {
-      console.error('Error updating horizontal offset:', error);
-    }
-  };
+      updateThrottleRef.current = null;
+    }, 16);
+  }, []);
 
-  const handleScaleChange = async (value: number) => {
-    try {
-      setQrScale(value);
-      await UserPreferencesService.updateQRScale(value);
-    } catch (error) {
-      console.error('Error updating scale:', error);
+  const handleScaleChange = useCallback((value: number) => {
+    // Throttle updates to prevent jitter
+    if (updateThrottleRef.current) {
+      clearTimeout(updateThrottleRef.current);
     }
-  };
+    
+    updateThrottleRef.current = setTimeout(() => {
+      setQrScale(value);
+      updateThrottleRef.current = null;
+    }, 16);
+  }, []);
 
   const handleTitlePress = async () => {
     if (!isPremium) {
