@@ -8,8 +8,8 @@ export interface UserPreferences {
   selectedGradientId: string;
   primaryQRCodeId?: string;
   secondaryQRCodeId?: string;
-  qrVerticalOffset?: number;  // Now stores percentage (0-100)
-  qrHorizontalOffset?: number;  // Now stores percentage (-50 to 50)
+  qrXPosition?: number;  // 0-100 coordinate system (0=left, 100=right)
+  qrYPosition?: number;  // 0-100 coordinate system (0=bottom, 100=top)
   qrScale?: number;
   showTitle?: boolean;
   qrSlotMode?: 'single' | 'double';
@@ -22,22 +22,31 @@ export class UserPreferencesService {
       const data = await AsyncStorage.getItem(PREFERENCES_KEY);
       const preferences = data ? JSON.parse(data) : { 
         selectedGradientId: 'sunset', 
-        qrVerticalOffset: 20,  // Default 20% from bottom
-        qrHorizontalOffset: 0,  // Default centered
+        qrXPosition: 50,  // Default centered horizontally
+        qrYPosition: 30,  // Default 30% from bottom
         qrScale: 1,
         showTitle: true,
         qrSlotMode: 'double',
         backgroundType: 'gradient'
       };
       
-      // Migrate old pixel-based values to percentage-based
-      if (preferences.qrVerticalOffset && preferences.qrVerticalOffset > 100) {
-        // This is an old pixel-based value, convert to percentage
-        const oldMin = 20;
-        const oldMax = 300;
-        const oldRange = oldMax - oldMin;
-        const normalizedValue = (preferences.qrVerticalOffset - oldMin) / oldRange;
-        preferences.qrVerticalOffset = normalizedValue * 100;
+      // Migrate old coordinate system to new simple system
+      if (preferences.qrVerticalOffset !== undefined || preferences.qrHorizontalOffset !== undefined) {
+        // Convert old vertical offset (percentage from bottom) to new Y position
+        if (preferences.qrVerticalOffset !== undefined) {
+          preferences.qrYPosition = preferences.qrVerticalOffset;
+          delete preferences.qrVerticalOffset;
+        }
+        
+        // Convert old horizontal offset (percentage from center) to new X position
+        if (preferences.qrHorizontalOffset !== undefined) {
+          // Old: -50 to 50 (center-based), New: 0-100 (absolute)
+          preferences.qrXPosition = 50 + preferences.qrHorizontalOffset;
+          delete preferences.qrHorizontalOffset;
+        }
+        
+        // Save the migrated preferences
+        await this.savePreferences(preferences);
       }
       
       return preferences;
@@ -45,8 +54,8 @@ export class UserPreferencesService {
       console.error('Error loading user preferences:', error);
       return { 
         selectedGradientId: 'sunset', 
-        qrVerticalOffset: 20,  // Default 20% from bottom
-        qrHorizontalOffset: 0,  // Default centered
+        qrXPosition: 50,  // Default centered horizontally
+        qrYPosition: 30,  // Default 30% from bottom
         qrScale: 1,
         showTitle: true,
         qrSlotMode: 'double',
@@ -97,24 +106,24 @@ export class UserPreferencesService {
     }
   }
 
-  static async updateQRVerticalOffset(offset: number): Promise<void> {
+  static async updateQRXPosition(xPosition: number): Promise<void> {
     try {
       const preferences = await this.getPreferences();
-      preferences.qrVerticalOffset = offset;
+      preferences.qrXPosition = xPosition;
       await this.savePreferences(preferences);
     } catch (error) {
-      console.error('Error updating QR vertical offset:', error);
+      console.error('Error updating QR X position:', error);
       throw error;
     }
   }
 
-  static async updateQRHorizontalOffset(offset: number): Promise<void> {
+  static async updateQRYPosition(yPosition: number): Promise<void> {
     try {
       const preferences = await this.getPreferences();
-      preferences.qrHorizontalOffset = offset;
+      preferences.qrYPosition = yPosition;
       await this.savePreferences(preferences);
     } catch (error) {
-      console.error('Error updating QR horizontal offset:', error);
+      console.error('Error updating QR Y position:', error);
       throw error;
     }
   }
@@ -126,6 +135,18 @@ export class UserPreferencesService {
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR scale:', error);
+      throw error;
+    }
+  }
+
+  static async updateQRPosition(xPosition: number, yPosition: number): Promise<void> {
+    try {
+      const preferences = await this.getPreferences();
+      preferences.qrXPosition = xPosition;
+      preferences.qrYPosition = yPosition;
+      await this.savePreferences(preferences);
+    } catch (error) {
+      console.error('Error updating QR position:', error);
       throw error;
     }
   }
@@ -199,7 +220,7 @@ export class UserPreferencesService {
       return null;
     }
   }
-  
+
   static async setCustomBackground(uri: string | null): Promise<void> {
     try {
       if (uri) {

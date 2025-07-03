@@ -29,22 +29,9 @@ function HomeScreen() {
   const insets = useSafeAreaInsets();
   const wallpaperRef = useRef<View>(null);
   const sessionStartTime = useRef<number>(Date.now());
-  const updateThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   const { height: screenHeight, width: screenWidth } = useWindowDimensions();
-  
-  const convertToPercentageBasedOffset = (fixedValue: number): number => {
-    const oldMin = 20;
-    const oldMax = 300;
-    const oldRange = oldMax - oldMin;
-    const normalizedValue = (fixedValue - oldMin) / oldRange;
-    
-    return normalizedValue * 100;
-  };
-  
-  const percentageToPixels = (percentage: number, dimension: number): number => {
-    return (percentage / 100) * dimension;
-  };
   
   const [currentGradientIndex, setCurrentGradientIndex] = useState(0);
   const [previousGradientIndex, setPreviousGradientIndex] = useState(0);
@@ -53,8 +40,8 @@ function HomeScreen() {
   const [secondaryQR, setSecondaryQR] = useState<QRCodeData | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
-  const [qrVerticalOffsetPercentage, setQrVerticalOffsetPercentage] = useState(20);
-  const [qrHorizontalOffsetPercentage, setQrHorizontalOffsetPercentage] = useState(0);
+  const [qrXPosition, setQrXPosition] = useState(50);  // 0-100 coordinate system
+  const [qrYPosition, setQrYPosition] = useState(30);  // 0-100 coordinate system
   const [qrScale, setQrScale] = useState(1);
   const [showSwipeIndicator, setShowSwipeIndicator] = useState(false);
   const [showPositionSlider, setShowPositionSlider] = useState(false);
@@ -72,6 +59,27 @@ function HomeScreen() {
   
   const gradientTransition = useSharedValue(0);
 
+  // Debounced save function for position changes
+  const savePositionChanges = useCallback((x: number, y: number, scale: number) => {
+    // Clear any existing timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    
+    // Set a new timeout to save after 500ms of inactivity
+    saveTimeoutRef.current = setTimeout(async () => {
+      try {
+        await Promise.all([
+          UserPreferencesService.updateQRXPosition(x),
+          UserPreferencesService.updateQRYPosition(y),
+          UserPreferencesService.updateQRScale(scale)
+        ]);
+      } catch (error) {
+        console.error('Error saving position changes:', error);
+      }
+    }, 500);
+  }, []);
+
   const loadUserData = useCallback(async () => {
     try {
       const preferences = await UserPreferencesService.getPreferences();
@@ -84,14 +92,8 @@ function HomeScreen() {
       setPreviousGradientIndex(validIndex);
       setIsPremium(premium);
       
-      const verticalOffset = preferences.qrVerticalOffset || 80;
-      if (verticalOffset > 100) {
-        setQrVerticalOffsetPercentage(convertToPercentageBasedOffset(verticalOffset));
-      } else {
-        setQrVerticalOffsetPercentage(verticalOffset);
-      }
-      
-      setQrHorizontalOffsetPercentage(preferences.qrHorizontalOffset || 0);
+      setQrXPosition(preferences.qrXPosition || 50);
+      setQrYPosition(preferences.qrYPosition || 30);
       setQrScale(preferences.qrScale || 1);
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
@@ -138,7 +140,7 @@ function HomeScreen() {
     } catch (error) {
       console.error('Error loading user data:', error);
     }
-  }, [screenHeight]);
+  }, []);
 
   const getSwipeIndicatorCount = async (): Promise<number> => {
     try {
@@ -233,41 +235,20 @@ function HomeScreen() {
     updateGradientPreference();
   }, [currentGradientIndex]);
 
-  const handleVerticalOffsetChange = useCallback((value: number) => {
-    // Throttle updates to prevent jitter (16ms = ~60fps)
-    if (updateThrottleRef.current) {
-      clearTimeout(updateThrottleRef.current);
-    }
-    
-    updateThrottleRef.current = setTimeout(() => {
-      setQrVerticalOffsetPercentage(value);
-      updateThrottleRef.current = null;
-    }, 16);
-  }, []);
+  const handleXPositionChange = useCallback((value: number) => {
+    setQrXPosition(value);
+    savePositionChanges(value, qrYPosition, qrScale);
+  }, [qrYPosition, qrScale, savePositionChanges]);
 
-  const handleHorizontalOffsetChange = useCallback((value: number) => {
-    // Throttle updates to prevent jitter
-    if (updateThrottleRef.current) {
-      clearTimeout(updateThrottleRef.current);
-    }
-    
-    updateThrottleRef.current = setTimeout(() => {
-      setQrHorizontalOffsetPercentage(value);
-      updateThrottleRef.current = null;
-    }, 16);
-  }, []);
+  const handleYPositionChange = useCallback((value: number) => {
+    setQrYPosition(value);
+    savePositionChanges(qrXPosition, value, qrScale);
+  }, [qrXPosition, qrScale, savePositionChanges]);
 
   const handleScaleChange = useCallback((value: number) => {
-    // Throttle updates to prevent jitter
-    if (updateThrottleRef.current) {
-      clearTimeout(updateThrottleRef.current);
-    }
-    
-    updateThrottleRef.current = setTimeout(() => {
-      setQrScale(value);
-      updateThrottleRef.current = null;
-    }, 16);
-  }, []);
+    setQrScale(value);
+    savePositionChanges(qrXPosition, qrYPosition, value);
+  }, [qrXPosition, qrYPosition, savePositionChanges]);
 
   const handleTitlePress = async () => {
     if (!isPremium) {
@@ -434,54 +415,50 @@ function HomeScreen() {
   };
 
   const handleQRSlotPress = async (slot: 'primary' | 'secondary') => {
-    if (slot === 'secondary' && !isPremium) {
-      await EngagementPricingService.trackAction('secondarySlotAttempts');
-      router.push('/modal/premium');
-      return;
-    }
-
-    const existingQR = slot === 'primary' ? primaryQR : secondaryQR;
-    
-    if (existingQR) {
-      router.push({
-        pathname: '/modal/view',
-        params: { id: existingQR.id, slot }
-      });
-    } else {
-      router.push({
-        pathname: '/modal/history',
-        params: { selectMode: 'true', slot }
-      });
+    try {
+      if (slot === 'primary') {
+        router.push('/modal/create?slot=primary');
+      } else if (slot === 'secondary') {
+        if (isPremium) {
+          router.push('/modal/create?slot=secondary');
+        } else {
+          await EngagementPricingService.trackAction('secondarySlotAttempts');
+          router.push('/modal/premium');
+        }
+      }
+    } catch (error) {
+      console.error('Error handling QR slot press:', error);
     }
   };
 
   const handleRemoveQR = async (slot: 'primary' | 'secondary') => {
     try {
       if (slot === 'primary') {
-        await UserPreferencesService.updatePrimaryQR(undefined);
         setPrimaryQR(null);
-      } else {
-        await UserPreferencesService.updateSecondaryQR(undefined);
+        await UserPreferencesService.updatePrimaryQR(undefined);
+      } else if (slot === 'secondary') {
         setSecondaryQR(null);
+        await UserPreferencesService.updateSecondaryQR(undefined);
       }
     } catch (error) {
-      console.error('Error removing QR code:', error);
+      console.error('Error removing QR:', error);
     }
   };
 
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
-    setShowSwipeIndicator(true);
     setShowPositionSlider(true);
+    
+    // Start showing swipe indicator after onboarding
     setTimeout(() => {
-      checkForOffer();
+      setShowSwipeIndicator(true);
     }, 1000);
   };
 
   const handleSliderExpand = () => {
     setSliderExpanded(true);
     Animated.timing(elementsOpacity, {
-      toValue: 0,
+      toValue: 0.3,
       duration: 200,
       useNativeDriver: true,
     }).start();
@@ -565,11 +542,11 @@ function HomeScreen() {
                         
                         {showPositionSlider && (
                           <PositionSlider
-                            verticalValue={qrVerticalOffsetPercentage}
-                            horizontalValue={qrHorizontalOffsetPercentage}
+                            xPosition={qrXPosition}
+                            yPosition={qrYPosition}
                             scaleValue={qrScale}
-                            onVerticalChange={handleVerticalOffsetChange}
-                            onHorizontalChange={handleHorizontalOffsetChange}
+                            onXPositionChange={handleXPositionChange}
+                            onYPositionChange={handleYPositionChange}
                             onScaleChange={handleScaleChange}
                             visible={showPositionSlider}
                             isExpanded={sliderExpanded}
@@ -588,8 +565,8 @@ function HomeScreen() {
                       secondaryQR={secondaryQR}
                       isPremium={isPremium}
                       showActionButtons={showActionButtons}
-                      verticalOffset={qrVerticalOffsetPercentage}
-                      horizontalOffset={qrHorizontalOffsetPercentage}
+                      xPosition={qrXPosition}
+                      yPosition={qrYPosition}
                       scale={qrScale}
                       onSlotPress={handleQRSlotPress}
                       onRemoveQR={handleRemoveQR}

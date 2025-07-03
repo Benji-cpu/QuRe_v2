@@ -6,14 +6,14 @@ import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View, useWindow
 import { Gesture } from 'react-native-gesture-handler';
 
 interface PositionSliderProps {
-  verticalValue: number;  // Percentage (0-100)
-  horizontalValue: number;  // Percentage (-50 to 50)
+  xPosition: number;  // 0-100 coordinate system (0=left, 100=right)
+  yPosition: number;  // 0-100 coordinate system (0=bottom, 100=top)
   scaleValue: number;
-  onVerticalChange: (value: number) => void;  // Will receive percentage
-  onHorizontalChange: (value: number) => void;  // Will receive percentage
+  onXPositionChange: (value: number) => void;
+  onYPositionChange: (value: number) => void;
   onScaleChange: (value: number) => void;
-  onVerticalChangeEnd?: (value: number) => void;
-  onHorizontalChangeEnd?: (value: number) => void;
+  onXPositionChangeEnd?: (value: number) => void;
+  onYPositionChangeEnd?: (value: number) => void;
   onScaleChangeEnd?: (value: number) => void;
   visible: boolean;
   isExpanded: boolean;
@@ -23,14 +23,14 @@ interface PositionSliderProps {
 }
 
 export default function PositionSlider({ 
-  verticalValue, 
-  horizontalValue,
+  xPosition, 
+  yPosition,
   scaleValue,
-  onVerticalChange, 
-  onHorizontalChange,
+  onXPositionChange, 
+  onYPositionChange,
   onScaleChange,
-  onVerticalChangeEnd,
-  onHorizontalChangeEnd,
+  onXPositionChangeEnd,
+  onYPositionChangeEnd,
   onScaleChangeEnd,
   visible,
   isExpanded,
@@ -105,59 +105,18 @@ export default function PositionSlider({
     })
     .runOnJS(true);
 
-  // Get slider ranges with bounds checking for QR size
-  const getVerticalRange = () => {
-    // Calculate QR container size in pixels
-    const baseSize = singleQRMode ? 120 : 90;
-    const qrSize = baseSize * scaleValue;
-    const containerSize = qrSize + 20;
-    
-    // Calculate safe range to prevent cropping
-    // Min: Small margin from bottom (QR codes start from bottom)
-    const minPercent = 0; // Allow QR to be at the very bottom
-    
-    // Max: Prevent QR from going too high (leave space for UI)
-    // The percentage represents how far up from the bottom
-    const maxSafePixels = screenHeight * 0.6; // Allow up to 60% of screen height
-    const maxPercent = (maxSafePixels / screenHeight) * 100;
-    
-    return { minValue: minPercent, maxValue: maxPercent };
-  };
-  
-  const getHorizontalRange = () => {
-    // Calculate QR container size in pixels
-    const baseSize = singleQRMode ? 120 : 90;
-    const qrSize = baseSize * scaleValue;
-    const containerSize = qrSize + 20;
-
-    if (singleQRMode) {
-      const maxSafePixels = (screenWidth - containerSize) / 2 - 10; // 10px padding
-      const maxPercent = (maxSafePixels / screenWidth) * 100;
-      return { minValue: -maxPercent, maxValue: maxPercent };
-    }
-
-    // Double mode: each slot lives in half of the screen minus spacer
-    const halfWidth = screenWidth / 2;
-    const spacer = Math.max(40, qrSize * 0.3);
-    const maxSafePixels = halfWidth - containerSize - spacer / 2 - 10;
-    const maxPercent = (maxSafePixels / screenWidth) * 100;
-    return { minValue: -maxPercent, maxValue: maxPercent };
-  };
-  
-  const getScaleRange = () => {
-    // For single QR mode: allow smaller size (0.5 to 1.5)
-    // For double QR mode: more limited (0.7 to 1.3)
-    if (singleQRMode) {
-      return { minValue: 0.5, maxValue: 1.5 };
-    }
-    return { minValue: 0.7, maxValue: 1.3 };
+  // Simple coordinate ranges - always 0-100 for positioning
+  const getCoordinateRanges = () => {
+    return {
+      xRange: { min: 0, max: 100 },
+      yRange: { min: 0, max: 100 },
+      scaleRange: singleQRMode ? { min: 0.5, max: 1.5 } : { min: 0.7, max: 1.3 }
+    };
   };
 
   if (!visible) return null;
 
-  const verticalRange = getVerticalRange();
-  const horizontalRange = getHorizontalRange();
-  const scaleRange = getScaleRange();
+  const { xRange, yRange, scaleRange } = getCoordinateRanges();
 
   return (
     <Animated.View 
@@ -177,6 +136,7 @@ export default function PositionSlider({
         {isExpanded ? (
           <View style={[styles.expandedCard, { borderRadius: scaleSpacing(12) }]}>
             <View 
+              ref={slidersRef}
               style={[styles.sliderContent, { padding: scaleSpacing(20) }]}
             >
               <View style={[styles.sliderHeader, { marginBottom: scaleSpacing(16) }]}>
@@ -188,38 +148,38 @@ export default function PositionSlider({
                 <Feather name="arrow-up" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
                 <Slider
                   style={styles.slider}
-                  minimumValue={verticalRange.minValue}
-                  maximumValue={verticalRange.maxValue}
-                  value={verticalValue}
-                  onValueChange={onVerticalChange}
-                  onSlidingComplete={onVerticalChangeEnd}
+                  minimumValue={yRange.min}
+                  maximumValue={yRange.max}
+                  value={yPosition}
+                  onValueChange={onYPositionChange}
+                  onSlidingComplete={onYPositionChangeEnd}
                   minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
                   maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                   thumbTintColor="white"
                 />
               </View>
-
+ 
               <View style={[styles.sliderRow, { marginBottom: scaleSpacing(16) }]}>
                 <Feather name="arrow-left" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
                 <Slider
                   style={styles.slider}
-                  minimumValue={horizontalRange.minValue}
-                  maximumValue={horizontalRange.maxValue}
-                  value={horizontalValue}
-                  onValueChange={onHorizontalChange}
-                  onSlidingComplete={onHorizontalChangeEnd}
+                  minimumValue={xRange.min}
+                  maximumValue={xRange.max}
+                  value={xPosition}
+                  onValueChange={onXPositionChange}
+                  onSlidingComplete={onXPositionChangeEnd}
                   minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
                   maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                   thumbTintColor="white"
                 />
               </View>
-
+ 
               <View style={[styles.sliderRow, { marginBottom: scaleSpacing(8) }]}>
                 <Feather name="maximize-2" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
                 <Slider
                   style={styles.slider}
-                  minimumValue={scaleRange.minValue}
-                  maximumValue={scaleRange.maxValue}
+                  minimumValue={scaleRange.min}
+                  maximumValue={scaleRange.max}
                   value={scaleValue}
                   onValueChange={onScaleChange}
                   onSlidingComplete={onScaleChangeEnd}

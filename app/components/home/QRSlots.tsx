@@ -9,8 +9,8 @@ interface QRSlotsProps {
   secondaryQR: QRCodeData | null;
   isPremium: boolean;
   showActionButtons: boolean;
-  verticalOffset: number;  // Percentage (0-100)
-  horizontalOffset: number;  // Percentage (-50 to 50)
+  xPosition: number;  // 0-100 coordinate system (0=left, 100=right)
+  yPosition: number;  // 0-100 coordinate system (0=bottom, 100=top)
   scale: number;
   onSlotPress: (slot: 'primary' | 'secondary') => void;
   onRemoveQR: (slot: 'primary' | 'secondary') => void;
@@ -32,8 +32,8 @@ export default function QRSlots({
   secondaryQR,
   isPremium,
   showActionButtons,
-  verticalOffset,
-  horizontalOffset,
+  xPosition,
+  yPosition,
   scale,
   onSlotPress,
   onRemoveQR,
@@ -42,19 +42,30 @@ export default function QRSlots({
 }: QRSlotsProps) {
   const [showInstructions, setShowInstructions] = useState(false);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  
-  // Convert percentage values to pixels
-  const verticalOffsetPixels = (verticalOffset / 100) * screenHeight;
-  const horizontalOffsetPixels = (horizontalOffset / 100) * screenWidth;
 
   const getQRSize = () => {
     const baseSize = singleQRMode ? 120 : 90;
     return baseSize * scale;
   };
 
+  // Convert 0-100 coordinates to actual screen positions with safe boundaries
   const getContainerStyle = () => {
+    const qrSize = getQRSize();
+    const containerSize = qrSize + 20;
+    
+    // Calculate safe area boundaries
+    const safeMargin = 20;
+    const safeLeft = safeMargin + containerSize / 2;
+    const safeRight = screenWidth - safeMargin - containerSize / 2;
+    const safeBottom = safeMargin + containerSize / 2;
+    const safeTop = screenHeight - safeMargin - containerSize / 2;
+    
+    // Convert 0-100 coordinates to pixel positions
+    const targetX = safeLeft + (xPosition / 100) * (safeRight - safeLeft);
+    const targetY = safeTop - (yPosition / 100) * (safeTop - safeBottom); // Invert Y (0=bottom, 100=top)
+    
     return {
-      transform: [{ translateY: -verticalOffsetPixels }],
+      transform: [{ translateY: targetY - screenHeight + 150 }], // Adjust for bottom positioning
       paddingHorizontal: 20,
     };
   };
@@ -62,46 +73,41 @@ export default function QRSlots({
   const getSlotStyle = (isLeft: boolean) => {
     const qrSize = getQRSize();
     const containerSize = qrSize + 20;
-    const halfContainer = containerSize / 2;
     
     if (singleQRMode) {
-      // Calculate max safe offset to prevent cropping
-      // Allow more movement but clamp at screen edges
-      const maxSafeOffset = (screenWidth / 2) - halfContainer - 10; // Half screen - half QR - minimal padding
-      const clampedOffset = Math.max(-maxSafeOffset, Math.min(maxSafeOffset, horizontalOffsetPixels));
+      // Convert x position to horizontal offset from center
+      const maxOffset = Math.min(100, (screenWidth / 2) - containerSize / 2 - 20);
+      const offsetPercent = ((xPosition - 50) / 50) * 100; // -100 to 100
+      const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, (offsetPercent / 100) * maxOffset));
       
       return {
         transform: [{ translateX: clampedOffset }],
       };
     }
     
-    // For double mode, apply safe clamping to avoid cropping
-    const sideHalf = (screenWidth / 2);
-    const available = sideHalf - halfContainer - dynamicSpacer / 2 - 10; // 10 padding
-    const clampedOffset = Math.max(-available, Math.min(available, horizontalOffsetPixels));
+    // For double mode, apply horizontal positioning to both slots
+    const spacer = Math.max(40, qrSize * 0.3);
+    const maxOffset = Math.min(50, (screenWidth / 4) - containerSize / 2 - spacer / 2 - 10);
+    const offsetPercent = ((xPosition - 50) / 50) * 100; // -100 to 100
+    const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, (offsetPercent / 100) * maxOffset));
     const offset = isLeft ? -clampedOffset : clampedOffset;
+    
     return {
       transform: [{ translateX: offset }],
     };
   };
 
-  const qrSize = getQRSize();
-  const containerSize = qrSize + 20;
-  const dynamicSpacer = Math.max(40, qrSize * 0.3);
-
   const renderQRSlot = (qr: QRCodeData | null, slot: 'primary' | 'secondary', isDefaultQuRe: boolean = false) => {
     if (qr || isDefaultQuRe) {
       const displayQR = qr || DEFAULT_QURE_QR;
-      // Check if the QR has a user-provided label
-      // For default QuRe QR, always show the label
       const hasCustomLabel = isDefaultQuRe || (displayQR.data && 'label' in displayQR.data && displayQR.data.label);
       
       return (
         <View style={styles.qrWrapper}>
-          <View style={[styles.qrContainer, { width: containerSize, height: containerSize }]}>
+          <View style={[styles.qrContainer, { width: getQRSize() + 20, height: getQRSize() + 20 }]}>
             <QRCodePreview 
               value={displayQR.content} 
-              size={qrSize} 
+              size={getQRSize()} 
               design={displayQR.design}
             />
             {showActionButtons && !isDefaultQuRe && (
@@ -126,7 +132,7 @@ export default function QRSlots({
     }
 
     return (
-      <View style={[styles.qrContainer, styles.qrPlaceholder, { width: containerSize, height: containerSize }]}>
+      <View style={[styles.qrContainer, styles.qrPlaceholder, { width: getQRSize() + 20, height: getQRSize() + 20 }]}>
         <Text style={styles.qrPlaceholderIcon}>+</Text>
         <Text style={styles.qrPlaceholderText}>CREATE QR{'\n'}CODE</Text>
       </View>
@@ -198,7 +204,7 @@ export default function QRSlots({
       )}
 
       {(shouldShowPrimary && (shouldShowSecondary || shouldShowDefaultQuRe)) && (
-        <View style={[styles.qrSpacer, { width: dynamicSpacer }]} />
+        <View style={[styles.qrSpacer, { width: Math.max(40, getQRSize() * 0.3) }]} />
       )}
 
       {(shouldShowSecondary || shouldShowDefaultQuRe) && (
