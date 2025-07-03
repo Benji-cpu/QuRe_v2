@@ -227,6 +227,7 @@ const styles = StyleSheet.create({
   qrSlotsContainer: {
     flexDirection: 'row',
     marginTop: 'auto',
+    zIndex: -1,
   },
   singleQRContainer: {
     justifyContent: 'center',
@@ -289,7 +290,6 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 2,
   },
   removeButtonText: {
     color: 'rgba(0, 0, 0, 0.4)',

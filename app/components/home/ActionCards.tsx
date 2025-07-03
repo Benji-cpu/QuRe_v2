@@ -40,6 +40,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     height: 60,
     gap: 12,
+    zIndex: 10,
   },
   actionCard: {
     flex: 1,
