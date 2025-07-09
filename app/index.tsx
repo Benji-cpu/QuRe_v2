@@ -13,6 +13,7 @@ import { GRADIENT_PRESETS } from '../constants/Gradients';
 import { EngagementPricingService } from '../services/EngagementPricingService';
 import { QRStorage } from '../services/QRStorage';
 import { UserPreferencesService } from '../services/UserPreferences';
+import { setLockScreenWallpaper } from '../services/WallpaperService';
 import { QRCodeData } from '../types/QRCode';
 import ActionCards from './components/home/ActionCards';
 import GradientBackground from './components/home/GradientBackground';
@@ -293,8 +294,8 @@ function HomeScreen() {
           duration: 200,
           useNativeDriver: true,
         }).start(() => {
-          setShowActionButtons(true);
           setHideElementsForExport(false);
+          setShowActionButtons(true);
           setShowExportPreview(false);
         });
         return;
@@ -308,7 +309,9 @@ function HomeScreen() {
 
       await MediaLibrary.saveToLibraryAsync(uri);
       await EngagementPricingService.trackAction('wallpapersExported');
-      
+
+      const wallpaperSet = await setLockScreenWallpaper(uri);
+
       Animated.timing(exportOverlayOpacity, {
         toValue: 0,
         duration: 200,
@@ -317,10 +320,23 @@ function HomeScreen() {
         setShowExportPreview(false);
         setShowActionButtons(true);
         setHideElementsForExport(false);
-        showSaveInstructions();
+
+        if (wallpaperSet) {
+          if (Platform.OS === 'android') {
+            ToastAndroid.showWithGravity(
+              'Lock screen updated successfully!',
+              ToastAndroid.LONG,
+              ToastAndroid.CENTER
+            );
+          } else {
+            Alert.alert('Lock Screen Updated', 'Your lock screen has been updated successfully.');
+          }
+        } else {
+          showSaveInstructions();
+        }
       });
     } catch (error) {
-      Alert.alert('Error', 'Failed to save wallpaper');
+      Alert.alert('Error', 'Failed to set lock screen');
       console.error('Export error:', error);
       Animated.timing(exportOverlayOpacity, {
         toValue: 0,
@@ -590,8 +606,8 @@ function HomeScreen() {
                 ]}
               > 
                 <View style={styles.exportControlsContent}>
-                  <Text style={styles.exportPreviewTitle}>Wallpaper Preview</Text>
-                  <Text style={styles.exportPreviewSubtitle}>How your wallpaper will look</Text>
+                  <Text style={styles.exportPreviewTitle}>Lock Screen Preview</Text>
+                  <Text style={styles.exportPreviewSubtitle}>How your lock screen will look</Text>
                   <View style={styles.exportButtons}>
                     <Pressable
                       style={styles.exportCancelButton}

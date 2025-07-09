@@ -3,7 +3,7 @@ export default {
   name: "QuRe",
   slug: "QuRe",
   owner: "benji000",
-  version: "1.0.4",
+  version: "1.0.5",
   runtimeVersion: "1.0.4",
   orientation: "portrait",
   icon: "./assets/images/icon.png",
@@ -14,7 +14,7 @@ export default {
   ios: {
     supportsTablet: true,
     bundleIdentifier: "com.qure.app",
-    buildNumber: "6"
+    buildNumber: "7"
   },
   
   android: {
@@ -23,10 +23,11 @@ export default {
       backgroundColor: "#ffffff"
     },
     package: "com.anonymous.QuRe",
-    versionCode: 6,
+    versionCode: 7,
     missingDimensionStrategy: {
       store: "play"
-    }
+    },
+    permissions: ["SET_WALLPAPER"]
   },
   
   web: {
