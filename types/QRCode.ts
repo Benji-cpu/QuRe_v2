@@ -22,7 +22,7 @@ export interface QRCodeDesign {
   logoBorderRadius?: number;
 }
 
-export type QRCodeType = 'link' | 'instagram' | 'whatsapp' | 'email' | 'phone' | 'contact';
+export type QRCodeType = 'link' | 'instagram' | 'whatsapp' | 'email' | 'phone' | 'contact' | 'paypal' | 'wise' | 'bitcoin';
 
 export type QRCodeTypeData = 
   | LinkData 
@@ -30,7 +30,10 @@ export type QRCodeTypeData =
   | WhatsAppData
   | EmailData 
   | PhoneData 
-  | ContactData;
+  | ContactData
+  | PayPalData
+  | WiseData
+  | BitcoinData;
 
 export interface LinkData {
   url: string;
@@ -66,4 +69,27 @@ export interface ContactData {
   phone?: string;
   email?: string;
   label?: string;
+}
+
+export interface PayPalData {
+  paypalLink: string;
+  amount?: string;
+  currency?: string;
+  description?: string;
+  label?: string;
+}
+
+export interface WiseData {
+  wiseLink: string;
+  amount?: string;
+  currency?: string;
+  description?: string;
+  label?: string;
+}
+
+export interface BitcoinData {
+  address: string;
+  amount?: string;
+  label?: string;
+  message?: string;
 }

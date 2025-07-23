@@ -25,8 +25,8 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     },
     {
       title: "Create & Customize",
-      subtitle: "Design QR codes that match your style",
-      description: "Choose from various types: links, contacts, WiFi, and more",
+      subtitle: "Multiple QR types for every need",
+      description: "Links for events & affiliates, contacts for networking, WhatsApp for quick chats, and payment options like PayPal & Bitcoin",
       gradient: ['#2193b0', '#6dd5ed'],
       icon: '🎨'
     },
