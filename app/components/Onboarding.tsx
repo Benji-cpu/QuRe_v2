@@ -24,23 +24,30 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       icon: '📱'
     },
     {
-      title: "Create & Customize",
-      subtitle: "Design QR codes that match your style",
-      description: "Choose from various types: links, contacts, WiFi, and more",
+      title: "Endless Possibilities",
+      subtitle: "One QR code, countless applications",
+      description: "Links for events, business cards for networking, payment codes for transactions, social profiles for growth, and so much more",
       gradient: ['#2193b0', '#6dd5ed'],
+      icon: '🌟'
+    },
+    {
+      title: "Design & Customize",
+      subtitle: "Make it uniquely yours",
+      description: "Beautiful gradients, custom colors, logos, and designs that match your style",
+      gradient: ['#cc2b5e', '#753a88'],
       icon: '🎨'
     },
     {
       title: "Swipe to Explore",
-      subtitle: "Beautiful gradients at your fingertips",
-      description: "Swipe left or right to change your wallpaper gradient instantly",
-      gradient: ['#cc2b5e', '#753a88'],
+      subtitle: "Change your vibe instantly",
+      description: "Swipe left or right to change your wallpaper gradient and find the perfect look",
+      gradient: ['#4facfe', '#00f2fe'],
       icon: '👆'
     },
     {
       title: "Premium Features",
       subtitle: "Unlock the full potential",
-      description: "Add a second QR code, custom designs, and remove watermarks",
+      description: "Add a second QR code, premium designs, remove watermarks, and access exclusive features",
       gradient: ['#348F50', '#56B4D3'],
       icon: '✨'
     }
@@ -88,6 +95,42 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               <Text style={styles.title}>{page.title}</Text>
               <Text style={styles.subtitle}>{page.subtitle}</Text>
               <Text style={styles.description}>{page.description}</Text>
+              
+              {/* Special content for the QR types page */}
+              {index === 1 && (
+                <View style={styles.examplesContainer}>
+                  <View style={styles.exampleRow}>
+                    <View style={styles.exampleItem}>
+                      <Text style={styles.exampleIcon}>🔗</Text>
+                      <Text style={styles.exampleText}>Event tickets</Text>
+                    </View>
+                    <View style={styles.exampleItem}>
+                      <Text style={styles.exampleIcon}>💳</Text>
+                      <Text style={styles.exampleText}>PayPal payments</Text>
+                    </View>
+                  </View>
+                  <View style={styles.exampleRow}>
+                    <View style={styles.exampleItem}>
+                      <Text style={styles.exampleIcon}>📸</Text>
+                      <Text style={styles.exampleText}>Social profiles</Text>
+                    </View>
+                    <View style={styles.exampleItem}>
+                      <Text style={styles.exampleIcon}>₿</Text>
+                      <Text style={styles.exampleText}>Crypto wallets</Text>
+                    </View>
+                  </View>
+                  <View style={styles.exampleRow}>
+                    <View style={styles.exampleItem}>
+                      <Text style={styles.exampleIcon}>👤</Text>
+                      <Text style={styles.exampleText}>Business cards</Text>
+                    </View>
+                    <View style={styles.exampleItem}>
+                      <Text style={styles.exampleIcon}>💬</Text>
+                      <Text style={styles.exampleText}>WhatsApp chats</Text>
+                    </View>
+                  </View>
+                </View>
+              )}
             </View>
           </LinearGradient>
         ))}
@@ -185,6 +228,33 @@ const styles = StyleSheet.create({
     color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
     lineHeight: 24,
+  },
+  examplesContainer: {
+    marginTop: 30,
+    width: '100%',
+  },
+  exampleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 15,
+  },
+  exampleItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    flex: 1,
+    marginHorizontal: 5,
+  },
+  exampleIcon: {
+    fontSize: 20,
+    marginBottom: 5,
+  },
+  exampleText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   pagination: {
     position: 'absolute',
