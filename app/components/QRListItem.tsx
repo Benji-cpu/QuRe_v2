@@ -1,6 +1,7 @@
 import React from 'react';
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { QR_TYPES } from '../../constants/QRTypes';
+import { useTheme } from '../../contexts/ThemeContext';
 import { QRCodeData } from '../../types/QRCode';
 
 interface QRListItemProps {
@@ -12,6 +13,7 @@ interface QRListItemProps {
 }
 
 export default function QRListItem({ qrCode, onPress, onEdit, onDelete, hideActions = false }: QRListItemProps) {
+  const { theme } = useTheme();
   const typeConfig = QR_TYPES.find(t => t.type === qrCode.type);
   
   const handleDelete = () => {
@@ -41,25 +43,25 @@ export default function QRListItem({ qrCode, onPress, onEdit, onDelete, hideActi
   };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
+    <TouchableOpacity style={[styles.container, { backgroundColor: theme.surface }]} onPress={onPress}>
       <View style={styles.content}>
         <View style={styles.header}>
           <View style={styles.typeIndicator}>
             <Text style={styles.typeIcon}>{typeConfig?.icon || '📄'}</Text>
-            <Text style={styles.typeText}>{typeConfig?.title || 'Unknown'}</Text>
+            <Text style={[styles.typeText, { color: theme.textSecondary }]}>{typeConfig?.title || 'Unknown'}</Text>
           </View>
-          <Text style={styles.date}>{formatDate(qrCode.createdAt)}</Text>
+          <Text style={[styles.date, { color: theme.textTertiary }]}>{formatDate(qrCode.createdAt)}</Text>
         </View>
         
-        <Text style={styles.label}>{qrCode.label}</Text>
+        <Text style={[styles.label, { color: theme.text }]}>{qrCode.label}</Text>
         
         {!hideActions && (
           <View style={styles.actions}>
             <TouchableOpacity style={styles.actionButton} onPress={onEdit}>
-              <Text style={styles.editButton}>Edit</Text>
+              <Text style={[styles.editButton, { color: theme.primary }]}>Edit</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
-              <Text style={styles.deleteButton}>Delete</Text>
+              <Text style={[styles.deleteButton, { color: theme.error }]}>Delete</Text>
             </TouchableOpacity>
           </View>
         )}

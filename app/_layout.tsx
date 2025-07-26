@@ -2,9 +2,12 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { AppStateProvider } from '../contexts/AppStateContext';
+import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { IAPService } from '../services/IAPService';
 
-export default function RootLayout() {
+function RootLayoutContent() {
+  const { theme, mode } = useTheme();
+  
   useEffect(() => {
     // Initialize IAP when app starts
     IAPService.initialize().catch(console.error);
@@ -16,15 +19,18 @@ export default function RootLayout() {
   }, []);
   
   return (
-    <AppStateProvider>
+    <>
       <Stack
         screenOptions={{
           headerStyle: {
-            backgroundColor: '#2196f3',
+            backgroundColor: theme.primary,
           },
-          headerTintColor: '#fff',
+          headerTintColor: theme.primaryText,
           headerTitleStyle: {
             fontWeight: 'bold',
+          },
+          contentStyle: {
+            backgroundColor: theme.background,
           },
         }}
       >
@@ -36,17 +42,9 @@ export default function RootLayout() {
           }} 
         />
         <Stack.Screen 
-          name="modal/create" 
+          name="modal/qrcode" 
           options={{ 
-            title: 'Create QR Code',
-            presentation: 'modal',
-            headerShown: false,
-          }} 
-        />
-        <Stack.Screen 
-          name="modal/edit" 
-          options={{ 
-            title: 'Edit QR Code',
+            title: 'QR Code',
             presentation: 'modal',
             headerShown: false,
           }} 
@@ -56,6 +54,10 @@ export default function RootLayout() {
           options={{ 
             title: 'QR Code',
             presentation: 'modal',
+            headerStyle: {
+              backgroundColor: theme.surface,
+            },
+            headerTintColor: theme.text,
           }} 
         />
         <Stack.Screen 
@@ -71,6 +73,7 @@ export default function RootLayout() {
           options={{ 
             title: 'Settings',
             presentation: 'modal',
+            headerShown: false,
           }} 
         />
         <Stack.Screen 
@@ -78,10 +81,21 @@ export default function RootLayout() {
           options={{ 
             title: 'Premium',
             presentation: 'modal',
+            headerShown: false,
           }} 
         />
       </Stack>
-      <StatusBar style="light" />
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+    </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <AppStateProvider>
+      <ThemeProvider>
+        <RootLayoutContent />
+      </ThemeProvider>
     </AppStateProvider>
   );
 }

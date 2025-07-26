@@ -19,29 +19,29 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     {
       title: "Welcome to QuRe",
       subtitle: "Turn your lock screen into a powerful QR code display",
-      description: "Create beautiful wallpapers with your QR codes integrated seamlessly",
-      gradient: ['#ff7e5f', '#feb47b'],
+      description: "Create beautiful lock screens with your QR codes integrated seamlessly",
+      gradient: ['#ff7e5f', '#feb47b'] as const,
       icon: '📱'
     },
     {
       title: "Create & Customize",
       subtitle: "Design QR codes that match your style",
       description: "Choose from various types: links, contacts, WiFi, and more",
-      gradient: ['#2193b0', '#6dd5ed'],
+      gradient: ['#2193b0', '#6dd5ed'] as const,
       icon: '🎨'
     },
     {
       title: "Swipe to Explore",
       subtitle: "Beautiful gradients at your fingertips",
-      description: "Swipe left or right to change your wallpaper gradient instantly",
-      gradient: ['#cc2b5e', '#753a88'],
+      description: "Swipe left or right to change your lock screen gradient instantly",
+      gradient: ['#cc2b5e', '#753a88'] as const,
       icon: '👆'
     },
     {
       title: "Premium Features",
       subtitle: "Unlock the full potential",
       description: "Add a second QR code, custom designs, and remove watermarks",
-      gradient: ['#348F50', '#56B4D3'],
+      gradient: ['#348F50', '#56B4D3'] as const,
       icon: '✨'
     }
   ];

@@ -1,4 +1,4 @@
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -6,12 +6,14 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GRADIENT_PRESETS } from '../../constants/Gradients';
+import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { IAPService } from '../../services/IAPService';
 import { UserPreferencesService } from '../../services/UserPreferences';
 
 export default function SettingsModal() {
   const insets = useSafeAreaInsets();
+  const { theme, mode, toggleTheme } = useTheme();
   const [selectedGradientId, setSelectedGradientId] = useState('sunset');
   const [isPremium, setIsPremium] = useState(false);
   const [showTitle, setShowTitle] = useState(true);
@@ -203,9 +205,16 @@ export default function SettingsModal() {
 
   return (
     <KeyboardAvoidingView 
-      style={styles.container}
+      style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Settings</Text>
+      </View>
+      
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
@@ -215,24 +224,26 @@ export default function SettingsModal() {
         ]}
         keyboardShouldPersistTaps="handled"
       >
-        <Text style={styles.sectionTitle}>Background</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Background</Text>
         
         {/* Background Type Switcher - Make it more prominent */}
         <View style={styles.backgroundTypeSwitcher}>
           <Pressable
             style={[
               styles.backgroundTypeButton,
-              backgroundType === 'gradient' && styles.backgroundTypeButtonActive
+              { backgroundColor: theme.surface, borderColor: theme.border },
+              backgroundType === 'gradient' && [styles.backgroundTypeButtonActive, { borderColor: theme.primary, backgroundColor: theme.surfaceVariant }]
             ]}
             onPress={async () => {
               setBackgroundType('gradient');
               await UserPreferencesService.updateBackgroundType('gradient');
             }}
           >
-            <Feather name="grid" size={20} color={backgroundType === 'gradient' ? "#2196f3" : "#666"} />
+            <Feather name="grid" size={20} color={backgroundType === 'gradient' ? theme.primary : theme.textSecondary} />
             <Text style={[
               styles.backgroundTypeButtonText,
-              backgroundType === 'gradient' && styles.backgroundTypeButtonTextActive
+              { color: theme.textSecondary },
+              backgroundType === 'gradient' && [styles.backgroundTypeButtonTextActive, { color: theme.primary }]
             ]}>
               Gradients
             </Text>
@@ -240,8 +251,9 @@ export default function SettingsModal() {
           <Pressable
             style={[
               styles.backgroundTypeButton,
-              backgroundType === 'custom' && isPremium && styles.backgroundTypeButtonActive,
-              !isPremium && styles.backgroundTypeButtonLocked
+              { backgroundColor: theme.surface, borderColor: theme.border },
+              backgroundType === 'custom' && isPremium && [styles.backgroundTypeButtonActive, { borderColor: theme.primary, backgroundColor: theme.surfaceVariant }],
+              !isPremium && [styles.backgroundTypeButtonLocked, { backgroundColor: theme.surfaceVariant, borderColor: theme.borderLight }]
             ]}
             onPress={async () => {
               if (!isPremium) {
@@ -253,15 +265,16 @@ export default function SettingsModal() {
               await UserPreferencesService.updateBackgroundType('custom');
             }}
           >
-            <Feather name="image" size={20} color={backgroundType === 'custom' && isPremium ? "#2196f3" : "#666"} />
+            <Feather name="image" size={20} color={backgroundType === 'custom' && isPremium ? theme.primary : theme.textSecondary} />
             <Text style={[
               styles.backgroundTypeButtonText,
-              backgroundType === 'custom' && isPremium && styles.backgroundTypeButtonTextActive,
-              !isPremium && styles.backgroundTypeButtonTextLocked
+              { color: theme.textSecondary },
+              backgroundType === 'custom' && isPremium && [styles.backgroundTypeButtonTextActive, { color: theme.primary }],
+              !isPremium && [styles.backgroundTypeButtonTextLocked, { color: theme.textTertiary }]
             ]}>
               Custom Photo
             </Text>
-            {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
+            {!isPremium && <Text style={[styles.lockIcon, { color: theme.textTertiary }]}>🔒</Text>}
           </Pressable>
         </View>
 
@@ -269,16 +282,16 @@ export default function SettingsModal() {
         {backgroundType === 'custom' && isPremium && (
           <View style={styles.customBackgroundContainer}>
             <TouchableOpacity 
-              style={styles.uploadButton}
+              style={[styles.uploadButton, { backgroundColor: theme.surface, borderColor: theme.primary }]}
               onPress={handleUploadBackground}
             >
-              <Feather name="upload" size={20} color="#2196f3" />
-              <Text style={styles.uploadButtonText}>
+              <Feather name="upload" size={20} color={theme.primary} />
+              <Text style={[styles.uploadButtonText, { color: theme.primary }]}>
                 {customBackground ? 'Change Custom Background' : 'Upload Custom Background'}
               </Text>
             </TouchableOpacity>
             
-            <Text style={styles.uploadHint}>
+            <Text style={[styles.uploadHint, { color: theme.textSecondary }]}>
               For best results, use a portrait image
             </Text>
           </View>
@@ -286,14 +299,14 @@ export default function SettingsModal() {
 
         {backgroundType === 'gradient' ? (
           <>
-            <Text style={styles.subsectionTitle}>Select Gradient</Text>
+            <Text style={[styles.subsectionTitle, { color: theme.text }]}>Select Gradient</Text>
             <View style={styles.gradientsGrid}>
               {GRADIENT_PRESETS.map((gradient) => (
                 <Pressable
                   key={gradient.id}
                   style={[
                     styles.gradientOption,
-                    selectedGradientId === gradient.id && styles.selectedGradient
+                    selectedGradientId === gradient.id && [styles.selectedGradient, { borderColor: theme.primary }]
                   ]}
                   onPress={() => handleGradientSelect(gradient.id)}
                 >
@@ -305,7 +318,7 @@ export default function SettingsModal() {
                   />
                   <Text style={styles.gradientName}>{gradient.name}</Text>
                   {selectedGradientId === gradient.id && (
-                    <View style={styles.selectedIndicator}>
+                    <View style={[styles.selectedIndicator, { backgroundColor: theme.primary }]}>
                       <Text style={styles.checkmark}>✓</Text>
                     </View>
                   )}
@@ -315,7 +328,7 @@ export default function SettingsModal() {
           </>
         ) : (
           <>
-            <Text style={styles.subsectionTitle}>Current Background</Text>
+            <Text style={[styles.subsectionTitle, { color: theme.text }]}>Current Background</Text>
             {customBackground ? (
               <View style={styles.customBackgroundLarge}>
                 <Image 
@@ -325,14 +338,14 @@ export default function SettingsModal() {
                 />
                 <View style={styles.customBackgroundActions}>
                   <TouchableOpacity
-                    style={styles.replaceButton}
+                    style={[styles.replaceButton, { backgroundColor: theme.surface, borderColor: theme.primary }]}
                     onPress={handleUploadBackground}
                   >
-                    <Feather name="refresh-cw" size={16} color="#2196f3" />
-                    <Text style={styles.replaceButtonText}>Replace</Text>
+                    <Feather name="refresh-cw" size={16} color={theme.primary} />
+                    <Text style={[styles.replaceButtonText, { color: theme.primary }]}>Replace</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={styles.removeButton}
+                    style={[styles.removeButton, { backgroundColor: theme.surface, borderColor: theme.error }]}
                     onPress={async () => {
                       Alert.alert(
                         'Remove Custom Background',
@@ -353,63 +366,65 @@ export default function SettingsModal() {
                       );
                     }}
                   >
-                    <Feather name="trash-2" size={16} color="#f44336" />
-                    <Text style={styles.removeButtonText}>Remove</Text>
+                    <Feather name="trash-2" size={16} color={theme.error} />
+                    <Text style={[styles.removeButtonText, { color: theme.error }]}>Remove</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             ) : (
-              <Text style={styles.noBackgroundText}>No custom background uploaded</Text>
+              <Text style={[styles.noBackgroundText, { color: theme.textSecondary }]}>No custom background uploaded</Text>
             )}
           </>
         )}
 
-        <Text style={styles.sectionTitle}>Display Settings</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Display Settings</Text>
         
-        <View style={styles.settingsContainer}>
+        <View style={[styles.settingsContainer, { backgroundColor: theme.surface }]}>
           <Pressable 
             style={styles.settingRow} 
-            onPress={() => handleShowTitleToggle(!showTitle)}
+            onPress={toggleTheme}
           >
             <View style={styles.settingInfo}>
               <View style={styles.settingTitleRow}>
-                <Text style={styles.settingTitle}>Show QuRe Branding</Text>
-                {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
+                <Text style={[styles.settingTitle, { color: theme.text }]}>Dark Mode</Text>
               </View>
-              <Text style={styles.settingDescription}>
-                {isPremium ? 'Display QuRe branding on wallpaper' : 'Premium feature - Upgrade to toggle'}
+              <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>
+                Switch between light and dark themes
               </Text>
             </View>
             <Switch
-              value={isPremium && showTitle}
-              onValueChange={handleShowTitleToggle}
-              trackColor={{ false: '#ddd', true: '#2196f3' }}
-              thumbColor={Platform.OS === 'android' ? '#ffffff' : undefined}
-              disabled={!isPremium}
+              value={mode === 'dark'}
+              onValueChange={toggleTheme}
+              trackColor={{ false: theme.switchTrackOff, true: theme.switchTrackOn }}
+              thumbColor={Platform.OS === 'android' ? theme.primaryText : undefined}
             />
           </Pressable>
+
+          <View style={[styles.settingDivider, { backgroundColor: theme.borderLight }]} />
 
           <View style={styles.settingDivider} />
 
           <View style={styles.qrModeContainer}>
             <View style={styles.settingTitleRow}>
-              <Text style={styles.settingTitle}>QR Code Layout</Text>
-              {!isPremium && <Text style={styles.lockIcon}>🔒</Text>}
+              <Text style={[styles.settingTitle, { color: theme.text }]}>QR Code Layout</Text>
+              {!isPremium && <Text style={[styles.lockIcon, { color: theme.textTertiary }]}>🔒</Text>}
             </View>
-            <Text style={styles.settingDescription}>
+            <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>
               {isPremium ? 'Choose number of QR codes' : 'Premium feature - Upgrade to customize'}
             </Text>
             <View style={styles.qrModeButtons}>
               <Pressable
                 style={[
                   styles.qrModeButton,
-                  qrSlotMode === 'single' && isPremium && styles.qrModeButtonActive
+                  { borderColor: theme.border },
+                  qrSlotMode === 'single' && isPremium && [styles.qrModeButtonActive, { borderColor: theme.primary, backgroundColor: theme.surfaceVariant }]
                 ]}
                 onPress={() => handleQRSlotModeChange('single')}
               >
                 <Text style={[
                   styles.qrModeButtonText,
-                  qrSlotMode === 'single' && isPremium && styles.qrModeButtonTextActive
+                  { color: theme.textSecondary },
+                  qrSlotMode === 'single' && isPremium && [styles.qrModeButtonTextActive, { color: theme.primary }]
                 ]}>
                   Single QR
                 </Text>
@@ -417,13 +432,15 @@ export default function SettingsModal() {
               <Pressable
                 style={[
                   styles.qrModeButton,
-                  qrSlotMode === 'double' && isPremium && styles.qrModeButtonActive
+                  { borderColor: theme.border },
+                  qrSlotMode === 'double' && isPremium && [styles.qrModeButtonActive, { borderColor: theme.primary, backgroundColor: theme.surfaceVariant }]
                 ]}
                 onPress={() => handleQRSlotModeChange('double')}
               >
                 <Text style={[
                   styles.qrModeButtonText,
-                  qrSlotMode === 'double' && isPremium && styles.qrModeButtonTextActive
+                  { color: theme.textSecondary },
+                  qrSlotMode === 'double' && isPremium && [styles.qrModeButtonTextActive, { color: theme.primary }]
                 ]}>
                   Double QR
                 </Text>
@@ -432,17 +449,17 @@ export default function SettingsModal() {
           </View>
         </View>
 
-        <Text style={styles.sectionTitle}>Plan Status</Text>
+        <Text style={[styles.sectionTitle, { color: theme.text }]}>Plan Status</Text>
         
-        <View style={styles.planContainer}>
+        <View style={[styles.planContainer, { backgroundColor: theme.surface }]}>
           <View style={styles.planInfo}>
-            <Text style={styles.planTitle}>
+            <Text style={[styles.planTitle, { color: theme.text }]}>
               {isPremium ? 'Premium Plan' : 'Free Plan'}
             </Text>
-            <Text style={styles.planStatus}>
-              Premium: <Text style={styles.planStatusValue}>{isPremium ? 'YES' : 'NO'}</Text>
+            <Text style={[styles.planStatus, { color: theme.textSecondary }]}>
+              Premium: <Text style={[styles.planStatusValue, { color: theme.primary }]}>{isPremium ? 'YES' : 'NO'}</Text>
             </Text>
-            <Text style={styles.planDescription}>
+            <Text style={[styles.planDescription, { color: theme.textSecondary }]}>
               {isPremium 
                 ? 'You have access to all features including secondary QR codes and custom backgrounds.'
                 : 'Upgrade to Premium for unlimited QR codes and advanced customization options.'
@@ -451,43 +468,43 @@ export default function SettingsModal() {
           </View>
           
           {!isPremium && (
-            <Pressable style={styles.upgradeButton} onPress={handleUpgrade}>
-              <Text style={styles.upgradeButtonText}>Upgrade to Premium</Text>
+            <Pressable style={[styles.upgradeButton, { backgroundColor: theme.primary }]} onPress={handleUpgrade}>
+              <Text style={[styles.upgradeButtonText, { color: theme.primaryText }]}>Upgrade to Premium</Text>
             </Pressable>
           )}
           
           <Pressable 
-            style={[styles.restoreButton, isRestoring && styles.disabledButton]}
+            style={[styles.restoreButton, { borderColor: theme.primary }, isRestoring && styles.disabledButton]}
             onPress={handleRestorePurchase}
             disabled={isRestoring}
           >
             {isRestoring ? (
-              <ActivityIndicator color="#2196f3" />
+              <ActivityIndicator color={theme.primary} />
             ) : (
-              <Text style={styles.restoreButtonText}>Restore Purchase</Text>
+              <Text style={[styles.restoreButtonText, { color: theme.primary }]}>Restore Purchase</Text>
             )}
           </Pressable>
         </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: 20 }]}>Developer Options</Text>
+        <Text style={[styles.sectionTitle, { marginTop: 20, color: theme.text }]}>Developer Options</Text>
         
-        <View style={styles.devOptionsContainer}>
+                  <View style={styles.devOptionsContainer}>
           <Pressable 
-            style={styles.devOption} 
+            style={[styles.devOption, { backgroundColor: theme.surface }]} 
             onPress={handlePremiumToggle}
-            android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+            android_ripple={{ color: theme.overlay }}
           >
-            <Text style={styles.devOptionText}>
+            <Text style={[styles.devOptionText, { color: theme.textSecondary }]}>
               {isPremium ? 'Disable Premium (Test)' : 'Enable Premium (Test)'}
             </Text>
           </Pressable>
           
           <Pressable 
-            style={styles.devOption} 
+            style={[styles.devOption, { backgroundColor: theme.surface }]} 
             onPress={handleShowOnboarding}
-            android_ripple={{ color: 'rgba(0,0,0,0.1)' }}
+            android_ripple={{ color: theme.overlay }}
           >
-            <Text style={styles.devOptionText}>Show Onboarding</Text>
+            <Text style={[styles.devOptionText, { color: theme.textSecondary }]}>Show Onboarding</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -498,7 +515,22 @@ export default function SettingsModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginLeft: 0,
+    flex: 1,
   },
   content: {
     flex: 1,
@@ -510,7 +542,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 15,
     marginTop: 20,
   },
@@ -571,11 +602,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 16,
     borderWidth: 2,
-    borderColor: '#2196f3',
     borderStyle: 'dashed',
   },
   lockedButton: {
@@ -585,7 +614,6 @@ const styles = StyleSheet.create({
   uploadButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#2196f3',
   },
   lockedButtonText: {
     color: '#999',
@@ -616,7 +644,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   settingsContainer: {
-    backgroundColor: 'white',
     borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 20,
@@ -639,17 +666,14 @@ const styles = StyleSheet.create({
   settingTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
   },
   settingDescription: {
     fontSize: 14,
-    color: '#666',
     lineHeight: 18,
     marginTop: 4,
   },
   settingDivider: {
     height: 1,
-    backgroundColor: '#f0f0f0',
     marginHorizontal: 20,
   },
   qrModeContainer: {
@@ -666,23 +690,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#ddd',
     alignItems: 'center',
   },
   qrModeButtonActive: {
-    borderColor: '#2196f3',
-    backgroundColor: '#e3f2fd',
   },
   qrModeButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#666',
   },
   qrModeButtonTextActive: {
-    color: '#2196f3',
   },
   planContainer: {
-    backgroundColor: 'white',
     borderRadius: 12,
     padding: 20,
     marginBottom: 20,
@@ -693,25 +711,20 @@ const styles = StyleSheet.create({
   planTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 5,
   },
   planStatus: {
     fontSize: 16,
-    color: '#666',
     marginBottom: 10,
   },
   planStatusValue: {
     fontWeight: 'bold',
-    color: '#2196f3',
   },
   planDescription: {
     fontSize: 14,
-    color: '#666',
     lineHeight: 20,
   },
   upgradeButton: {
-    backgroundColor: '#2196f3',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -719,20 +732,17 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   upgradeButtonText: {
-    color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
   },
   restoreButton: {
     borderWidth: 2,
-    borderColor: '#2196f3',
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderRadius: 8,
     alignItems: 'center',
   },
   restoreButtonText: {
-    color: '#2196f3',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -744,13 +754,11 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   devOption: {
-    backgroundColor: 'white',
     borderRadius: 8,
     padding: 15,
   },
   devOptionText: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
   },
   backgroundTypeSwitcher: {
@@ -768,34 +776,24 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 10,
     borderWidth: 2,
-    borderColor: '#ddd',
-    backgroundColor: 'white',
     position: 'relative',
   },
   backgroundTypeButtonActive: {
-    borderColor: '#2196f3',
-    backgroundColor: '#e3f2fd',
   },
   backgroundTypeButtonLocked: {
-    borderColor: '#ddd',
-    backgroundColor: '#f5f5f5',
     opacity: 0.7,
   },
   backgroundTypeButtonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#666',
   },
   backgroundTypeButtonTextActive: {
-    color: '#2196f3',
   },
   backgroundTypeButtonTextLocked: {
-    color: '#999',
   },
   subsectionTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#555',
     marginBottom: 10,
   },
   customBackgroundLarge: {
@@ -819,14 +817,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
-    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#2196f3',
   },
   replaceButtonText: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2196f3',
   },
   removeButton: {
     flexDirection: 'row',
@@ -835,19 +830,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 6,
-    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#f44336',
   },
   uploadHint: {
     fontSize: 12,
-    color: '#666',
     textAlign: 'center',
     marginTop: 10,
   },
   noBackgroundText: {
     fontSize: 14,
-    color: '#666',
     textAlign: 'center',
     marginTop: 10,
   },

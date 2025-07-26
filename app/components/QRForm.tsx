@@ -1,7 +1,8 @@
 // app/components/QRForm.tsx
-import React, { useCallback, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { QR_TYPES } from '../../constants/QRTypes';
+import { useTheme } from '../../contexts/ThemeContext';
 import { QRCodeType, QRCodeTypeData } from '../../types/QRCode';
 
 interface QRFormProps {
@@ -11,24 +12,35 @@ interface QRFormProps {
 }
 
 export default function QRForm({ type, initialData, onDataChange }: QRFormProps) {
+  const { theme } = useTheme();
   const [formData, setFormData] = useState<Record<string, string>>({});
-  const isInitialMount = useRef(true);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitialized = useRef(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const typeConfig = QR_TYPES.find(t => t.type === type);
 
-  React.useEffect(() => {
-    if (initialData) {
+  useEffect(() => {
+    // Reset when type changes
+    hasInitialized.current = false;
+    setFormData({});
+  }, [type]);
+
+  useEffect(() => {
+    // Initialize form data only once when initialData is provided
+    if (initialData && !hasInitialized.current) {
       const newFormData: Record<string, string> = {};
       Object.entries(initialData).forEach(([key, value]) => {
         newFormData[key] = String(value || '');
       });
       setFormData(newFormData);
-    } else {
-      setFormData({});
+      hasInitialized.current = true;
+      
+      // Notify parent of initial data after a slight delay to avoid render loop
+      setTimeout(() => {
+        onDataChange(newFormData as unknown as QRCodeTypeData);
+      }, 0);
     }
-    isInitialMount.current = true;
-  }, [type]);
+  }, [initialData, onDataChange]);
 
   const updateField = useCallback((key: string, value: string) => {
     setFormData(prev => {
@@ -60,24 +72,30 @@ export default function QRForm({ type, initialData, onDataChange }: QRFormProps)
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>
+      <Text style={[styles.title, { color: theme.text }]}>
         {typeConfig.icon} {typeConfig.title} Details
       </Text>
       
       {typeConfig.fields.map((field) => (
         <View key={field.key} style={styles.fieldContainer}>
-          <Text style={styles.fieldLabel}>
+          <Text style={[styles.fieldLabel, { color: theme.text }]}>
             {field.label}
-            {field.required && <Text style={styles.required}> *</Text>}
+            {field.required && <Text style={[styles.required, { color: theme.error }]}> *</Text>}
           </Text>
           <TextInput
             style={[
               styles.textInput,
+              {
+                backgroundColor: theme.inputBackground,
+                borderColor: theme.border,
+                color: theme.text,
+              },
               field.multiline && styles.multilineInput
             ]}
             value={formData[field.key] || ''}
             onChangeText={(value) => updateField(field.key, value)}
             placeholder={field.placeholder}
+            placeholderTextColor={theme.textTertiary}
             keyboardType={field.keyboardType || 'default'}
             multiline={field.multiline}
             numberOfLines={field.multiline ? 4 : 1}

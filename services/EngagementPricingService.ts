@@ -182,7 +182,7 @@ export class EngagementPricingService {
           productId: PRODUCT_IDS[platform].tier1,
           displayPrice: '$4.99',
           trigger: 'export_wallpaper',
-          message: 'Love your wallpapers? Remove watermarks and unlock premium backgrounds'
+          message: 'Love your lock screens? Remove watermarks and unlock premium backgrounds'
         };
       }
 

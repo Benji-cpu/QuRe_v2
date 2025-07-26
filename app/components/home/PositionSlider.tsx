@@ -1,6 +1,7 @@
 // app/components/home/PositionSlider.tsx
 import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
+import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
 import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { Gesture } from 'react-native-gesture-handler';
@@ -43,6 +44,13 @@ export default function PositionSlider({
   const [containerOpacity] = useState(new Animated.Value(1));
   const slidersRef = useRef<View>(null);
   
+  // Snap state tracking
+  const [hasSnappedX, setHasSnappedX] = useState(false);
+  const [hasSnappedY, setHasSnappedY] = useState(false);
+  
+  // Toggle state for snapping to bottom
+  const [isSnappedToBottom, setIsSnappedToBottom] = useState(false);
+  
   // Use window dimensions for responsive design
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   
@@ -50,6 +58,60 @@ export default function PositionSlider({
   const scale = screenWidth / 375; // Base width of iPhone X
   const scaleFont = (size: number) => Math.round(size * Math.min(scale, 1.2));
   const scaleSpacing = (size: number) => Math.round(size * scale);
+
+  // Snap configuration
+  const SNAP_THRESHOLD = 3; // How close to center before snapping (±3 units)
+  const SNAP_TARGET = 50; // Center position
+
+  // Handle snap logic with haptic feedback
+  const handleSnapPosition = (value: number, isX: boolean) => {
+    const distance = Math.abs(value - SNAP_TARGET);
+    const hasSnapped = isX ? hasSnappedX : hasSnappedY;
+    
+    if (distance <= SNAP_THRESHOLD && !hasSnapped) {
+      // Snap to center and provide haptic feedback
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      if (isX) {
+        setHasSnappedX(true);
+        onXPositionChange(SNAP_TARGET);
+      } else {
+        setHasSnappedY(true);
+        onYPositionChange(SNAP_TARGET);
+      }
+      return SNAP_TARGET;
+    } else if (distance > SNAP_THRESHOLD) {
+      // Reset snap state when moving away from center
+      if (isX) {
+        setHasSnappedX(false);
+      } else {
+        setHasSnappedY(false);
+      }
+    }
+    
+    return value;
+  };
+
+  const handleXPositionChange = (value: number) => {
+    const snappedValue = handleSnapPosition(value, true);
+    if (snappedValue !== value) return; // Already handled by snap
+    onXPositionChange(value);
+  };
+
+  const handleYPositionChange = (value: number) => {
+    const snappedValue = handleSnapPosition(value, false);
+    if (snappedValue !== value) return; // Already handled by snap
+    onYPositionChange(value);
+  };
+
+  const handleXPositionChangeEnd = (value: number) => {
+    setHasSnappedX(false); // Reset snap state when user stops sliding
+    onXPositionChangeEnd?.(value);
+  };
+
+  const handleYPositionChangeEnd = (value: number) => {
+    setHasSnappedY(false); // Reset snap state when user stops sliding
+    onYPositionChangeEnd?.(value);
+  };
 
   useEffect(() => {
     if (visible) {
@@ -63,11 +125,19 @@ export default function PositionSlider({
 
   useEffect(() => {
     if (isExpanded) {
-      // Dynamic expanded position based on screen height
-      const expandedPosition = -(screenHeight * 0.5 - screenHeight * 0.45);
+      // Choose position based on toggle state
+      let targetPosition;
+      if (isSnappedToBottom) {
+        // Move to bottom of screen - use a large positive value
+        targetPosition = screenHeight * 0.4; // This will move it to the bottom
+      } else {
+        // Dynamic expanded position based on screen height
+        targetPosition = -(screenHeight * 0.5 - screenHeight * 0.45);
+      }
+      
       Animated.parallel([
         Animated.timing(translateY, {
-          toValue: expandedPosition,
+          toValue: targetPosition,
           duration: 300,
           useNativeDriver: true,
         }),
@@ -91,10 +161,15 @@ export default function PositionSlider({
         }),
       ]).start();
     }
-  }, [isExpanded, screenHeight]);
+  }, [isExpanded, screenHeight, isSnappedToBottom]);
 
   const handleExpand = () => {
     onExpand?.();
+  };
+
+  const handleTogglePosition = () => {
+    setIsSnappedToBottom(!isSnappedToBottom);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
   const containerGesture = Gesture.Tap()
@@ -140,8 +215,42 @@ export default function PositionSlider({
               style={[styles.sliderContent, { padding: scaleSpacing(20) }]}
             >
               <View style={[styles.sliderHeader, { marginBottom: scaleSpacing(16) }]}>
-                <Feather name="move" size={scaleFont(20)} color="white" />
-                <Text style={[styles.sliderLabel, { fontSize: scaleFont(16) }]}>Adjust Position</Text>
+                <TouchableOpacity 
+                  style={[styles.toggleButton, { 
+                    paddingHorizontal: scaleSpacing(8), 
+                    paddingVertical: scaleSpacing(4),
+                    borderRadius: scaleSpacing(6)
+                  }]}
+                  onPress={handleTogglePosition}
+                  activeOpacity={0.7}
+                >
+                  <Feather 
+                    name={isSnappedToBottom ? "chevron-up" : "chevron-down"} 
+                    size={scaleFont(20)} 
+                    color="white" 
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.resetButton, { 
+                    paddingHorizontal: scaleSpacing(8), 
+                    paddingVertical: scaleSpacing(4),
+                    borderRadius: scaleSpacing(6)
+                  }]}
+                  onPress={() => {
+                    // Reset to default values
+                    onXPositionChange(50); // Center horizontally
+                    onYPositionChange(50); // Center vertically  
+                    onScaleChange(singleQRMode ? 1.0 : 1.0); // Default scale
+                    
+                    // Trigger end callbacks for persistence
+                    onXPositionChangeEnd?.(50);
+                    onYPositionChangeEnd?.(50);
+                    onScaleChangeEnd?.(singleQRMode ? 1.0 : 1.0);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Feather name="rotate-ccw" size={scaleFont(16)} color="rgba(255, 255, 255, 0.8)" />
+                </TouchableOpacity>
               </View>
               
               <View style={[styles.sliderRow, { marginBottom: scaleSpacing(16) }]}>
@@ -151,8 +260,8 @@ export default function PositionSlider({
                   minimumValue={yRange.min}
                   maximumValue={yRange.max}
                   value={yPosition}
-                  onValueChange={onYPositionChange}
-                  onSlidingComplete={onYPositionChangeEnd}
+                  onValueChange={handleYPositionChange}
+                  onSlidingComplete={handleYPositionChangeEnd}
                   minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
                   maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                   thumbTintColor="white"
@@ -166,8 +275,8 @@ export default function PositionSlider({
                   minimumValue={xRange.min}
                   maximumValue={xRange.max}
                   value={xPosition}
-                  onValueChange={onXPositionChange}
-                  onSlidingComplete={onXPositionChangeEnd}
+                  onValueChange={handleXPositionChange}
+                  onSlidingComplete={handleXPositionChangeEnd}
                   minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
                   maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
                   thumbTintColor="white"
@@ -262,7 +371,22 @@ const styles = StyleSheet.create({
   sliderHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
+  },
+  toggleButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  resetButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sliderLabel: {
     fontWeight: '600',

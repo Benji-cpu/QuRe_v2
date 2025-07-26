@@ -1,15 +1,17 @@
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as FileSystem from 'expo-file-system';
 import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, BackHandler, Dimensions, Linking, Platform, Pressable, StyleSheet, Text, ToastAndroid, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, BackHandler, Dimensions, Linking, Platform, Pressable, Share, StyleSheet, Text, ToastAndroid, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import { GRADIENT_PRESETS } from '../constants/Gradients';
+import { useTheme } from '../contexts/ThemeContext';
 import { EngagementPricingService } from '../services/EngagementPricingService';
 import { QRStorage } from '../services/QRStorage';
 import { UserPreferencesService } from '../services/UserPreferences';
@@ -28,6 +30,7 @@ const SWIPE_INDICATOR_KEY = '@qure_swipe_indicator_count';
 
 function HomeScreen() {
   const insets = useSafeAreaInsets();
+  const { theme, mode } = useTheme();
   const wallpaperRef = useRef<View>(null);
   const sessionStartTime = useRef<number>(Date.now());
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -353,18 +356,18 @@ function HomeScreen() {
   const showSaveInstructions = () => {
     if (Platform.OS === 'android') {
       ToastAndroid.showWithGravity(
-        'Wallpaper saved! Open Gallery › Downloads (or "QuRe") to set it.',
+        'Image saved! Open Gallery › Downloads (or "QuRe") to set as lock screen.',
         ToastAndroid.LONG,
         ToastAndroid.CENTER
       );
       
       Alert.alert(
-        'Wallpaper Saved!',
-        'Your wallpaper has been saved to Gallery.\n\nTo set as wallpaper:\n1. Open Gallery app\n2. Find the wallpaper (usually in Downloads or QuRe folder)\n3. Tap menu (3 dots)\n4. Select "Set as wallpaper"\n5. Choose "Lock screen"',
+        'Image Saved!',
+        'Your image has been saved to Gallery.\n\nTo set as lock screen:\n1. Open Gallery app\n2. Find the image (usually in Downloads or QuRe folder)\n3. Tap menu (3 dots)\n4. Select "Set as wallpaper"\n5. Choose "Lock screen"',
         [
           { text: 'OK', style: 'default' },
           {
-            text: 'Set as Wallpaper',
+            text: 'Set as Lock Screen',
             onPress: async () => {
               try {
                 await Linking.openURL('intent:#Intent;action=android.intent.action.SET_WALLPAPER;end');
@@ -374,7 +377,7 @@ function HomeScreen() {
                 } catch {
                   Alert.alert(
                     'Could not open wallpaper chooser', 
-                    'Please set the wallpaper manually:\n1. Open your Gallery app\n2. Find the saved wallpaper\n3. Set it as your wallpaper',
+                    'Please set the lock screen manually:\n1. Open your Gallery app\n2. Find the saved image\n3. Set it as your lock screen',
                     [{ text: 'OK' }]
                   );
                 }
@@ -384,10 +387,10 @@ function HomeScreen() {
         ]
       );
     } else {
-      const instructions = '1. Open Photos app\n2. Find the wallpaper\n3. Tap Share button\n4. Select "Use as Wallpaper"\n5. Choose "Set"';
+      const instructions = '1. Open Photos app\n2. Find the image\n3. Tap Share button\n4. Select "Use as Wallpaper"\n5. Choose "Set"';
       Alert.alert(
-        'Wallpaper Saved!',
-        `Your wallpaper has been saved to photos.\n\nTo set as wallpaper:\n${instructions}`,
+        'Image Saved!',
+        `Your image has been saved to photos.\n\nTo set as lock screen:\n${instructions}`,
         [
           { text: 'OK', style: 'default' },
           {
@@ -398,6 +401,90 @@ function HomeScreen() {
           },
         ]
       );
+    }
+  };
+
+  const handleShareWallpaper = async () => {
+    try {
+      // Show export preview and hide UI elements
+      setShowExportPreview(true);
+      setShowActionButtons(false);
+      setHideElementsForExport(true);
+
+      // Start export animation
+      Animated.timing(exportOverlayOpacity, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+
+      // Add a small delay to ensure UI updates before capture
+      setTimeout(async () => {
+        try {
+          const captureFormat = Platform.OS === 'android' ? 'jpg' : 'png';
+          const uri = await captureRef(wallpaperRef, {
+            format: captureFormat,
+            quality: 1,
+          });
+
+          // Track the sharing action
+          await EngagementPricingService.trackAction('wallpapersExported');
+
+          // Share the screenshot using React Native's built-in Share
+          if (Platform.OS === 'ios') {
+            await Share.share({
+              url: uri,
+              title: 'Check out my QuRe lock screen!',
+            });
+          } else {
+            // For Android, copy to cache directory and share
+            const filename = `qure_lockscreen_${Date.now()}.${captureFormat}`;
+            const shareableUri = `${FileSystem.cacheDirectory}${filename}`;
+            
+            // Copy the captured image to cache directory
+            await FileSystem.copyAsync({
+              from: uri,
+              to: shareableUri,
+            });
+            
+            // Share the file from cache
+            await Share.share({
+              url: shareableUri,
+              title: 'Check out my QuRe lock screen!',
+            });
+          }
+
+          // Hide export preview and show UI elements again
+          Animated.timing(exportOverlayOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            setShowExportPreview(false);
+            setShowActionButtons(true);
+            setHideElementsForExport(false);
+          });
+
+        } catch (shareError) {
+          console.error('Share error:', shareError);
+          Alert.alert('Share failed', 'Unable to share the screenshot. Please try again.');
+          
+          // Reset UI state on error
+          Animated.timing(exportOverlayOpacity, {
+            toValue: 0,
+            duration: 200,
+            useNativeDriver: true,
+          }).start(() => {
+            setShowExportPreview(false);
+            setShowActionButtons(true);
+            setHideElementsForExport(false);
+          });
+        }
+      }, 200);
+
+    } catch (error) {
+      console.error('Share preparation error:', error);
+      Alert.alert('Error', 'Failed to prepare screenshot for sharing.');
     }
   };
 
@@ -433,10 +520,22 @@ function HomeScreen() {
   const handleQRSlotPress = async (slot: 'primary' | 'secondary') => {
     try {
       if (slot === 'primary') {
-        router.push('/modal/create?slot=primary');
+        if (primaryQR) {
+          // Edit existing QR code
+          router.push(`/modal/qrcode?id=${primaryQR.id}&slot=primary`);
+        } else {
+          // Create new QR code
+          router.push('/modal/qrcode?slot=primary');
+        }
       } else if (slot === 'secondary') {
         if (isPremium) {
-          router.push('/modal/create?slot=secondary');
+          if (secondaryQR) {
+            // Edit existing QR code
+            router.push(`/modal/qrcode?id=${secondaryQR.id}&slot=secondary`);
+          } else {
+            // Create new QR code
+            router.push('/modal/qrcode?slot=secondary');
+          }
         } else {
           await EngagementPricingService.trackAction('secondarySlotAttempts');
           router.push('/modal/premium');
@@ -506,7 +605,7 @@ function HomeScreen() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <StatusBar style="light" />
+      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
       <View style={styles.container}>
         <GestureDetector gesture={swipeGesture}>
           <View style={styles.container}>
@@ -525,18 +624,9 @@ function HomeScreen() {
                 )}
                 
                 <View style={styles.content}>
-                  {shouldShowTitleArea && (
-                    <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
-                      <Pressable onPress={handleTitlePress} style={styles.titleContainer}>
-                        <Animated.Text style={[styles.appTitle, { opacity: titleOpacity }]}>
-                          QuRe
-                        </Animated.Text>
-                        {(!isPremium || (isPremium && showTitle)) && (
-                          <Text style={styles.closeButton}>×</Text>
-                        )}
-                      </Pressable>
-                    </View>
-                  )}
+                  <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
+                    {/* QuRe title section removed */}
+                  </View>
 
                   <Animated.View style={{ opacity: elementsOpacity }}>
                     {!hideElementsForExport && !sliderExpanded && (
@@ -551,6 +641,7 @@ function HomeScreen() {
                           {!sliderExpanded && (
                             <ActionCards 
                               onExportWallpaper={handleExportWallpaper}
+                              onShareWallpaper={handleShareWallpaper}
                               onSettings={handleSettings}
                             />
                           )}
@@ -631,7 +722,7 @@ function HomeScreen() {
                       onPress={handleSaveWallpaper}
                     >
                       <Feather name="check" size={20} color="white" />
-                      <Text style={styles.exportButtonText}>Save</Text>
+                      <Text style={styles.exportButtonText}>Set as Lock Screen</Text>
                     </Pressable>
                   </View>
                 </View>

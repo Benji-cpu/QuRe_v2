@@ -1,7 +1,9 @@
 // app/modal/history.tsx - Add engagement tracking
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { QRStorage } from '../../services/QRStorage';
 import { UserPreferencesService } from '../../services/UserPreferences';
@@ -9,6 +11,7 @@ import { QRCodeData } from '../../types/QRCode';
 import QRListItem from '../components/QRListItem';
 
 export default function HistoryModal() {
+  const { theme } = useTheme();
   const { selectMode, slot } = useLocalSearchParams<{ selectMode?: string; slot?: string }>();
   const [qrCodes, setQrCodes] = useState<QRCodeData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,7 +66,7 @@ export default function HistoryModal() {
 
   const handleEdit = (qrCode: QRCodeData) => {
     router.push({
-      pathname: '/modal/edit',
+      pathname: '/modal/qrcode',
       params: { id: qrCode.id }
     });
   };
@@ -89,11 +92,11 @@ export default function HistoryModal() {
   const handleCreate = () => {
     if (isSelectMode) {
       router.replace({
-        pathname: '/modal/create',
+        pathname: '/modal/qrcode',
         params: slot ? { slot } : {}
       });
     } else {
-      router.push('/modal/create');
+      router.push('/modal/qrcode');
     }
   };
 
@@ -101,9 +104,9 @@ export default function HistoryModal() {
     if (!isSelectMode || qrCodes.length === 0) return null;
 
     return (
-      <TouchableOpacity style={styles.createNewCard} onPress={handleCreate}>
-        <Text style={styles.createNewIcon}>+</Text>
-        <Text style={styles.createNewText}>Create New QR Code</Text>
+      <TouchableOpacity style={[styles.createNewCard, { backgroundColor: theme.primary }]} onPress={handleCreate}>
+        <Text style={[styles.createNewIcon, { color: theme.primaryText }]}>+</Text>
+        <Text style={[styles.createNewText, { color: theme.primaryText }]}>Create New QR Code</Text>
       </TouchableOpacity>
     );
   };
@@ -111,36 +114,33 @@ export default function HistoryModal() {
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
       <Text style={styles.emptyIcon}>📱</Text>
-      <Text style={styles.emptyTitle}>No QR Codes Yet</Text>
-      <Text style={styles.emptyText}>
+      <Text style={[styles.emptyTitle, { color: theme.text }]}>No QR Codes Yet</Text>
+      <Text style={[styles.emptyText, { color: theme.textSecondary }]}>
         Create your first QR code to get started!
       </Text>
-      <TouchableOpacity style={styles.emptyButton} onPress={handleCreate}>
-        <Text style={styles.emptyButtonText}>Create QR Code</Text>
+      <TouchableOpacity style={[styles.emptyButton, { backgroundColor: theme.primary }]} onPress={handleCreate}>
+        <Text style={[styles.emptyButtonText, { color: theme.primaryText }]}>Create QR Code</Text>
       </TouchableOpacity>
     </View>
   );
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading...</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>
           {isSelectMode ? 'Select QR Code' : 'Your QR Codes'}
         </Text>
-        <TouchableOpacity 
-          style={styles.closeButton} 
-          onPress={() => router.back()}
-        >
-          <Text style={styles.closeButtonText}>✕</Text>
-        </TouchableOpacity>
       </View>
       
       <FlatList
@@ -162,8 +162,8 @@ export default function HistoryModal() {
       />
       
       {(qrCodes.length > 0 && !isSelectMode) && (
-        <TouchableOpacity style={styles.fab} onPress={handleCreate}>
-          <Text style={styles.fabIcon}>+</Text>
+        <TouchableOpacity style={[styles.fab, { backgroundColor: theme.primary }]} onPress={handleCreate}>
+          <Text style={[styles.fabIcon, { color: theme.primaryText }]}>+</Text>
         </TouchableOpacity>
       )}
     </View>
@@ -177,7 +177,6 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 15,
@@ -185,10 +184,14 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
+  backButton: {
+    marginRight: 15,
+  },
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    flex: 1,
   },
   closeButton: {
     width: 30,

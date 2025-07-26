@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QR_TYPES } from '../../constants/QRTypes';
+import { useTheme } from '../../contexts/ThemeContext';
 import { QRStorage } from '../../services/QRStorage';
 import { QRCodeData } from '../../types/QRCode';
 import QRCodePreview from '../components/QRCodePreview';
@@ -12,6 +13,7 @@ export default function ViewModal() {
   const [qrCode, setQrCode] = useState<QRCodeData | null>(null);
   const [loading, setLoading] = useState(true);
   const insets = useSafeAreaInsets();
+  const { theme } = useTheme();
 
   useEffect(() => {
     loadQRCode();
@@ -42,7 +44,7 @@ export default function ViewModal() {
 
   const handleEdit = () => {
     router.push({
-      pathname: '/modal/edit',
+      pathname: '/modal/qrcode',
       params: { id: qrCode?.id, slot }
     });
   };
@@ -72,8 +74,8 @@ export default function ViewModal() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.loadingText}>Loading...</Text>
+      <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
+        <Text style={[styles.loadingText, { color: theme.textSecondary }]}>Loading...</Text>
       </View>
     );
   }
@@ -85,13 +87,13 @@ export default function ViewModal() {
   const typeConfig = QR_TYPES.find(t => t.type === qrCode.type);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 120 }}
       >
-        <View style={styles.qrContainer}>
+        <View style={[styles.qrContainer, { backgroundColor: theme.surface }]}>
           <QRCodePreview 
             value={qrCode.content} 
             size={250} 
@@ -99,49 +101,52 @@ export default function ViewModal() {
           />
         </View>
         
-        <View style={styles.infoContainer}>
+        <View style={[styles.infoContainer, { backgroundColor: theme.surface }]}>
           <View style={styles.typeInfo}>
             <Text style={styles.typeIcon}>{typeConfig?.icon || '📄'}</Text>
-            <Text style={styles.typeText}>{typeConfig?.title || 'Unknown'}</Text>
+            <Text style={[styles.typeText, { color: theme.textSecondary }]}>{typeConfig?.title || 'Unknown'}</Text>
           </View>
           
-          <Text style={styles.label}>{qrCode.label}</Text>
-          <Text style={styles.date}>Created {formatDate(qrCode.createdAt)}</Text>
+          <Text style={[styles.label, { color: theme.text }]}>{qrCode.label}</Text>
+          <Text style={[styles.date, { color: theme.textTertiary }]}>Created {formatDate(qrCode.createdAt)}</Text>
           
-          <View style={styles.dataContainer}>
-            <Text style={styles.dataTitle}>QR Code Data:</Text>
-            <Text style={styles.dataContent}>{qrCode.content}</Text>
+          <View style={[styles.dataContainer, { borderTopColor: theme.border }]}>
+            <Text style={[styles.dataTitle, { color: theme.text }]}>QR Code Data:</Text>
+            <Text style={[styles.dataContent, { color: theme.textSecondary, backgroundColor: theme.surfaceVariant }]}>{qrCode.content}</Text>
           </View>
         </View>
       </ScrollView>
       
       <View style={[
-        styles.footer, 
+        styles.footer
+        , 
         { 
-          paddingBottom: Platform.OS === 'android' ? 50 : Math.max(insets.bottom, 50)
+          paddingBottom: Platform.OS === 'android' ? 50 : Math.max(insets.bottom, 50),
+          backgroundColor: theme.surface,
+          borderTopColor: theme.border
         }
       ]}>
         <TouchableOpacity 
-          style={styles.closeButton} 
+          style={[styles.closeButton, { backgroundColor: theme.surfaceVariant }]} 
           onPress={handleClose}
         >
-          <Text style={styles.closeButtonText}>Close</Text>
+          <Text style={[styles.closeButtonText, { color: theme.text }]}>Close</Text>
         </TouchableOpacity>
         
         {slot && (
           <TouchableOpacity 
-            style={styles.changeButton} 
+            style={[styles.changeButton, { backgroundColor: theme.warning }]} 
             onPress={handleChangeQR}
           >
-            <Text style={styles.changeButtonText}>Change</Text>
+            <Text style={[styles.changeButtonText, { color: theme.primaryText }]}>Change</Text>
           </TouchableOpacity>
         )}
         
         <TouchableOpacity 
-          style={styles.editButton} 
+          style={[styles.editButton, { backgroundColor: theme.primary }]} 
           onPress={handleEdit}
         >
-          <Text style={styles.editButtonText}>Edit</Text>
+          <Text style={[styles.editButtonText, { color: theme.primaryText }]}>Edit</Text>
         </TouchableOpacity>
       </View>
     </View>

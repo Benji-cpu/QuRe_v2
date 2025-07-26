@@ -1,13 +1,16 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Product, PurchaseError } from 'react-native-iap';
 import { PRODUCT_IDS } from '../../config/IAPConfig';
+import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService, PricingOffer } from '../../services/EngagementPricingService';
 import { IAPService } from '../../services/IAPService';
 import { UserPreferencesService } from '../../services/UserPreferences';
 
 export default function PremiumModal() {
+  const { theme, mode } = useTheme();
   const [offer, setOffer] = useState<PricingOffer | null>(null);
   const [baseProduct, setBaseProduct] = useState<Product | null>(null); // tier1 (normal price)
   const [offerProduct, setOfferProduct] = useState<Product | null>(null); // current offer
@@ -136,7 +139,7 @@ export default function PremiumModal() {
     {
       icon: '🎯',
       title: 'Secondary QR Code',
-      description: 'Add a second QR code to your wallpaper for more functionality'
+      description: 'Add a second QR code to your lock screen for more functionality'
     },
     {
       icon: '🎨',
@@ -151,7 +154,7 @@ export default function PremiumModal() {
     {
       icon: '✨',
       title: 'No Watermarks',
-      description: 'Export wallpapers without QuRe branding'
+      description: 'Export lock screens without QuRe branding'
     },
     {
       icon: '🚀',
@@ -180,7 +183,7 @@ export default function PremiumModal() {
     }
     
     if (offer.trigger === 'export_wallpaper') {
-      return 'Love creating wallpapers? Remove watermarks and get premium backgrounds!';
+      return 'Love creating lock screens? Remove watermarks and get premium backgrounds!';
     }
 
     return null;
@@ -195,56 +198,63 @@ export default function PremiumModal() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.headerBar, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>Premium</Text>
+      </View>
+      
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Unlock Premium</Text>
-          <Text style={styles.subtitle}>
+        <View style={[styles.header, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.title, { color: theme.text }]}>Unlock Premium</Text>
+          <Text style={[styles.subtitle, { color: theme.textSecondary }]}>
             {offer?.message || 'Get the most out of QuRe'}
           </Text>
         </View>
 
         {getSpecialMessage() && (
-          <View style={styles.specialMessageContainer}>
-            <Text style={styles.specialMessage}>{getSpecialMessage()}</Text>
+          <View style={[styles.specialMessageContainer, { backgroundColor: theme.warning + '20', borderLeftColor: theme.warning }]}>
+            <Text style={[styles.specialMessage, { color: theme.text }]}>{getSpecialMessage()}</Text>
           </View>
         )}
 
-        <View style={styles.featuresContainer}>
+        <View style={[styles.featuresContainer, { backgroundColor: theme.surface }]}>
           {features.map((feature, index) => (
             <View key={index} style={styles.featureItem}>
               <Text style={styles.featureIcon}>{feature.icon}</Text>
               <View style={styles.featureContent}>
-                <Text style={styles.featureTitle}>{feature.title}</Text>
-                <Text style={styles.featureDescription}>{feature.description}</Text>
+                <Text style={[styles.featureTitle, { color: theme.text }]}>{feature.title}</Text>
+                <Text style={[styles.featureDescription, { color: theme.textSecondary }]}>{feature.description}</Text>
               </View>
             </View>
           ))}
         </View>
 
         <View style={styles.pricingContainer}>
-          <View style={styles.priceCard}>
-            <Text style={styles.priceTitle}>One-Time Purchase</Text>
+          <View style={[styles.priceCard, { backgroundColor: theme.surface }]}>
+            <Text style={[styles.priceTitle, { color: theme.text }]}>One-Time Purchase</Text>
             
             {offer && offerProduct && baseProduct && offerProduct.price < baseProduct.price && (
-              <View style={styles.discountBadge}>
+              <View style={[styles.discountBadge, { backgroundColor: theme.success }]}>
                 <Text style={styles.discountText}>SPECIAL PRICE</Text>
               </View>
             )}
             
             <View style={styles.priceRow}>
               {offerProduct && baseProduct && offerProduct.price < baseProduct.price && (
-                <Text style={styles.originalPrice}>{baseProduct.localizedPrice}</Text>
+                <Text style={[styles.originalPrice, { color: theme.textTertiary }]}>{baseProduct.localizedPrice}</Text>
               )}
-              <Text style={styles.priceAmount}>
+              <Text style={[styles.priceAmount, { color: theme.primary }]}>
                 {offerProduct?.localizedPrice || offer?.displayPrice || baseProduct?.localizedPrice || '$4.99'}
               </Text>
             </View>
             
-            <Text style={styles.pricePeriod}>lifetime access</Text>
+            <Text style={[styles.pricePeriod, { color: theme.textSecondary }]}>lifetime access</Text>
             
             {offerProduct && baseProduct && offerProduct.price < baseProduct.price && (
-              <Text style={styles.savingsText}>
+              <Text style={[styles.savingsText, { color: theme.success }]}>
                 {(() => {
                   const diff = (Number(baseProduct.price) - Number(offerProduct.price)).toFixed(2);
                   const symbol = (baseProduct.localizedPrice || '').replace(/[\d.,\s]/g, '') || '$';
@@ -255,33 +265,44 @@ export default function PremiumModal() {
           </View>
         </View>
 
-        <View style={styles.guaranteeContainer}>
-          <Text style={styles.guaranteeText}>✓ Lifetime access to all features</Text>
-          <Text style={styles.guaranteeText}>✓ All future updates included</Text>
-          <Text style={styles.guaranteeText}>✓ No recurring charges</Text>
-          <Text style={styles.guaranteeText}>✓ Instant activation</Text>
+        <View style={[styles.guaranteeContainer, { backgroundColor: theme.surface }]}>
+          <Text style={[styles.guaranteeText, { color: theme.success }]}>✓ Lifetime access to all features</Text>
+          <Text style={[styles.guaranteeText, { color: theme.success }]}>✓ All future updates included</Text>
+          <Text style={[styles.guaranteeText, { color: theme.success }]}>✓ No recurring charges</Text>
+          <Text style={[styles.guaranteeText, { color: theme.success }]}>✓ Instant activation</Text>
         </View>
 
         {!iapAvailable && (
-          <View style={styles.warningContainer}>
+          <View style={[styles.warningContainer, { backgroundColor: theme.primary + '20', borderLeftColor: theme.primary }]}>
             <Text style={styles.warningIcon}>ℹ️</Text>
-            <Text style={styles.warningText}>
+            <Text style={[styles.warningText, { color: theme.text }]}>
               In-app purchases not available in emulator. Test on a real device.
             </Text>
           </View>
         )}
       </ScrollView>
       
-      <View style={styles.footer}>
+      <View style={[styles.footer, { backgroundColor: theme.surface, borderTopColor: theme.border }]}>
         <TouchableOpacity 
-          style={[styles.upgradeButton, isPurchasing && styles.disabledButton]} 
+          style={[
+            styles.upgradeButton, 
+            { 
+              backgroundColor: mode === 'dark' ? theme.surfaceVariant : theme.primary,
+              borderWidth: mode === 'dark' ? 2 : 0,
+              borderColor: mode === 'dark' ? theme.primary : 'transparent'
+            }, 
+            isPurchasing && styles.disabledButton
+          ]} 
           onPress={handlePurchase}
           disabled={isPurchasing}
         >
           {isPurchasing ? (
-            <ActivityIndicator color="white" />
+            <ActivityIndicator color={mode === 'dark' ? theme.primary : theme.primaryText} />
           ) : (
-            <Text style={styles.upgradeButtonText}>
+            <Text style={[
+              styles.upgradeButtonText, 
+              { color: mode === 'dark' ? theme.primary : theme.primaryText }
+            ]}>
               Unlock Premium - {offerProduct?.localizedPrice || offer?.displayPrice || baseProduct?.localizedPrice || '$4.99'}
             </Text>
           )}
@@ -294,7 +315,6 @@ export default function PremiumModal() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   loadingContainer: {
     flex: 1,
@@ -304,37 +324,46 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    flex: 1,
+  },
   header: {
-    backgroundColor: '#2196f3',
-    padding: 30,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
     alignItems: 'center',
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: 'white',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
   },
   specialMessageContainer: {
-    backgroundColor: '#FFF3CD',
     padding: 15,
     margin: 20,
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#FFC107',
   },
   specialMessage: {
     fontSize: 14,
-    color: '#856404',
     lineHeight: 20,
   },
   featuresContainer: {
-    backgroundColor: 'white',
     margin: 20,
     borderRadius: 12,
     padding: 20,
@@ -355,12 +384,10 @@ const styles = StyleSheet.create({
   featureTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 2,
   },
   featureDescription: {
     fontSize: 14,
-    color: '#666',
     lineHeight: 18,
   },
   pricingContainer: {
@@ -368,7 +395,6 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   priceCard: {
-    backgroundColor: 'white',
     borderRadius: 16,
     padding: 30,
     alignItems: 'center',
@@ -383,7 +409,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -10,
     right: -10,
-    backgroundColor: '#4CAF50',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -396,7 +421,6 @@ const styles = StyleSheet.create({
   priceTitle: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 10,
   },
   priceRow: {
@@ -406,46 +430,38 @@ const styles = StyleSheet.create({
   },
   originalPrice: {
     fontSize: 24,
-    color: '#999',
     textDecorationLine: 'line-through',
   },
   priceAmount: {
     fontSize: 36,
     fontWeight: 'bold',
-    color: '#2196f3',
   },
   pricePeriod: {
     fontSize: 16,
-    color: '#666',
     marginTop: 5,
   },
   savingsText: {
     fontSize: 14,
-    color: '#4CAF50',
     fontWeight: '600',
     marginTop: 10,
   },
   guaranteeContainer: {
-    backgroundColor: 'white',
     margin: 20,
     borderRadius: 12,
     padding: 20,
   },
   guaranteeText: {
     fontSize: 14,
-    color: '#4CAF50',
     marginBottom: 8,
     fontWeight: '500',
   },
   warningContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#E3F2FD',
     margin: 20,
     padding: 15,
     borderRadius: 8,
     borderLeftWidth: 4,
-    borderLeftColor: '#2196F3',
   },
   warningIcon: {
     fontSize: 20,
@@ -454,24 +470,19 @@ const styles = StyleSheet.create({
   warningText: {
     flex: 1,
     fontSize: 14,
-    color: '#1976D2',
     lineHeight: 20,
   },
   footer: {
     padding: 20,
-    backgroundColor: 'white',
     borderTopWidth: 1,
-    borderTopColor: '#eee',
     paddingBottom: 40,
   },
   upgradeButton: {
-    backgroundColor: '#2196f3',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
   },
   upgradeButtonText: {
-    color: 'white',
     fontSize: 18,
     fontWeight: 'bold',
   },

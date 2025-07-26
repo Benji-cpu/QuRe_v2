@@ -5,15 +5,16 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface ActionCardsProps {
   onExportWallpaper: () => void;
+  onShareWallpaper: () => void;
   onSettings: () => void;
 }
 
-export default function ActionCards({ onExportWallpaper, onSettings }: ActionCardsProps) {
+export default function ActionCards({ onExportWallpaper, onShareWallpaper, onSettings }: ActionCardsProps) {
   return (
     <View style={styles.actionsContainer}>
       <TouchableOpacity style={styles.actionCard} onPress={onExportWallpaper}>
         <View style={styles.iconContainer}>
-          <Feather name="download" size={20} color="white" />
+          <Feather name="download" size={18} color="white" />
         </View>
         <View style={styles.actionContent}>
           <Text style={styles.actionTitle}>Set as</Text>
@@ -21,9 +22,19 @@ export default function ActionCards({ onExportWallpaper, onSettings }: ActionCar
         </View>
       </TouchableOpacity>
 
+      <TouchableOpacity style={styles.actionCard} onPress={onShareWallpaper}>
+        <View style={styles.iconContainer}>
+          <Feather name="share" size={18} color="white" />
+        </View>
+        <View style={styles.actionContent}>
+          <Text style={styles.actionTitle}>Share</Text>
+          <Text style={styles.actionSubtitle}>Screenshot</Text>
+        </View>
+      </TouchableOpacity>
+
       <TouchableOpacity style={styles.actionCard} onPress={onSettings}>
         <View style={styles.iconContainer}>
-          <Feather name="settings" size={20} color="white" />
+          <Feather name="settings" size={18} color="white" />
         </View>
         <View style={styles.actionContent}>
           <Text style={styles.actionTitle}>Settings</Text>
@@ -39,7 +50,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 20,
     height: 60,
-    gap: 12,
+    gap: 8,
     zIndex: 10,
   },
   actionCard: {
@@ -48,30 +59,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 12,
-    padding: 14,
+    padding: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
   },
   iconContainer: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 8,
   },
   actionContent: {
     flex: 1,
   },
   actionTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '600',
     color: 'white',
     marginBottom: 1,
   },
   actionSubtitle: {
-    fontSize: 12,
+    fontSize: 10,
     color: 'rgba(255, 255, 255, 0.8)',
   },
 });
