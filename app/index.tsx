@@ -1,11 +1,11 @@
+// app/index.tsx
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as FileSystem from 'expo-file-system';
-import * as MediaLibrary from 'expo-media-library';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, BackHandler, Dimensions, Linking, Platform, Pressable, Share, StyleSheet, Text, ToastAndroid, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, BackHandler, Dimensions, Platform, Pressable, StyleSheet, Text, ToastAndroid, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +24,14 @@ import QRSlots from './components/home/QRSlots';
 import SwipeIndicator from './components/home/SwipeIndicator';
 import TimeDisplay from './components/home/TimeDisplay';
 import Onboarding from './components/Onboarding';
+
+// Try to import Sharing, but handle errors gracefully
+let Sharing: any;
+try {
+  Sharing = require('expo-sharing');
+} catch (error) {
+  console.log('expo-sharing not available in this environment');
+}
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_INDICATOR_KEY = '@qure_swipe_indicator_count';
@@ -44,8 +52,8 @@ function HomeScreen() {
   const [secondaryQR, setSecondaryQR] = useState<QRCodeData | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
-  const [qrXPosition, setQrXPosition] = useState(50);  // 0-100 coordinate system
-  const [qrYPosition, setQrYPosition] = useState(30);  // 0-100 coordinate system
+  const [qrXPosition, setQrXPosition] = useState(50);
+  const [qrYPosition, setQrYPosition] = useState(30);
   const [qrScale, setQrScale] = useState(1);
   const [showSwipeIndicator, setShowSwipeIndicator] = useState(false);
   const [showPositionSlider, setShowPositionSlider] = useState(false);
@@ -63,14 +71,11 @@ function HomeScreen() {
   
   const gradientTransition = useSharedValue(0);
 
-  // Debounced save function for position changes
   const savePositionChanges = useCallback((x: number, y: number, scale: number) => {
-    // Clear any existing timeout
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
     
-    // Set a new timeout to save after 500ms of inactivity
     saveTimeoutRef.current = setTimeout(async () => {
       try {
         await Promise.all([
@@ -276,50 +281,53 @@ function HomeScreen() {
   };
 
   const handleExportWallpaper = async () => {
-    setShowActionButtons(false);
-    setHideElementsForExport(true);
-    setShowExportPreview(true);
-    
-    Animated.timing(exportOverlayOpacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
+    Alert.alert(
+      'Set as Lock Screen',
+      'Would you like to set this as your lock screen wallpaper?',
+      [
+        { 
+          text: 'Cancel', 
+          style: 'cancel' 
+        },
+        {
+          text: 'Set Wallpaper',
+          onPress: async () => {
+            setShowActionButtons(false);
+            setHideElementsForExport(true);
+            setShowExportPreview(true);
+            
+            Animated.timing(exportOverlayOpacity, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            }).start(() => {
+              // Automatically proceed to save after showing preview
+              setTimeout(() => {
+                handleSaveWallpaper();
+              }, 500);
+            });
+          }
+        }
+      ]
+    );
   };
 
   const handleSaveWallpaper = async () => {
     try {
-      const { status } = await MediaLibrary.requestPermissionsAsync();
-      if (status !== 'granted') {
-        Alert.alert('Permission needed', 'Please grant permission to save photos');
-        Animated.timing(exportOverlayOpacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }).start(() => {
-          setHideElementsForExport(false);
-          setShowActionButtons(true);
-          setShowExportPreview(false);
-        });
-        return;
-      }
-
       const captureFormat = Platform.OS === 'android' ? 'jpg' : 'png';
       const uri = await captureRef(wallpaperRef, {
         format: captureFormat,
         quality: 1,
       });
 
-      await MediaLibrary.saveToLibraryAsync(uri);
-      await EngagementPricingService.trackAction('wallpapersExported');
-
       const wallpaperSet = await setLockScreenWallpaper(uri);
+      await EngagementPricingService.trackAction('wallpapersExported');
 
       Animated.timing(exportOverlayOpacity, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
-      }).start(() => {
+      }).start(async () => {
         setShowExportPreview(false);
         setShowActionButtons(true);
         setHideElementsForExport(false);
@@ -327,19 +335,23 @@ function HomeScreen() {
         if (wallpaperSet) {
           if (Platform.OS === 'android') {
             ToastAndroid.showWithGravity(
-              'Lock screen updated successfully!',
+              'Lock screen wallpaper set successfully!',
               ToastAndroid.LONG,
               ToastAndroid.CENTER
             );
           } else {
-            Alert.alert('Lock Screen Updated', 'Your lock screen has been updated successfully.');
+            Alert.alert('Success', 'Your lock screen wallpaper has been set successfully!');
           }
         } else {
-          showSaveInstructions();
+          Alert.alert(
+            'Failed to Set Wallpaper',
+            'Unable to set the lock screen wallpaper. Please try again.',
+            [{ text: 'OK' }]
+          );
         }
       });
     } catch (error) {
-      Alert.alert('Error', 'Failed to set lock screen');
+      Alert.alert('Error', 'Failed to set lock screen wallpaper. Please try again.');
       console.error('Export error:', error);
       Animated.timing(exportOverlayOpacity, {
         toValue: 0,
@@ -353,72 +365,13 @@ function HomeScreen() {
     }
   };
 
-  const showSaveInstructions = () => {
-    if (Platform.OS === 'android') {
-      ToastAndroid.showWithGravity(
-        'Image saved! Open Gallery › Downloads (or "QuRe") to set as lock screen.',
-        ToastAndroid.LONG,
-        ToastAndroid.CENTER
-      );
-      
-      Alert.alert(
-        'Image Saved!',
-        'Your image has been saved to Gallery.\n\nTo set as lock screen:\n1. Open Gallery app\n2. Find the image (usually in Downloads or QuRe folder)\n3. Tap menu (3 dots)\n4. Select "Set as wallpaper"\n5. Choose "Lock screen"',
-        [
-          { text: 'OK', style: 'default' },
-          {
-            text: 'Set as Lock Screen',
-            onPress: async () => {
-              try {
-                await Linking.openURL('intent:#Intent;action=android.intent.action.SET_WALLPAPER;end');
-              } catch (error) {
-                try {
-                  await Linking.openURL('intent:#Intent;action=android.intent.action.CHOOSER;type=image/*;end');
-                } catch {
-                  Alert.alert(
-                    'Could not open wallpaper chooser', 
-                    'Please set the lock screen manually:\n1. Open your Gallery app\n2. Find the saved image\n3. Set it as your lock screen',
-                    [{ text: 'OK' }]
-                  );
-                }
-              }
-            },
-          },
-        ]
-      );
-    } else {
-      const instructions = '1. Open Photos app\n2. Find the image\n3. Tap Share button\n4. Select "Use as Wallpaper"\n5. Choose "Set"';
-      Alert.alert(
-        'Image Saved!',
-        `Your image has been saved to photos.\n\nTo set as lock screen:\n${instructions}`,
-        [
-          { text: 'OK', style: 'default' },
-          {
-            text: 'Open Photos',
-            onPress: () => {
-              Linking.openURL('photos-redirect://');
-            },
-          },
-        ]
-      );
-    }
-  };
-
   const handleShareWallpaper = async () => {
     try {
-      // Show export preview and hide UI elements
-      setShowExportPreview(true);
+      // Temporarily hide action buttons and elements for export
       setShowActionButtons(false);
       setHideElementsForExport(true);
 
-      // Start export animation
-      Animated.timing(exportOverlayOpacity, {
-        toValue: 1,
-        duration: 200,
-        useNativeDriver: true,
-      }).start();
-
-      // Add a small delay to ensure UI updates before capture
+      // Small delay to ensure UI updates
       setTimeout(async () => {
         try {
           const captureFormat = Platform.OS === 'android' ? 'jpg' : 'png';
@@ -427,64 +380,73 @@ function HomeScreen() {
             quality: 1,
           });
 
-          // Track the sharing action
           await EngagementPricingService.trackAction('wallpapersExported');
 
-          // Share the screenshot using React Native's built-in Share
-          if (Platform.OS === 'ios') {
-            await Share.share({
-              url: uri,
-              title: 'Check out my QuRe lock screen!',
-            });
-          } else {
-            // For Android, copy to cache directory and share
-            const filename = `qure_lockscreen_${Date.now()}.${captureFormat}`;
-            const shareableUri = `${FileSystem.cacheDirectory}${filename}`;
-            
-            // Copy the captured image to cache directory
-            await FileSystem.copyAsync({
-              from: uri,
-              to: shareableUri,
-            });
-            
-            // Share the file from cache
-            await Share.share({
-              url: shareableUri,
-              title: 'Check out my QuRe lock screen!',
-            });
-          }
-
-          // Hide export preview and show UI elements again
-          Animated.timing(exportOverlayOpacity, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => {
-            setShowExportPreview(false);
+          // Check if sharing module is available
+          if (!Sharing) {
+            Alert.alert(
+              'Sharing not available', 
+              'Sharing is not available in this environment. Please use a development build.',
+              [{ text: 'OK' }]
+            );
             setShowActionButtons(true);
             setHideElementsForExport(false);
-          });
+            return;
+          }
+
+          // Check if sharing is available
+          const isAvailable = await Sharing.isAvailableAsync();
+          
+          if (isAvailable) {
+            // For Android, we need to ensure the file is in a shareable location
+            if (Platform.OS === 'android') {
+              const filename = `qure_lockscreen_${Date.now()}.${captureFormat}`;
+              const shareableUri = `${FileSystem.cacheDirectory}${filename}`;
+              
+              await FileSystem.copyAsync({
+                from: uri,
+                to: shareableUri,
+              });
+              
+              await Sharing.shareAsync(shareableUri, {
+                dialogTitle: 'Share QuRe Lock Screen',
+                mimeType: `image/${captureFormat}`,
+                UTI: captureFormat === 'png' ? 'public.png' : 'public.jpeg',
+              });
+            } else {
+              // iOS can share directly
+              await Sharing.shareAsync(uri, {
+                dialogTitle: 'Share QuRe Lock Screen',
+                mimeType: `image/${captureFormat}`,
+                UTI: captureFormat === 'png' ? 'public.png' : 'public.jpeg',
+              });
+            }
+          } else {
+            // Fallback to native Share API if expo-sharing is not available
+            Alert.alert('Sharing not available', 'Sharing is not available on this device.');
+          }
+
+          // Restore UI elements after sharing
+          setShowActionButtons(true);
+          setHideElementsForExport(false);
 
         } catch (shareError) {
           console.error('Share error:', shareError);
           Alert.alert('Share failed', 'Unable to share the screenshot. Please try again.');
           
-          // Reset UI state on error
-          Animated.timing(exportOverlayOpacity, {
-            toValue: 0,
-            duration: 200,
-            useNativeDriver: true,
-          }).start(() => {
-            setShowExportPreview(false);
-            setShowActionButtons(true);
-            setHideElementsForExport(false);
-          });
+          // Restore UI elements on error
+          setShowActionButtons(true);
+          setHideElementsForExport(false);
         }
-      }, 200);
+      }, 100); // Reduced delay since we're not showing preview
 
     } catch (error) {
       console.error('Share preparation error:', error);
       Alert.alert('Error', 'Failed to prepare screenshot for sharing.');
+      
+      // Restore UI elements on error
+      setShowActionButtons(true);
+      setHideElementsForExport(false);
     }
   };
 
@@ -494,23 +456,11 @@ function HomeScreen() {
         handleSliderCollapse();
         return true;
       }
-      if (showExportPreview) {
-        Animated.timing(exportOverlayOpacity, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }).start(() => {
-          setShowExportPreview(false);
-          setShowActionButtons(true);
-          setHideElementsForExport(false);
-        });
-        return true;
-      }
       return false;
     };
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
     return () => backHandler.remove();
-  }, [sliderExpanded, showExportPreview, exportOverlayOpacity]);
+  }, [sliderExpanded]);
 
   const handleSettings = async () => {
     await EngagementPricingService.trackAction('settingsOpened');
@@ -521,19 +471,15 @@ function HomeScreen() {
     try {
       if (slot === 'primary') {
         if (primaryQR) {
-          // Edit existing QR code
           router.push(`/modal/qrcode?id=${primaryQR.id}&slot=primary`);
         } else {
-          // Create new QR code
           router.push('/modal/qrcode?slot=primary');
         }
       } else if (slot === 'secondary') {
         if (isPremium) {
           if (secondaryQR) {
-            // Edit existing QR code
             router.push(`/modal/qrcode?id=${secondaryQR.id}&slot=secondary`);
           } else {
-            // Create new QR code
             router.push('/modal/qrcode?slot=secondary');
           }
         } else {
@@ -564,7 +510,6 @@ function HomeScreen() {
     setShowOnboarding(false);
     setShowPositionSlider(true);
     
-    // Start showing swipe indicator after onboarding
     setTimeout(() => {
       setShowSwipeIndicator(true);
     }, 1000);
@@ -625,7 +570,6 @@ function HomeScreen() {
                 
                 <View style={styles.content}>
                   <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
-                    {/* QuRe title section removed */}
                   </View>
 
                   <Animated.View style={{ opacity: elementsOpacity }}>
@@ -835,5 +779,5 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: '600',
     fontSize: 16,
-  },
+ },
 });
