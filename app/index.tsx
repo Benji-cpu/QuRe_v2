@@ -281,35 +281,16 @@ function HomeScreen() {
   };
 
   const handleExportWallpaper = async () => {
-    Alert.alert(
-      'Set as Lock Screen',
-      'Would you like to set this as your lock screen wallpaper?',
-      [
-        { 
-          text: 'Cancel', 
-          style: 'cancel' 
-        },
-        {
-          text: 'Set Wallpaper',
-          onPress: async () => {
-            setShowActionButtons(false);
-            setHideElementsForExport(true);
-            setShowExportPreview(true);
-            
-            Animated.timing(exportOverlayOpacity, {
-              toValue: 1,
-              duration: 300,
-              useNativeDriver: true,
-            }).start(() => {
-              // Automatically proceed to save after showing preview
-              setTimeout(() => {
-                handleSaveWallpaper();
-              }, 500);
-            });
-          }
-        }
-      ]
-    );
+    // Skip the system alert and go directly to custom preview
+    setShowActionButtons(false);
+    setHideElementsForExport(true);
+    setShowExportPreview(true);
+    
+    Animated.timing(exportOverlayOpacity, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   };
 
   const handleSaveWallpaper = async () => {
@@ -731,12 +712,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    backgroundColor: 'rgba(0,0,0,0.8)',
+    paddingHorizontal: 32,
+    paddingVertical: 24,
+    backgroundColor: 'rgba(0,0,0,0.9)',
     zIndex: 100,
-    borderRadius: 16,
-    marginHorizontal: 20,
+    borderRadius: 20,
+    marginHorizontal: 24,
   },
   exportControlsContent: {
     flex: 1,
@@ -751,29 +732,35 @@ const styles = StyleSheet.create({
   exportPreviewSubtitle: {
     fontSize: 14,
     color: 'rgba(255,255,255,0.8)',
-    marginBottom: 20,
+    marginBottom: 24,
+    textAlign: 'center',
   },
   exportButtons: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 16,
+    paddingHorizontal: 8,
   },
   exportCancelButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.1)',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
     borderRadius: 25,
     gap: 8,
+    minWidth: 120,
+    justifyContent: 'center',
   },
   exportSaveButton: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#4F8EF7',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
     borderRadius: 25,
     gap: 8,
+    minWidth: 180,
+    justifyContent: 'center',
   },
   exportButtonText: {
     color: 'white',

@@ -28,7 +28,7 @@ export default function ActionCards({ onExportWallpaper, onShareWallpaper, onSet
         </View>
         <View style={styles.actionContent}>
           <Text style={styles.actionTitle}>Share</Text>
-          <Text style={styles.actionSubtitle}>Screenshot</Text>
+          <Text style={styles.actionSubtitle}>Lock Screen</Text>
         </View>
       </TouchableOpacity>
 
