@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { QRStorage } from '../../services/QRStorage';
@@ -12,6 +13,7 @@ import QRListItem from '../components/QRListItem';
 
 export default function HistoryModal() {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const { selectMode, slot } = useLocalSearchParams<{ selectMode?: string; slot?: string }>();
   const [qrCodes, setQrCodes] = useState<QRCodeData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,7 +136,7 @@ export default function HistoryModal() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: insets.top + 15 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>

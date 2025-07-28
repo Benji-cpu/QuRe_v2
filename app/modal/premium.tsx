@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Product, PurchaseError } from 'react-native-iap';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PRODUCT_IDS } from '../../config/IAPConfig';
 import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService, PricingOffer } from '../../services/EngagementPricingService';
@@ -11,6 +12,7 @@ import { UserPreferencesService } from '../../services/UserPreferences';
 
 export default function PremiumModal() {
   const { theme, mode } = useTheme();
+  const insets = useSafeAreaInsets();
   const [offer, setOffer] = useState<PricingOffer | null>(null);
   const [baseProduct, setBaseProduct] = useState<Product | null>(null); // tier1 (normal price)
   const [offerProduct, setOfferProduct] = useState<Product | null>(null); // current offer
@@ -199,7 +201,7 @@ export default function PremiumModal() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.headerBar, { backgroundColor: theme.surface, borderBottomColor: theme.border }]}>
+      <View style={[styles.headerBar, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: insets.top + 15 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -88,6 +89,13 @@ export default function ViewModal() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: insets.top + 15 }]}>
+        <TouchableOpacity style={styles.backButton} onPress={handleClose}>
+          <Ionicons name="arrow-back" size={24} color={theme.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: theme.text }]}>QR Code Details</Text>
+      </View>
+      
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
@@ -167,6 +175,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+     header: {
+     flexDirection: 'row',
+     alignItems: 'center',
+     paddingHorizontal: 20,
+     paddingBottom: 15,
+     borderBottomWidth: 1,
+   },
+   backButton: {
+     marginRight: 15,
+   },
+   headerTitle: {
+     fontSize: 20,
+     fontWeight: 'bold',
+     flex: 1,
+   },
   content: {
     flex: 1,
   },
