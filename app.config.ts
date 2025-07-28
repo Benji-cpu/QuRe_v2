@@ -14,7 +14,7 @@ export default {
   ios: {
     supportsTablet: true,
     bundleIdentifier: "com.qure.app",
-    buildNumber: "11"
+    buildNumber: "13"
   },
   
   android: {
@@ -23,7 +23,7 @@ export default {
       backgroundColor: "#ffffff"
     },
     package: "com.anonymous.QuRe",
-    versionCode: 11,
+    versionCode: 13,
     missingDimensionStrategy: {
       store: "play"
     },

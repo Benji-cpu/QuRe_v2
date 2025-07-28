@@ -4,9 +4,9 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAppState } from '../../contexts/AppStateContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
+import { navigationService } from '../../services/NavigationService';
 import { QRGenerator } from '../../services/QRGenerator';
 import { QRStorage } from '../../services/QRStorage';
 import { UserPreferencesService } from '../../services/UserPreferences';
@@ -40,7 +40,6 @@ export default function QRCodeModal() {
   
   const formDataRef = useRef<QRCodeTypeData>(formData);
   const isEditMode = !!id;
-  const { navigateToPremium } = useAppState();
   
   useEffect(() => {
     formDataRef.current = formData;
@@ -243,7 +242,7 @@ export default function QRCodeModal() {
 
   const handleDesignTabClick = () => {
     if (!isPremium) {
-      navigateToPremium();
+      navigationService.navigateToPremium();
     }
   };
 

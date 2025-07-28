@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { AppStateProvider } from '../contexts/AppStateContext';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { IAPService } from '../services/IAPService';
+import { navigationService } from '../services/NavigationService';
 
 function RootLayoutContent() {
   const { theme, mode } = useTheme();
@@ -15,6 +16,7 @@ function RootLayoutContent() {
     return () => {
       // Cleanup when app unmounts
       IAPService.disconnect().catch(console.error);
+      navigationService.reset();
     };
   }, []);
   

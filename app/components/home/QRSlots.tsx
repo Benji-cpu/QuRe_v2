@@ -45,9 +45,7 @@ export default function QRSlots({
 
   const getQRSize = () => {
     const baseSize = singleQRMode ? 120 : 90;
-    // Ensure scale is valid (fallback to 1 if undefined/null)
-    const validScale = scale ?? 1;
-    return baseSize * validScale;
+    return baseSize * scale;
   };
 
   // Convert 0-100 coordinates to actual screen positions with safe boundaries
@@ -55,19 +53,32 @@ export default function QRSlots({
     const qrSize = getQRSize();
     const containerSize = qrSize + 20;
     
-    // Calculate safe area boundaries with proper margins
-    const safeMarginTop = 80; // More space from top for UI elements
-    const safeMarginBottom = 60; // Space from bottom
-    const safeHeight = screenHeight - safeMarginTop - safeMarginBottom - containerSize;
+    // Ensure we have valid screen dimensions
+    const validScreenHeight = screenHeight || 812; // iPhone X default
     
-    // Convert Y position: 0=bottom, 100=top within the safe area
-    // Ensure yPosition is valid (fallback to 30 if undefined/null)
-    const validYPosition = yPosition ?? 30;
-    const yOffset = -(validYPosition / 100) * safeHeight;
+    // Calculate safe area boundaries with proper margins
+    const safeMarginTop = 120; // Space from top for UI elements
+    const safeMarginBottom = 100; // Space from bottom for navigation
+    const availableHeight = validScreenHeight - safeMarginTop - safeMarginBottom;
+    
+    // Y position: 0=bottom, 100=top
+    // At Y=0, QR should be at bottom of safe area
+    // At Y=100, QR should be at top of safe area
+    // At Y=50, QR should be centered
+    const yPercent = Math.max(0, Math.min(100, yPosition));
+    
+    // Calculate position from bottom of screen
+    // When Y=0, offset should position QR at bottom (small offset)
+    // When Y=100, offset should position QR at top (large offset)
+    const bottomOffset = safeMarginBottom + (yPercent / 100) * availableHeight;
     
     return {
-      transform: [{ translateY: yOffset }],
+      position: 'absolute' as const,
+      bottom: bottomOffset,
+      left: 0,
+      right: 0,
       paddingHorizontal: 20,
+      alignItems: 'center' as const,
     };
   };
 
@@ -75,13 +86,13 @@ export default function QRSlots({
     const qrSize = getQRSize();
     const containerSize = qrSize + 20;
     
-    // Ensure xPosition is valid (fallback to 50 if undefined/null)
-    const validXPosition = xPosition ?? 50;
+    // Ensure we have valid screen dimensions
+    const validScreenWidth = screenWidth || 375; // iPhone X default
     
     if (singleQRMode) {
       // Convert x position to horizontal offset from center
-      const maxOffset = Math.min(100, (screenWidth / 2) - containerSize / 2 - 20);
-      const offsetPercent = ((validXPosition - 50) / 50) * 100; // -100 to 100
+      const maxOffset = Math.min(100, (validScreenWidth / 2) - containerSize / 2 - 20);
+      const offsetPercent = ((xPosition - 50) / 50) * 100; // -100 to 100
       const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, (offsetPercent / 100) * maxOffset));
       
       return {
@@ -91,8 +102,8 @@ export default function QRSlots({
     
     // For double mode, apply horizontal positioning to both slots
     const spacer = Math.max(40, qrSize * 0.3);
-    const maxOffset = Math.min(50, (screenWidth / 4) - containerSize / 2 - spacer / 2 - 10);
-    const offsetPercent = ((validXPosition - 50) / 50) * 100; // -100 to 100
+    const maxOffset = Math.min(50, (validScreenWidth / 4) - containerSize / 2 - spacer / 2 - 10);
+    const offsetPercent = ((xPosition - 50) / 50) * 100; // -100 to 100
     const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, (offsetPercent / 100) * maxOffset));
     const offset = isLeft ? -clampedOffset : clampedOffset;
     
@@ -149,7 +160,7 @@ export default function QRSlots({
 
   if (singleQRMode) {
     return (
-      <View style={[styles.qrSlotsContainer, getContainerStyle(), styles.singleQRContainer]}>
+      <View style={[styles.qrSlotsContainer, styles.singleQRContainer, getContainerStyle()]}>
         <TouchableOpacity 
           style={[styles.qrSlot, getSlotStyle(false)]} 
           onPress={() => onSlotPress('primary')}
@@ -230,12 +241,10 @@ export default function QRSlots({
 const styles = StyleSheet.create({
   qrSlotsContainer: {
     flexDirection: 'row',
-    marginTop: 'auto',
-    zIndex: -1,
+    justifyContent: 'center',
   },
   singleQRContainer: {
     justifyContent: 'center',
-    position: 'relative',
   },
   qrSlot: {
     flex: 1,

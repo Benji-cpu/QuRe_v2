@@ -6,16 +6,15 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GRADIENT_PRESETS } from '../../constants/Gradients';
-import { useAppState } from '../../contexts/AppStateContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { IAPService } from '../../services/IAPService';
+import { navigationService } from '../../services/NavigationService';
 import { UserPreferencesService } from '../../services/UserPreferences';
 
 export default function SettingsModal() {
   const insets = useSafeAreaInsets();
   const { theme, mode, toggleTheme } = useTheme();
-  const { navigateToPremium } = useAppState();
   const [selectedGradientId, setSelectedGradientId] = useState('sunset');
   const [isPremium, setIsPremium] = useState(false);
   const [showTitle, setShowTitle] = useState(true);
@@ -69,7 +68,7 @@ export default function SettingsModal() {
 
   const handleShowTitleToggle = async (value: boolean) => {
     if (!isPremium) {
-      navigateToPremium();
+      navigationService.navigateToPremium();
       return;
     }
     try {
@@ -82,7 +81,7 @@ export default function SettingsModal() {
 
   const handleQRSlotModeChange = async (mode: 'single' | 'double') => {
     if (!isPremium) {
-      navigateToPremium();
+      navigationService.navigateToPremium();
       return;
     }
     try {
@@ -95,7 +94,7 @@ export default function SettingsModal() {
 
   const handleUploadBackground = async () => {
     if (!isPremium) {
-      navigateToPremium();
+      navigationService.navigateToPremium();
       return;
     }
 
@@ -202,7 +201,7 @@ export default function SettingsModal() {
   };
 
   const handleUpgrade = () => {
-    navigateToPremium();
+    navigationService.navigateToPremium();
   };
 
   return (
@@ -259,7 +258,7 @@ export default function SettingsModal() {
             ]}
             onPress={async () => {
               if (!isPremium) {
-                navigateToPremium();
+                navigationService.navigateToPremium();
                 return;
               }
               // Premium users can always access custom photo tab
