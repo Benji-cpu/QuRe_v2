@@ -20,7 +20,7 @@ export class UserPreferencesService {
   static async getPreferences(): Promise<UserPreferences> {
     try {
       const data = await AsyncStorage.getItem(PREFERENCES_KEY);
-      const preferences = data ? JSON.parse(data) : { 
+      const defaultPreferences = { 
         selectedGradientId: 'sunset', 
         qrXPosition: 50,  // Default centered horizontally
         qrYPosition: 30,  // Default 30% from bottom
@@ -29,6 +29,8 @@ export class UserPreferencesService {
         qrSlotMode: 'double',
         backgroundType: 'gradient'
       };
+      
+      const preferences = data ? { ...defaultPreferences, ...JSON.parse(data) } : defaultPreferences;
       
       // Migrate old coordinate system to new simple system
       if (preferences.qrVerticalOffset !== undefined || preferences.qrHorizontalOffset !== undefined) {
@@ -49,7 +51,18 @@ export class UserPreferencesService {
         await this.savePreferences(preferences);
       }
       
-      return preferences;
+      // Ensure all required properties have valid values
+      return {
+        selectedGradientId: preferences.selectedGradientId || 'sunset',
+        qrXPosition: preferences.qrXPosition ?? 50,
+        qrYPosition: preferences.qrYPosition ?? 30,
+        qrScale: preferences.qrScale ?? 1,
+        showTitle: preferences.showTitle ?? true,
+        qrSlotMode: preferences.qrSlotMode || 'double',
+        backgroundType: preferences.backgroundType || 'gradient',
+        primaryQRCodeId: preferences.primaryQRCodeId,
+        secondaryQRCodeId: preferences.secondaryQRCodeId
+      };
     } catch (error) {
       console.error('Error loading user preferences:', error);
       return { 

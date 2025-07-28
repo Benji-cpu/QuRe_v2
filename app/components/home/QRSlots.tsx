@@ -45,7 +45,9 @@ export default function QRSlots({
 
   const getQRSize = () => {
     const baseSize = singleQRMode ? 120 : 90;
-    return baseSize * scale;
+    // Ensure scale is valid (fallback to 1 if undefined/null)
+    const validScale = scale ?? 1;
+    return baseSize * validScale;
   };
 
   // Convert 0-100 coordinates to actual screen positions with safe boundaries
@@ -59,7 +61,9 @@ export default function QRSlots({
     const safeHeight = screenHeight - safeMarginTop - safeMarginBottom - containerSize;
     
     // Convert Y position: 0=bottom, 100=top within the safe area
-    const yOffset = -(yPosition / 100) * safeHeight;
+    // Ensure yPosition is valid (fallback to 30 if undefined/null)
+    const validYPosition = yPosition ?? 30;
+    const yOffset = -(validYPosition / 100) * safeHeight;
     
     return {
       transform: [{ translateY: yOffset }],
@@ -71,10 +75,13 @@ export default function QRSlots({
     const qrSize = getQRSize();
     const containerSize = qrSize + 20;
     
+    // Ensure xPosition is valid (fallback to 50 if undefined/null)
+    const validXPosition = xPosition ?? 50;
+    
     if (singleQRMode) {
       // Convert x position to horizontal offset from center
       const maxOffset = Math.min(100, (screenWidth / 2) - containerSize / 2 - 20);
-      const offsetPercent = ((xPosition - 50) / 50) * 100; // -100 to 100
+      const offsetPercent = ((validXPosition - 50) / 50) * 100; // -100 to 100
       const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, (offsetPercent / 100) * maxOffset));
       
       return {
@@ -85,7 +92,7 @@ export default function QRSlots({
     // For double mode, apply horizontal positioning to both slots
     const spacer = Math.max(40, qrSize * 0.3);
     const maxOffset = Math.min(50, (screenWidth / 4) - containerSize / 2 - spacer / 2 - 10);
-    const offsetPercent = ((xPosition - 50) / 50) * 100; // -100 to 100
+    const offsetPercent = ((validXPosition - 50) / 50) * 100; // -100 to 100
     const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, (offsetPercent / 100) * maxOffset));
     const offset = isLeft ? -clampedOffset : clampedOffset;
     

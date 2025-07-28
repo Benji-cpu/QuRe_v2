@@ -55,6 +55,7 @@ function HomeScreen() {
   const [qrXPosition, setQrXPosition] = useState(50);
   const [qrYPosition, setQrYPosition] = useState(30);
   const [qrScale, setQrScale] = useState(1);
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false);
   const [showSwipeIndicator, setShowSwipeIndicator] = useState(false);
   const [showPositionSlider, setShowPositionSlider] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -101,9 +102,14 @@ function HomeScreen() {
       setPreviousGradientIndex(validIndex);
       setIsPremium(premium);
       
-      setQrXPosition(preferences.qrXPosition || 50);
-      setQrYPosition(preferences.qrYPosition || 30);
-      setQrScale(preferences.qrScale || 1);
+      // Ensure we always have valid positioning values
+      const xPos = preferences.qrXPosition ?? 50;
+      const yPos = preferences.qrYPosition ?? 30;
+      const scaleVal = preferences.qrScale ?? 1;
+      
+      setQrXPosition(xPos);
+      setQrYPosition(yPos);
+      setQrScale(scaleVal);
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
       
@@ -146,8 +152,13 @@ function HomeScreen() {
         duration: 0,
         useNativeDriver: true,
       }).start();
+      
+      // Mark preferences as loaded
+      setPreferencesLoaded(true);
     } catch (error) {
       console.error('Error loading user data:', error);
+      // Even on error, mark as loaded with defaults
+      setPreferencesLoaded(true);
     }
   }, []);
 
@@ -205,10 +216,25 @@ function HomeScreen() {
       if (qrSlotMode !== (preferences.qrSlotMode || 'double')) {
         setQrSlotMode(preferences.qrSlotMode || 'double');
       }
+
+      // Ensure positioning values are always valid (prevent them from being undefined/null)
+      const currentXPos = preferences.qrXPosition ?? 50;
+      const currentYPos = preferences.qrYPosition ?? 30;
+      const currentScale = preferences.qrScale ?? 1;
+      
+      if (qrXPosition !== currentXPos) {
+        setQrXPosition(currentXPos);
+      }
+      if (qrYPosition !== currentYPos) {
+        setQrYPosition(currentYPos);
+      }
+      if (qrScale !== currentScale) {
+        setQrScale(currentScale);
+      }
     } catch (error) {
       console.error('Error loading focus data:', error);
     }
-  }, [currentGradientIndex, backgroundType, showTitle, qrSlotMode]);
+  }, [currentGradientIndex, backgroundType, showTitle, qrSlotMode, qrXPosition, qrYPosition, qrScale]);
 
   const getSwipeIndicatorCount = async (): Promise<number> => {
     try {
@@ -632,7 +658,7 @@ function HomeScreen() {
                           )}
                         </Animated.View>
                         
-                        {showPositionSlider && (
+                        {showPositionSlider && preferencesLoaded && (
                           <PositionSlider
                             xPosition={qrXPosition}
                             yPosition={qrYPosition}
@@ -652,19 +678,21 @@ function HomeScreen() {
                   </View>
 
                   <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 15 }]}>
-                    <QRSlots
-                      primaryQR={primaryQR}
-                      secondaryQR={secondaryQR}
-                      isPremium={isPremium}
-                      showActionButtons={showActionButtons}
-                      xPosition={qrXPosition}
-                      yPosition={qrYPosition}
-                      scale={qrScale}
-                      onSlotPress={handleQRSlotPress}
-                      onRemoveQR={handleRemoveQR}
-                      hideEmptySlots={hideElementsForExport}
-                      singleQRMode={qrSlotMode === 'single'}
-                    />
+                    {preferencesLoaded && (
+                      <QRSlots
+                        primaryQR={primaryQR}
+                        secondaryQR={secondaryQR}
+                        isPremium={isPremium}
+                        showActionButtons={showActionButtons}
+                        xPosition={qrXPosition}
+                        yPosition={qrYPosition}
+                        scale={qrScale}
+                        onSlotPress={handleQRSlotPress}
+                        onRemoveQR={handleRemoveQR}
+                        hideEmptySlots={hideElementsForExport}
+                        singleQRMode={qrSlotMode === 'single'}
+                      />
+                    )}
                     
                     {showSwipeIndicator && (
                       <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
