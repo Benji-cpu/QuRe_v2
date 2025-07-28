@@ -151,6 +151,65 @@ function HomeScreen() {
     }
   }, []);
 
+  // Selective reload for focus events - only reload QR codes and essential data without resetting positions
+  const loadFocusData = useCallback(async () => {
+    try {
+      const preferences = await UserPreferencesService.getPreferences();
+      const premium = await UserPreferencesService.isPremium();
+      
+      // Update premium status
+      setIsPremium(premium);
+      
+      // Only reload QR codes if they may have changed
+      if (preferences.primaryQRCodeId) {
+        const primaryQRData = await QRStorage.getQRCodeById(preferences.primaryQRCodeId);
+        setPrimaryQR(primaryQRData);
+      } else {
+        setPrimaryQR(null);
+      }
+
+      if (preferences.secondaryQRCodeId && premium) {
+        const secondaryQRData = await QRStorage.getQRCodeById(preferences.secondaryQRCodeId);
+        setSecondaryQR(secondaryQRData);
+      } else if (!premium) {
+        setSecondaryQR(null);
+      }
+
+      // Update background type if needed (but don't reload custom background unnecessarily)
+      if (!premium && preferences.backgroundType === 'custom') {
+        setBackgroundType('gradient');
+        await UserPreferencesService.updateBackgroundType('gradient');
+      } else if (backgroundType !== (preferences.backgroundType || 'gradient')) {
+        setBackgroundType(preferences.backgroundType || 'gradient');
+      }
+
+      // Update gradient if it changed
+      const gradientIndex = GRADIENT_PRESETS.findIndex(g => g.id === preferences.selectedGradientId);
+      const validIndex = gradientIndex >= 0 ? gradientIndex : 0;
+      if (currentGradientIndex !== validIndex) {
+        setCurrentGradientIndex(validIndex);
+        setPreviousGradientIndex(validIndex);
+      }
+
+      // Update title visibility if it changed
+      if (showTitle !== (preferences.showTitle ?? true)) {
+        setShowTitle(preferences.showTitle ?? true);
+        Animated.timing(titleOpacity, {
+          toValue: (premium && !(preferences.showTitle ?? true)) ? 0 : 1,
+          duration: 0,
+          useNativeDriver: true,
+        }).start();
+      }
+
+      // Update slot mode if it changed
+      if (qrSlotMode !== (preferences.qrSlotMode || 'double')) {
+        setQrSlotMode(preferences.qrSlotMode || 'double');
+      }
+    } catch (error) {
+      console.error('Error loading focus data:', error);
+    }
+  }, [currentGradientIndex, backgroundType, showTitle, qrSlotMode]);
+
   const getSwipeIndicatorCount = async (): Promise<number> => {
     try {
       const countStr = await AsyncStorage.getItem(SWIPE_INDICATOR_KEY);
@@ -178,14 +237,15 @@ function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      loadUserData();
+      // On focus, only reload essential data without resetting positions
+      loadFocusData();
       sessionStartTime.current = Date.now();
       
       return () => {
         const sessionDuration = Date.now() - sessionStartTime.current;
         EngagementPricingService.trackSession(sessionDuration);
       };
-    }, [loadUserData])
+    }, [loadFocusData])
   );
 
   useEffect(() => {

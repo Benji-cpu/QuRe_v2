@@ -53,19 +53,16 @@ export default function QRSlots({
     const qrSize = getQRSize();
     const containerSize = qrSize + 20;
     
-    // Calculate safe area boundaries
-    const safeMargin = 20;
-    const safeLeft = safeMargin + containerSize / 2;
-    const safeRight = screenWidth - safeMargin - containerSize / 2;
-    const safeBottom = safeMargin + containerSize / 2;
-    const safeTop = screenHeight - safeMargin - containerSize / 2;
+    // Calculate safe area boundaries with proper margins
+    const safeMarginTop = 80; // More space from top for UI elements
+    const safeMarginBottom = 60; // Space from bottom
+    const safeHeight = screenHeight - safeMarginTop - safeMarginBottom - containerSize;
     
-    // Convert 0-100 coordinates to pixel positions
-    const targetX = safeLeft + (xPosition / 100) * (safeRight - safeLeft);
-    const targetY = safeTop - (yPosition / 100) * (safeTop - safeBottom); // Invert Y (0=bottom, 100=top)
+    // Convert Y position: 0=bottom, 100=top within the safe area
+    const yOffset = -(yPosition / 100) * safeHeight;
     
     return {
-      transform: [{ translateY: targetY - screenHeight + 150 }], // Adjust for bottom positioning
+      transform: [{ translateY: yOffset }],
       paddingHorizontal: 20,
     };
   };
