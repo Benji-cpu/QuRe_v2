@@ -1,10 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
+import { router, useFocusEffect } from 'expo-router';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Product, PurchaseError } from 'react-native-iap';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PRODUCT_IDS } from '../../config/IAPConfig';
+import { useAppState } from '../../contexts/AppStateContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService, PricingOffer } from '../../services/EngagementPricingService';
 import { IAPService } from '../../services/IAPService';
@@ -12,6 +13,7 @@ import { UserPreferencesService } from '../../services/UserPreferences';
 
 export default function PremiumModal() {
   const { theme, mode } = useTheme();
+  const { setPremiumModalOpen } = useAppState();
   const insets = useSafeAreaInsets();
   const [offer, setOffer] = useState<PricingOffer | null>(null);
   const [baseProduct, setBaseProduct] = useState<Product | null>(null); // tier1 (normal price)
@@ -21,13 +23,25 @@ export default function PremiumModal() {
   const [insights, setInsights] = useState<any>(null);
   const [iapAvailable, setIapAvailable] = useState(true);
 
+  // Handle cases where modal is closed by gesture or other means
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        // Called when screen loses focus (modal is closed)
+        setPremiumModalOpen(false);
+      };
+    }, [setPremiumModalOpen])
+  );
+
   useEffect(() => {
     initializeScreen();
     
     return () => {
       IAPService.cleanup();
+      // Mark modal as closed when component unmounts
+      setPremiumModalOpen(false);
     };
-  }, []);
+  }, [setPremiumModalOpen]);
 
   const initializeScreen = async () => {
     const platform = Platform.OS as 'ios' | 'android';
@@ -110,7 +124,10 @@ export default function PremiumModal() {
           Alert.alert(
             'Welcome to QuRe Premium!', 
             'You now have access to all features including secondary QR codes and custom designs.',
-            [{ text: 'Awesome!', onPress: () => router.back() }]
+            [{ text: 'Awesome!', onPress: () => {
+              setPremiumModalOpen(false);
+              router.back();
+            }}]
           );
         },
         (error: PurchaseError) => {
@@ -202,7 +219,10 @@ export default function PremiumModal() {
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.headerBar, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: insets.top + 15 }]}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+        <TouchableOpacity style={styles.backButton} onPress={() => {
+          setPremiumModalOpen(false);
+          router.back();
+        }}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.text }]}>Premium</Text>

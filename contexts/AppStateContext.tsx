@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import React, { createContext, ReactNode, useContext, useEffect, useState } from 'react';
 import { QRStorage } from '../services/QRStorage';
 import { UserPreferencesService } from '../services/UserPreferences';
@@ -8,10 +9,13 @@ interface AppState {
   secondaryQR: QRCodeData | null;
   isPremium: boolean;
   selectedGradientId: string;
+  isPremiumModalOpen: boolean;
   refreshData: () => Promise<void>;
   updatePrimaryQR: (qrId: string | undefined) => Promise<void>;
   updateSecondaryQR: (qrId: string | undefined) => Promise<void>;
   setPremium: (isPremium: boolean) => Promise<void>;
+  navigateToPremium: () => void;
+  setPremiumModalOpen: (isOpen: boolean) => void;
 }
 
 const AppStateContext = createContext<AppState | undefined>(undefined);
@@ -21,6 +25,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [secondaryQR, setSecondaryQR] = useState<QRCodeData | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [selectedGradientId, setSelectedGradientId] = useState('sunset');
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
   const refreshData = async () => {
     try {
@@ -63,6 +68,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     await refreshData();
   };
 
+  const navigateToPremium = () => {
+    // Only navigate if the modal is not already open
+    if (!isPremiumModalOpen) {
+      setIsPremiumModalOpen(true);
+      router.push('/modal/premium');
+    }
+  };
+
+  const setPremiumModalOpen = (isOpen: boolean) => {
+    setIsPremiumModalOpen(isOpen);
+  };
+
   useEffect(() => {
     refreshData();
   }, []);
@@ -74,10 +91,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
         secondaryQR,
         isPremium,
         selectedGradientId,
+        isPremiumModalOpen,
         refreshData,
         updatePrimaryQR,
         updateSecondaryQR,
         setPremium: setPremiumStatus,
+        navigateToPremium,
+        setPremiumModalOpen,
       }}
     >
       {children}

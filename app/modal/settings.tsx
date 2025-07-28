@@ -6,6 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GRADIENT_PRESETS } from '../../constants/Gradients';
+import { useAppState } from '../../contexts/AppStateContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { IAPService } from '../../services/IAPService';
@@ -14,6 +15,7 @@ import { UserPreferencesService } from '../../services/UserPreferences';
 export default function SettingsModal() {
   const insets = useSafeAreaInsets();
   const { theme, mode, toggleTheme } = useTheme();
+  const { navigateToPremium } = useAppState();
   const [selectedGradientId, setSelectedGradientId] = useState('sunset');
   const [isPremium, setIsPremium] = useState(false);
   const [showTitle, setShowTitle] = useState(true);
@@ -67,7 +69,7 @@ export default function SettingsModal() {
 
   const handleShowTitleToggle = async (value: boolean) => {
     if (!isPremium) {
-      router.push('/modal/premium');
+      navigateToPremium();
       return;
     }
     try {
@@ -80,7 +82,7 @@ export default function SettingsModal() {
 
   const handleQRSlotModeChange = async (mode: 'single' | 'double') => {
     if (!isPremium) {
-      router.push('/modal/premium');
+      navigateToPremium();
       return;
     }
     try {
@@ -93,7 +95,7 @@ export default function SettingsModal() {
 
   const handleUploadBackground = async () => {
     if (!isPremium) {
-      router.push('/modal/premium');
+      navigateToPremium();
       return;
     }
 
@@ -200,7 +202,7 @@ export default function SettingsModal() {
   };
 
   const handleUpgrade = () => {
-    router.push('/modal/premium');
+    navigateToPremium();
   };
 
   return (
@@ -257,7 +259,7 @@ export default function SettingsModal() {
             ]}
             onPress={async () => {
               if (!isPremium) {
-                router.push('/modal/premium');
+                navigateToPremium();
                 return;
               }
               // Premium users can always access custom photo tab

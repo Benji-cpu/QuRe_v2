@@ -11,6 +11,7 @@ import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import { GRADIENT_PRESETS } from '../constants/Gradients';
+import { useAppState } from '../contexts/AppStateContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { EngagementPricingService } from '../services/EngagementPricingService';
 import { QRStorage } from '../services/QRStorage';
@@ -39,6 +40,7 @@ const SWIPE_INDICATOR_KEY = '@qure_swipe_indicator_count';
 function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { theme, mode } = useTheme();
+  const { navigateToPremium } = useAppState();
   const wallpaperRef = useRef<View>(null);
   const sessionStartTime = useRef<number>(Date.now());
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -287,7 +289,7 @@ function HomeScreen() {
       if (offer && !isPremium) {
         setTimeout(() => {
           if (!showOnboarding) {
-            router.push('/modal/premium');
+            navigateToPremium();
           }
         }, 2000);
       }
@@ -347,7 +349,7 @@ function HomeScreen() {
 
   const handleTitlePress = async () => {
     if (!isPremium) {
-      router.push('/modal/premium');
+      navigateToPremium();
     } else {
       const newShowTitle = !showTitle;
       setShowTitle(newShowTitle);
@@ -551,7 +553,7 @@ function HomeScreen() {
           }
         } else {
           await EngagementPricingService.trackAction('secondarySlotAttempts');
-          router.push('/modal/premium');
+          navigateToPremium();
         }
       }
     } catch (error) {
