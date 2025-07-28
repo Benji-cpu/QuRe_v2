@@ -55,20 +55,38 @@ export default function HistoryModal() {
     }
   };
 
-  const handleView = (qrCode: QRCodeData) => {
+  const handleView = async (qrCode: QRCodeData) => {
     if (isSelectMode) {
       handleSelect(qrCode);
     } else {
-      router.push({
-        pathname: '/modal/view',
-        params: { id: qrCode.id }
-      });
+      // Assign QR code to an available slot and go to home screen
+      try {
+        const preferences = await UserPreferencesService.getPreferences();
+        const premium = await UserPreferencesService.isPremium();
+        
+        // Determine which slot to assign to
+        // Priority: use primary if empty, otherwise use secondary if premium and empty
+        if (!preferences.primaryQRCodeId) {
+          await UserPreferencesService.updatePrimaryQR(qrCode.id);
+        } else if (premium && !preferences.secondaryQRCodeId) {
+          await UserPreferencesService.updateSecondaryQR(qrCode.id);
+        } else {
+          // If both slots are taken, replace primary slot
+          await UserPreferencesService.updatePrimaryQR(qrCode.id);
+        }
+        
+        // Navigate to home screen
+        router.dismissAll();
+        router.replace('/');
+      } catch (error) {
+        Alert.alert('Error', 'Failed to assign QR code');
+      }
     }
   };
 
   const handleEdit = (qrCode: QRCodeData) => {
     router.push({
-      pathname: '/modal/qrcode',
+      pathname: '/modal/view',
       params: { id: qrCode.id }
     });
   };

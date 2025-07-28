@@ -91,29 +91,34 @@ export default function QRCodeModal() {
   };
 
   const handleSelectFromHistory = async (qrCode: QRCodeData) => {
-    if (isEditMode && slot) {
-      // When editing and selecting from history, assign the selected QR code to the slot
-      try {
-        if (slot === 'primary') {
+    // Always assign the selected QR code to a slot and go to home screen
+    try {
+      const preferences = await UserPreferencesService.getPreferences();
+      const premium = await UserPreferencesService.isPremium();
+      
+      // Determine which slot to assign to
+      if (slot === 'primary') {
+        await UserPreferencesService.updatePrimaryQR(qrCode.id);
+      } else if (slot === 'secondary') {
+        await UserPreferencesService.updateSecondaryQR(qrCode.id);
+      } else {
+        // No specific slot provided, use smart assignment
+        // Priority: use primary if empty, otherwise use secondary if premium and empty
+        if (!preferences.primaryQRCodeId) {
           await UserPreferencesService.updatePrimaryQR(qrCode.id);
-        } else if (slot === 'secondary') {
+        } else if (premium && !preferences.secondaryQRCodeId) {
           await UserPreferencesService.updateSecondaryQR(qrCode.id);
+        } else {
+          // If both slots are taken, replace primary slot
+          await UserPreferencesService.updatePrimaryQR(qrCode.id);
         }
-        
-        // Navigate back to home screen to show the newly assigned QR code
-        router.dismissAll();
-        router.replace('/');
-      } catch (error) {
-        Alert.alert('Error', 'Failed to assign QR code to slot');
       }
-    } else {
-      // When creating new, load the data into the form
-      setSelectedType(qrCode.type);
-      setFormData(qrCode.data);
-      if (qrCode.design) {
-        setDesign(qrCode.design);
-      }
-      setShowHistorySelector(false);
+      
+      // Navigate back to home screen to show the newly assigned QR code
+      router.dismissAll();
+      router.replace('/');
+    } catch (error) {
+      Alert.alert('Error', 'Failed to assign QR code to slot');
     }
   };
 
