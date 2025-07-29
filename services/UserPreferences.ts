@@ -109,7 +109,8 @@ export class UserPreferencesService {
   static async updateQRXPosition(xPosition: number): Promise<void> {
     try {
       const preferences = await this.getPreferences();
-      preferences.qrXPosition = xPosition;
+      // Validate and clamp position to 0-100 range
+      preferences.qrXPosition = Math.max(0, Math.min(100, xPosition));
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR X position:', error);
@@ -120,7 +121,8 @@ export class UserPreferencesService {
   static async updateQRYPosition(yPosition: number): Promise<void> {
     try {
       const preferences = await this.getPreferences();
-      preferences.qrYPosition = yPosition;
+      // Validate and clamp position to 0-100 range
+      preferences.qrYPosition = Math.max(0, Math.min(100, yPosition));
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR Y position:', error);
@@ -142,8 +144,9 @@ export class UserPreferencesService {
   static async updateQRPosition(xPosition: number, yPosition: number): Promise<void> {
     try {
       const preferences = await this.getPreferences();
-      preferences.qrXPosition = xPosition;
-      preferences.qrYPosition = yPosition;
+      // Validate and clamp positions to 0-100 range
+      preferences.qrXPosition = Math.max(0, Math.min(100, xPosition));
+      preferences.qrYPosition = Math.max(0, Math.min(100, yPosition));
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR position:', error);

@@ -101,13 +101,9 @@ function HomeScreen() {
       setPreviousGradientIndex(validIndex);
       setIsPremium(premium);
       
-      // Load position values with proper defaults
-      // If qrYPosition is undefined or is the old default of 30, use 50 for better visibility
-      const yPos = preferences.qrYPosition;
-      const adjustedYPos = (yPos === undefined || yPos === 30) ? 50 : yPos;
-      
+      // Load position values - UserPreferencesService already provides proper defaults (50, 50)
       setQrXPosition(preferences.qrXPosition || 50);
-      setQrYPosition(adjustedYPos);
+      setQrYPosition(preferences.qrYPosition || 50);
       setQrScale(preferences.qrScale || 1);
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
@@ -156,16 +152,15 @@ function HomeScreen() {
     }
   }, []);
 
-  // Selective reload for focus events - only reload QR codes and essential data without resetting positions
-  const loadFocusData = useCallback(async () => {
+  // Simple function to reload QR codes when returning from modals
+  const reloadQRCodes = useCallback(async () => {
     try {
       const preferences = await UserPreferencesService.getPreferences();
       const premium = await UserPreferencesService.isPremium();
       
-      // Update premium status
+      // Only update QR codes and premium status - nothing else!
       setIsPremium(premium);
-      
-      // Only reload QR codes if they may have changed
+
       if (preferences.primaryQRCodeId) {
         const primaryQRData = await QRStorage.getQRCodeById(preferences.primaryQRCodeId);
         setPrimaryQR(primaryQRData);
@@ -179,41 +174,17 @@ function HomeScreen() {
       } else if (!premium) {
         setSecondaryQR(null);
       }
-
-      // Update background type if needed (but don't reload custom background unnecessarily)
-      if (!premium && preferences.backgroundType === 'custom') {
-        setBackgroundType('gradient');
-        await UserPreferencesService.updateBackgroundType('gradient');
-      } else if (backgroundType !== (preferences.backgroundType || 'gradient')) {
-        setBackgroundType(preferences.backgroundType || 'gradient');
-      }
-
-      // Update gradient if it changed
-      const gradientIndex = GRADIENT_PRESETS.findIndex(g => g.id === preferences.selectedGradientId);
-      const validIndex = gradientIndex >= 0 ? gradientIndex : 0;
-      if (currentGradientIndex !== validIndex) {
-        setCurrentGradientIndex(validIndex);
-        setPreviousGradientIndex(validIndex);
-      }
-
-      // Update title visibility if it changed
-      if (showTitle !== (preferences.showTitle ?? true)) {
-        setShowTitle(preferences.showTitle ?? true);
-        Animated.timing(titleOpacity, {
-          toValue: (premium && !(preferences.showTitle ?? true)) ? 0 : 1,
-          duration: 0,
-          useNativeDriver: true,
-        }).start();
-      }
-
-      // Update slot mode if it changed
-      if (qrSlotMode !== (preferences.qrSlotMode || 'double')) {
-        setQrSlotMode(preferences.qrSlotMode || 'double');
-      }
     } catch (error) {
-      console.error('Error loading focus data:', error);
+      console.error('Error reloading QR codes:', error);
     }
-  }, [currentGradientIndex, backgroundType, showTitle, qrSlotMode]);
+  }, []);
+
+  // Reload QR codes when screen comes into focus (returning from modals)
+  useFocusEffect(
+    useCallback(() => {
+      reloadQRCodes();
+    }, [reloadQRCodes])
+  );
 
   const getSwipeIndicatorCount = async (): Promise<number> => {
     try {
@@ -240,18 +211,15 @@ function HomeScreen() {
     }
   }, [loadUserData, showOnboarding]);
 
-  useFocusEffect(
-    useCallback(() => {
-      // On focus, only reload essential data without resetting positions
-      loadFocusData();
-      sessionStartTime.current = Date.now();
-      
-      return () => {
-        const sessionDuration = Date.now() - sessionStartTime.current;
-        EngagementPricingService.trackSession(sessionDuration);
-      };
-    }, [loadFocusData])
-  );
+  // Track session duration for engagement analytics
+  useEffect(() => {
+    sessionStartTime.current = Date.now();
+    
+    return () => {
+      const sessionDuration = Date.now() - sessionStartTime.current;
+      EngagementPricingService.trackSession(sessionDuration);
+    };
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);

@@ -237,15 +237,15 @@ export default function PositionSlider({
                     borderRadius: scaleSpacing(6)
                   }]}
                   onPress={() => {
-                    // Reset to default values
+                    // Reset to default values (centered at 50, 50)
                     onXPositionChange(50); // Center horizontally
-                    onYPositionChange(30); // 30% from bottom (default position)
-                    onScaleChange(singleQRMode ? 1.0 : 1.0); // Default scale
+                    onYPositionChange(50); // Center vertically (consistent with system default)
+                    onScaleChange(1.0); // Default scale
                     
                     // Trigger end callbacks for persistence
                     onXPositionChangeEnd?.(50);
-                    onYPositionChangeEnd?.(30);
-                    onScaleChangeEnd?.(singleQRMode ? 1.0 : 1.0);
+                    onYPositionChangeEnd?.(50);
+                    onScaleChangeEnd?.(1.0);
                   }}
                   activeOpacity={0.7}
                 >

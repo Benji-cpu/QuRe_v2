@@ -1,6 +1,7 @@
 import { Feather } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Modal, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QRCodeData } from '../../../types/QRCode';
 import QRCodePreview from '../QRCodePreview';
 
@@ -42,6 +43,7 @@ export default function QRSlots({
 }: QRSlotsProps) {
   const [showInstructions, setShowInstructions] = useState(false);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
 
   const getQRSize = () => {
     const baseSize = singleQRMode ? 120 : 90;
@@ -56,10 +58,12 @@ export default function QRSlots({
     // Ensure we have valid screen dimensions
     const validScreenHeight = screenHeight || 812; // iPhone X default
     
-    // Calculate safe area boundaries with proper margins
-    const safeMarginTop = 120; // Space from top for UI elements
-    const safeMarginBottom = 100; // Space from bottom for navigation
-    const availableHeight = validScreenHeight - safeMarginTop - safeMarginBottom;
+    // Calculate safe area boundaries using dynamic insets with additional UI margins
+    const additionalTopMargin = 60; // Space for UI elements (time display, etc.)
+    const additionalBottomMargin = 80; // Space for action buttons and navigation
+    const safeMarginTop = insets.top + additionalTopMargin;
+    const safeMarginBottom = insets.bottom + additionalBottomMargin;
+    const availableHeight = Math.max(200, validScreenHeight - safeMarginTop - safeMarginBottom); // Ensure minimum height
     
     // Y position: 0=bottom, 100=top
     // At Y=0, QR should be at bottom of safe area
@@ -70,7 +74,8 @@ export default function QRSlots({
     // Calculate position from bottom of screen
     // When Y=0, offset should position QR at bottom (small offset)
     // When Y=100, offset should position QR at top (large offset)
-    const bottomOffset = safeMarginBottom + (yPercent / 100) * availableHeight;
+    // Add half the container size to center the QR code properly
+    const bottomOffset = safeMarginBottom + (yPercent / 100) * availableHeight - (containerSize / 2);
     
     return {
       position: 'absolute' as const,
