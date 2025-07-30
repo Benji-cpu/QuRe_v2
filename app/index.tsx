@@ -52,9 +52,9 @@ function HomeScreen() {
   const [secondaryQR, setSecondaryQR] = useState<QRCodeData | null>(null);
   const [isPremium, setIsPremium] = useState(false);
   const [showActionButtons, setShowActionButtons] = useState(true);
-  const [qrXPosition, setQrXPosition] = useState(50);
-  const [qrYPosition, setQrYPosition] = useState(50); // Changed from 30 to 50 for centered default
-  const [qrScale, setQrScale] = useState(1);
+  const [qrXPosition, setQrXPosition] = useState<number | null>(null);
+  const [qrYPosition, setQrYPosition] = useState<number | null>(null);
+  const [qrScale, setQrScale] = useState<number | null>(null);
   const [showSwipeIndicator, setShowSwipeIndicator] = useState(false);
   const [showPositionSlider, setShowPositionSlider] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -78,19 +78,32 @@ function HomeScreen() {
     
     saveTimeoutRef.current = setTimeout(async () => {
       try {
+        console.log('Saving position changes:', { x, y, scale });
         await Promise.all([
           UserPreferencesService.updateQRXPosition(x),
           UserPreferencesService.updateQRYPosition(y),
           UserPreferencesService.updateQRScale(scale)
         ]);
+        console.log('Position changes saved successfully');
       } catch (error) {
         console.error('Error saving position changes:', error);
       }
     }, 500);
   }, []);
+  
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
-  const loadUserData = useCallback(async () => {
+  // Remove useCallback to prevent re-creation and dependency issues
+  const loadUserData = async () => {
     try {
+      console.log('🚀 loadUserData called - component mounting/remounting?');
       const preferences = await UserPreferencesService.getPreferences();
       const premium = await UserPreferencesService.isPremium();
       const hasCompletedOnboarding = await UserPreferencesService.hasCompletedOnboarding();
@@ -102,9 +115,22 @@ function HomeScreen() {
       setIsPremium(premium);
       
       // Load position values - UserPreferencesService already provides proper defaults (50, 50)
-      setQrXPosition(preferences.qrXPosition || 50);
-      setQrYPosition(preferences.qrYPosition || 50);
-      setQrScale(preferences.qrScale || 1);
+      // Use nullish coalescing to preserve 0 values
+      const newX = preferences.qrXPosition ?? 50;
+      const newY = preferences.qrYPosition ?? 50;
+      const newScale = preferences.qrScale ?? 1;
+      
+      console.log('📊 Loading positions in loadUserData:', { 
+        stored: { x: preferences.qrXPosition, y: preferences.qrYPosition, scale: preferences.qrScale },
+        calculated: { newX, newY, newScale }, 
+        currentState: { x: qrXPosition, y: qrYPosition, scale: qrScale } 
+      });
+      
+      setQrXPosition(newX);
+      setQrYPosition(newY);
+      setQrScale(newScale);
+      
+      console.log('✅ Position state updated in loadUserData');
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
       
@@ -150,13 +176,25 @@ function HomeScreen() {
     } catch (error) {
       console.error('Error loading user data:', error);
     }
-  }, []);
+  };
 
   // Simple function to reload QR codes when returning from modals
   const reloadQRCodes = useCallback(async () => {
     try {
+      console.log('🔄 reloadQRCodes called - current positions:', { 
+        x: qrXPosition, 
+        y: qrYPosition, 
+        scale: qrScale 
+      });
+      
       const preferences = await UserPreferencesService.getPreferences();
       const premium = await UserPreferencesService.isPremium();
+      
+      console.log('📖 Preferences loaded in reloadQRCodes:', {
+        x: preferences.qrXPosition,
+        y: preferences.qrYPosition,
+        scale: preferences.qrScale
+      });
       
       // Only update QR codes and premium status - nothing else!
       setIsPremium(premium);
@@ -182,6 +220,7 @@ function HomeScreen() {
   // Reload QR codes when screen comes into focus (returning from modals)
   useFocusEffect(
     useCallback(() => {
+      // Only reload QR codes, not positions
       reloadQRCodes();
     }, [reloadQRCodes])
   );
@@ -204,12 +243,17 @@ function HomeScreen() {
     }
   };
 
+  // Initial load only - empty dependency array ensures this runs once
   useEffect(() => {
     loadUserData();
+  }, []); // Only run once on mount
+  
+  // Separate effect for offer checking
+  useEffect(() => {
     if (!showOnboarding) {
       checkForOffer();
     }
-  }, [loadUserData, showOnboarding]);
+  }, [showOnboarding]);
 
   // Track session duration for engagement analytics
   useEffect(() => {
@@ -277,20 +321,29 @@ function HomeScreen() {
     updateGradientPreference();
   }, [currentGradientIndex]);
 
+  // Use refs to avoid stale closures in position handlers
+  const positionRef = useRef({ x: qrXPosition, y: qrYPosition, scale: qrScale });
+  
+  useEffect(() => {
+    positionRef.current = { x: qrXPosition, y: qrYPosition, scale: qrScale };
+  }, [qrXPosition, qrYPosition, qrScale]);
+
   const handleXPositionChange = useCallback((value: number) => {
+    console.log('🎯 X Position changed to:', value);
     setQrXPosition(value);
-    savePositionChanges(value, qrYPosition, qrScale);
-  }, [qrYPosition, qrScale, savePositionChanges]);
+    savePositionChanges(value, positionRef.current.y, positionRef.current.scale);
+  }, [savePositionChanges]);
 
   const handleYPositionChange = useCallback((value: number) => {
+    console.log('🎯 Y Position changed to:', value);
     setQrYPosition(value);
-    savePositionChanges(qrXPosition, value, qrScale);
-  }, [qrXPosition, qrScale, savePositionChanges]);
+    savePositionChanges(positionRef.current.x, value, positionRef.current.scale);
+  }, [savePositionChanges]);
 
   const handleScaleChange = useCallback((value: number) => {
     setQrScale(value);
-    savePositionChanges(qrXPosition, qrYPosition, value);
-  }, [qrXPosition, qrYPosition, savePositionChanges]);
+    savePositionChanges(positionRef.current.x, positionRef.current.y, value);
+  }, [savePositionChanges]);
 
   const handleTitlePress = async () => {
     if (!isPremium) {

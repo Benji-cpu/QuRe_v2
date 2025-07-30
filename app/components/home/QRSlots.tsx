@@ -59,8 +59,8 @@ export default function QRSlots({
     const validScreenHeight = screenHeight || 812; // iPhone X default
     
     // Calculate safe area boundaries using dynamic insets with additional UI margins
-    const additionalTopMargin = 60; // Space for UI elements (time display, etc.)
-    const additionalBottomMargin = 80; // Space for action buttons and navigation
+    const additionalTopMargin = 80; // Space for UI elements (time display, etc.)
+    const additionalBottomMargin = 20; // Minimal bottom margin for edge proximity
     const safeMarginTop = insets.top + additionalTopMargin;
     const safeMarginBottom = insets.bottom + additionalBottomMargin;
     const availableHeight = Math.max(200, validScreenHeight - safeMarginTop - safeMarginBottom); // Ensure minimum height
@@ -74,8 +74,12 @@ export default function QRSlots({
     // Calculate position from bottom of screen
     // When Y=0, offset should position QR at bottom (small offset)
     // When Y=100, offset should position QR at top (large offset)
-    // Add half the container size to center the QR code properly
-    const bottomOffset = safeMarginBottom + (yPercent / 100) * availableHeight - (containerSize / 2);
+    // We need to ensure QR never goes above the safe area
+    const maxBottomOffset = validScreenHeight - safeMarginTop - containerSize;
+    const minBottomOffset = safeMarginBottom;
+    
+    // Linear interpolation between min and max positions
+    const bottomOffset = minBottomOffset + (yPercent / 100) * (maxBottomOffset - minBottomOffset);
     
     return {
       position: 'absolute' as const,

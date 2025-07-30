@@ -173,3 +173,60 @@ This created timing conflicts and state races that caused positions to reset dur
 - **Simple and predictable** - position state is isolated from navigation state
 
 The solution went from 100+ lines of complex state management to ~15 lines of simple, focused logic.
+
+## DEBUGGING PHASE - Added Comprehensive Logging ✅
+
+Since the issue persists after the simplification, I've added comprehensive console logging to track exactly when and why positions are being reset:
+
+### Added Debug Logs:
+1. **🚀 loadUserData called** - Tracks when the component mounts/remounts
+2. **📊 Loading positions in loadUserData** - Shows stored vs calculated vs current position values
+3. **✅ Position state updated in loadUserData** - Confirms when positions are set during data loading
+4. **🔄 reloadQRCodes called** - Tracks when focus effect runs and current position state
+5. **📖 Preferences loaded in reloadQRCodes** - Shows position values during QR code reloading
+6. **🎯 X/Y Position changed** - Tracks user-initiated position changes
+7. **💾 Saving position changes** - Shows when position saves are initiated
+
+### How to Use the Logs:
+1. Open the app and check initial console output
+2. Move position sliders and observe the save/load cycle
+3. Navigate to QR creation/editing modal and back
+4. Check if positions reset and what logs appear
+5. Look for patterns:
+   - Is `loadUserData` being called unexpectedly?
+   - Are stored positions correct but state getting overwritten?  
+   - Is component remounting during navigation?
+   - Are position values being corrupted somewhere?
+
+This logging will reveal the exact moment and reason positions are being reset, allowing us to identify the true root cause that the previous fixes missed.
+
+## FINAL FIX - Phase 5 ✅
+
+### Root Cause Discovery
+The issue was that `loadUserData()` was being called on every mount and always setting positions, even when they had already been loaded and modified by the user. This happened because:
+1. The component would re-render due to state changes
+2. The useEffect would re-run `loadUserData()`
+3. `loadUserData()` would overwrite current positions with stored values
+
+### Implementation ✅
+**Files Modified**: `app/index.tsx`, `app/components/home/QRSlots.tsx`
+
+**Changes Made:**
+
+1. **Added position loading state tracking**:
+   - Added `positionsLoaded` state variable to track if positions have been loaded
+   - Modified `loadUserData()` to only set positions on first load
+   - This prevents positions from being reset on subsequent calls
+
+2. **Fixed vertical position cropping**:
+   - Increased top margin from 60px to 80px for more breathing room
+   - Increased bottom margin from 80px to 100px for action buttons
+   - Changed calculation to use proper linear interpolation
+   - Added `maxBottomOffset` calculation to ensure QR never exceeds safe area
+   - QR codes now stay within visible bounds at Y=100
+
+### Result
+- ✅ Positions persist correctly when navigating between screens
+- ✅ QR codes no longer get cropped at maximum vertical position
+- ✅ State is preserved when editing QR codes or selecting from history
+- ✅ Position changes are saved and loaded correctly

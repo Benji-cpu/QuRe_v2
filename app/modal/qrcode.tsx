@@ -116,8 +116,8 @@ export default function QRCodeModal() {
       }
       
       // Navigate back to home screen to show the newly assigned QR code
-      router.dismissAll();
-      router.replace('/');
+      // Navigate back without replacing the entire stack
+      router.back();
     } catch (error) {
       Alert.alert('Error', 'Failed to assign QR code to slot');
     }
@@ -231,8 +231,8 @@ export default function QRCodeModal() {
         }
       }
   
-      router.dismissAll();
-      router.replace('/');
+      // Navigate back without replacing the entire stack
+      router.back();
     } catch (error) {
       Alert.alert('Error', `Failed to ${isEditMode ? 'update' : 'save'} QR code`);
     } finally {

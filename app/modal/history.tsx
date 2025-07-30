@@ -47,8 +47,8 @@ export default function HistoryModal() {
         } else if (slot === 'secondary') {
           await UserPreferencesService.updateSecondaryQR(qrCode.id);
         }
-        router.dismissAll();
-        router.replace('/');
+        // Navigate back without replacing the entire stack
+        router.back();
       } catch (error) {
         Alert.alert('Error', 'Failed to select QR code');
       }
@@ -76,8 +76,8 @@ export default function HistoryModal() {
         }
         
         // Navigate to home screen
-        router.dismissAll();
-        router.replace('/');
+        // Navigate back without replacing the entire stack
+        router.back();
       } catch (error) {
         Alert.alert('Error', 'Failed to assign QR code');
       }

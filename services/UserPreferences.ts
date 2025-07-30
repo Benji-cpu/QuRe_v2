@@ -20,7 +20,7 @@ export class UserPreferencesService {
   static async getPreferences(): Promise<UserPreferences> {
     try {
       const data = await AsyncStorage.getItem(PREFERENCES_KEY);
-      const preferences = data ? JSON.parse(data) : { 
+      const defaultPreferences = { 
         selectedGradientId: 'sunset', 
         qrXPosition: 50,  // Default centered horizontally
         qrYPosition: 50,  // Default centered vertically (changed from 30)
@@ -29,6 +29,8 @@ export class UserPreferencesService {
         qrSlotMode: 'double',
         backgroundType: 'gradient'
       };
+      
+      const preferences = data ? { ...defaultPreferences, ...JSON.parse(data) } : defaultPreferences;
       
       // Migrate old coordinate system to new simple system
       if (preferences.qrVerticalOffset !== undefined || preferences.qrHorizontalOffset !== undefined) {
@@ -110,7 +112,9 @@ export class UserPreferencesService {
     try {
       const preferences = await this.getPreferences();
       // Validate and clamp position to 0-100 range
-      preferences.qrXPosition = Math.max(0, Math.min(100, xPosition));
+      // Ensure the value is a valid number
+      const validPosition = typeof xPosition === 'number' && !isNaN(xPosition) ? xPosition : 50;
+      preferences.qrXPosition = Math.max(0, Math.min(100, validPosition));
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR X position:', error);
@@ -122,7 +126,9 @@ export class UserPreferencesService {
     try {
       const preferences = await this.getPreferences();
       // Validate and clamp position to 0-100 range
-      preferences.qrYPosition = Math.max(0, Math.min(100, yPosition));
+      // Ensure the value is a valid number
+      const validPosition = typeof yPosition === 'number' && !isNaN(yPosition) ? yPosition : 50;
+      preferences.qrYPosition = Math.max(0, Math.min(100, validPosition));
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR Y position:', error);
