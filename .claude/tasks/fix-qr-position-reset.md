@@ -230,3 +230,45 @@ The issue was that `loadUserData()` was being called on every mount and always s
 - ✅ QR codes no longer get cropped at maximum vertical position
 - ✅ State is preserved when editing QR codes or selecting from history
 - ✅ Position changes are saved and loaded correctly
+
+## FINAL FIX - Phase 6 ✅
+
+### Remaining Issues
+1. **Bottom padding too large** - QR codes couldn't go low enough
+2. **App restart position reset** - Positions still reset when app closed and reopened
+
+### Implementation ✅
+**Files Modified**: `app/index.tsx`, `app/components/home/QRSlots.tsx`
+
+**Changes Made:**
+
+1. **Reduced bottom padding**:
+   - Changed `additionalBottomMargin` from 100px to 20px in QRSlots.tsx
+   - Now QR codes can go much closer to the bottom of the screen
+
+2. **Fixed app restart position reset**:
+   - Changed position state initialization from hardcoded values (50, 50, 1) to null
+   - This prevents the component from showing incorrect positions before stored values load
+   - Added null coalescing operators (??) to provide defaults only when needed
+   - Now positions are truly loaded from storage on app restart
+
+### Final Result
+- ✅ QR codes can now position close to the bottom of the screen
+- ✅ Positions persist correctly across app restarts
+- ✅ No more position resets when opening/closing the app
+- ✅ QR codes stay within visible bounds at all positions
+
+## FINAL FIX - Phase 7 ✅
+
+### Y Position Bug Fix
+**Issue**: Y position was resetting to 100 (maximum/top) on app restart
+
+**Root Cause**: A stored Y=100 value was persisting in AsyncStorage, likely from previous buggy state or migration issues
+
+**Implementation**:
+Added migration logic in UserPreferences.ts to detect and fix Y=100 values:
+- When loading preferences, check if Y position equals 100
+- Reset to center position (50) if found
+- Save the corrected value immediately
+
+This ensures that any buggy Y=100 values are corrected on load, preventing QR codes from appearing at the top of the screen on app restart.

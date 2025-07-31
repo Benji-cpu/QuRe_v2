@@ -55,6 +55,7 @@ function HomeScreen() {
   const [qrXPosition, setQrXPosition] = useState<number | null>(null);
   const [qrYPosition, setQrYPosition] = useState<number | null>(null);
   const [qrScale, setQrScale] = useState<number | null>(null);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [showSwipeIndicator, setShowSwipeIndicator] = useState(false);
   const [showPositionSlider, setShowPositionSlider] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
@@ -72,6 +73,12 @@ function HomeScreen() {
   const gradientTransition = useSharedValue(0);
 
   const savePositionChanges = useCallback((x: number, y: number, scale: number) => {
+    // Don't save if initial load hasn't completed
+    if (!initialLoadComplete) {
+      console.log('⏭️ Skipping save - initial load not complete');
+      return;
+    }
+    
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
@@ -79,17 +86,20 @@ function HomeScreen() {
     saveTimeoutRef.current = setTimeout(async () => {
       try {
         console.log('Saving position changes:', { x, y, scale });
-        await Promise.all([
-          UserPreferencesService.updateQRXPosition(x),
-          UserPreferencesService.updateQRYPosition(y),
-          UserPreferencesService.updateQRScale(scale)
-        ]);
+        // Save all values atomically to avoid race conditions
+        const preferences = await UserPreferencesService.getPreferences();
+        await UserPreferencesService.savePreferences({
+          ...preferences,
+          qrXPosition: x,
+          qrYPosition: y,
+          qrScale: scale
+        });
         console.log('Position changes saved successfully');
       } catch (error) {
         console.error('Error saving position changes:', error);
       }
     }, 500);
-  }, []);
+  }, [initialLoadComplete]);
   
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -104,6 +114,7 @@ function HomeScreen() {
   const loadUserData = async () => {
     try {
       console.log('🚀 loadUserData called - component mounting/remounting?');
+      
       const preferences = await UserPreferencesService.getPreferences();
       const premium = await UserPreferencesService.isPremium();
       const hasCompletedOnboarding = await UserPreferencesService.hasCompletedOnboarding();
@@ -126,11 +137,13 @@ function HomeScreen() {
         currentState: { x: qrXPosition, y: qrYPosition, scale: qrScale } 
       });
       
+      
       setQrXPosition(newX);
       setQrYPosition(newY);
       setQrScale(newScale);
       
-      console.log('✅ Position state updated in loadUserData');
+      console.log('✅ Position state updated in loadUserData to:', { x: newX, y: newY, scale: newScale });
+      setInitialLoadComplete(true);
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
       
@@ -322,10 +335,10 @@ function HomeScreen() {
   }, [currentGradientIndex]);
 
   // Use refs to avoid stale closures in position handlers
-  const positionRef = useRef({ x: qrXPosition, y: qrYPosition, scale: qrScale });
+  const positionRef = useRef({ x: qrXPosition ?? 50, y: qrYPosition ?? 50, scale: qrScale ?? 1 });
   
   useEffect(() => {
-    positionRef.current = { x: qrXPosition, y: qrYPosition, scale: qrScale };
+    positionRef.current = { x: qrXPosition ?? 50, y: qrYPosition ?? 50, scale: qrScale ?? 1 };
   }, [qrXPosition, qrYPosition, qrScale]);
 
   const handleXPositionChange = useCallback((value: number) => {
@@ -449,48 +462,40 @@ function HomeScreen() {
 
           await EngagementPricingService.trackAction('wallpapersExported');
 
-          // Check if sharing module is available
-          if (!Sharing) {
-            Alert.alert(
-              'Sharing not available', 
-              'Sharing is not available in this environment. Please use a development build.',
-              [{ text: 'OK' }]
-            );
-            setShowActionButtons(true);
-            setHideElementsForExport(false);
-            return;
-          }
+          // Prepare share content
+          const shareMessage = `🔒 Check out my custom lock screen created with QuRe!\n\n✨ Create your own personalized QR code lock screen with QuRe.\n\n📲 Get QuRe: https://qure.app`;
 
-          // Check if sharing is available
-          const isAvailable = await Sharing.isAvailableAsync();
-          
-          if (isAvailable) {
-            // For Android, we need to ensure the file is in a shareable location
-            if (Platform.OS === 'android') {
-              const filename = `qure_lockscreen_${Date.now()}.${captureFormat}`;
-              const shareableUri = `${FileSystem.cacheDirectory}${filename}`;
-              
-              await FileSystem.copyAsync({
-                from: uri,
-                to: shareableUri,
-              });
-              
-              await Sharing.shareAsync(shareableUri, {
-                dialogTitle: 'Share QuRe Lock Screen',
-                mimeType: `image/${captureFormat}`,
-                UTI: captureFormat === 'png' ? 'public.png' : 'public.jpeg',
-              });
-            } else {
-              // iOS can share directly
-              await Sharing.shareAsync(uri, {
-                dialogTitle: 'Share QuRe Lock Screen',
-                mimeType: `image/${captureFormat}`,
-                UTI: captureFormat === 'png' ? 'public.png' : 'public.jpeg',
-              });
+          // For Android, we need to ensure the file is in a shareable location
+          if (Platform.OS === 'android') {
+            const filename = `qure_lockscreen_${Date.now()}.${captureFormat}`;
+            const shareableUri = `${FileSystem.cacheDirectory}${filename}`;
+            
+            await FileSystem.copyAsync({
+              from: uri,
+              to: shareableUri,
+            });
+
+            // Use React Native Share API
+            const shareResult = await Share.share({
+              message: shareMessage,
+              url: shareableUri,
+              title: 'Share QuRe Lock Screen',
+            });
+
+            if (shareResult.action === Share.dismissedAction) {
+              console.log('Share dismissed');
             }
           } else {
-            // Fallback to native Share API if expo-sharing is not available
-            Alert.alert('Sharing not available', 'Sharing is not available on this device.');
+            // iOS - use React Native Share API
+            const shareResult = await Share.share({
+              message: shareMessage,
+              url: uri,
+              title: 'Share QuRe Lock Screen',
+            });
+
+            if (shareResult.action === Share.dismissedAction) {
+              console.log('Share dismissed');
+            }
           }
 
           // Restore UI elements after sharing
@@ -660,9 +665,9 @@ function HomeScreen() {
                         
                         {showPositionSlider && (
                           <PositionSlider
-                            xPosition={qrXPosition}
-                            yPosition={qrYPosition}
-                            scaleValue={qrScale}
+                            xPosition={qrXPosition ?? 50}
+                            yPosition={qrYPosition ?? 50}
+                            scaleValue={qrScale ?? 1}
                             onXPositionChange={handleXPositionChange}
                             onYPositionChange={handleYPositionChange}
                             onScaleChange={handleScaleChange}
@@ -683,9 +688,9 @@ function HomeScreen() {
                       secondaryQR={secondaryQR}
                       isPremium={isPremium}
                       showActionButtons={showActionButtons}
-                      xPosition={qrXPosition}
-                      yPosition={qrYPosition}
-                      scale={qrScale}
+                      xPosition={qrXPosition ?? 50}
+                      yPosition={qrYPosition ?? 50}
+                      scale={qrScale ?? 1}
                       onSlotPress={handleQRSlotPress}
                       onRemoveQR={handleRemoveQR}
                       hideEmptySlots={hideElementsForExport}

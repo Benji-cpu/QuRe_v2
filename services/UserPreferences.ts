@@ -20,6 +20,8 @@ export class UserPreferencesService {
   static async getPreferences(): Promise<UserPreferences> {
     try {
       const data = await AsyncStorage.getItem(PREFERENCES_KEY);
+      console.log('🔍 Raw AsyncStorage data:', data);
+      
       const defaultPreferences = { 
         selectedGradientId: 'sunset', 
         qrXPosition: 50,  // Default centered horizontally
@@ -31,11 +33,21 @@ export class UserPreferencesService {
       };
       
       const preferences = data ? { ...defaultPreferences, ...JSON.parse(data) } : defaultPreferences;
+      console.log('🔍 Final preferences with Y position:', preferences.qrYPosition);
+      
       
       // Migrate old coordinate system to new simple system
       if (preferences.qrVerticalOffset !== undefined || preferences.qrHorizontalOffset !== undefined) {
+        console.log('🔄 Migrating old coordinate system:', {
+          oldVertical: preferences.qrVerticalOffset,
+          oldHorizontal: preferences.qrHorizontalOffset
+        });
+        
         // Convert old vertical offset (percentage from bottom) to new Y position
         if (preferences.qrVerticalOffset !== undefined) {
+          // OLD: 0-100 percentage from bottom (0=bottom, 100=top)
+          // NEW: 0-100 Y position (0=bottom, 100=top)
+          // The coordinate systems are actually the same!
           preferences.qrYPosition = preferences.qrVerticalOffset;
           delete preferences.qrVerticalOffset;
         }
@@ -49,6 +61,12 @@ export class UserPreferencesService {
         
         // Save the migrated preferences
         await this.savePreferences(preferences);
+      }
+      
+      // Ensure Y position is valid
+      if (typeof preferences.qrYPosition !== 'number' || isNaN(preferences.qrYPosition)) {
+        console.log('⚠️ Invalid Y position detected, using default');
+        preferences.qrYPosition = 50;
       }
       
       return preferences;
@@ -129,6 +147,8 @@ export class UserPreferencesService {
       // Ensure the value is a valid number
       const validPosition = typeof yPosition === 'number' && !isNaN(yPosition) ? yPosition : 50;
       preferences.qrYPosition = Math.max(0, Math.min(100, validPosition));
+      
+      
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR Y position:', error);
