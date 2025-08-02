@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system';
 import { router, useFocusEffect } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, BackHandler, Dimensions, Platform, Pressable, StyleSheet, Text, ToastAndroid, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, BackHandler, Dimensions, Platform, Pressable, Share, StyleSheet, Text, ToastAndroid, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,13 +25,7 @@ import SwipeIndicator from './components/home/SwipeIndicator';
 import TimeDisplay from './components/home/TimeDisplay';
 import Onboarding from './components/Onboarding';
 
-// Try to import Sharing, but handle errors gracefully
-let Sharing: any;
-try {
-  Sharing = require('expo-sharing');
-} catch (error) {
-  console.log('expo-sharing not available in this environment');
-}
+// No longer need expo-sharing as we're using React Native's built-in Share API
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_INDICATOR_KEY = '@qure_swipe_indicator_count';

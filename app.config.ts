@@ -9,12 +9,17 @@ export default {
   icon: "./assets/images/icon.png",
   scheme: "qure",
   userInterfaceStyle: "automatic",
-  newArchEnabled: true,
+  newArchEnabled: false,
   
   ios: {
     supportsTablet: true,
-    bundleIdentifier: "com.qure.app",
-    buildNumber: "20"
+    bundleIdentifier: "com.qureapp.app",
+    buildNumber: "22",
+    infoPlist: {
+      ITSAppUsesNonExemptEncryption: false,
+      NSPhotoLibraryUsageDescription: "QuRe needs access to your photo library to save wallpapers and select custom backgrounds.",
+      NSPhotoLibraryAddUsageDescription: "QuRe needs permission to save generated wallpapers to your photo library."
+    }
   },
   
   android: {

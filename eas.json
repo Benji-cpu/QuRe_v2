@@ -29,6 +29,9 @@
         "serviceAccountKeyPath": "./keys/qure-462502-90765c942128.json",
         "track": "internal",
         "releaseStatus": "completed"
+      },
+      "ios": {
+        "appleTeamId": "6G62Q6BH3X"
       }
     }
   }
