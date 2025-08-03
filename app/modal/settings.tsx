@@ -261,9 +261,16 @@ export default function SettingsModal() {
                 navigationService.navigateToPremium();
                 return;
               }
-              // Premium users can always access custom photo tab
+              
+              // Switch to custom photo mode
               setBackgroundType('custom');
               await UserPreferencesService.updateBackgroundType('custom');
+              
+              // If no custom background is stored, prompt to upload one
+              if (!customBackground) {
+                // Optional: Automatically open the image picker
+                // handleUploadBackground();
+              }
             }}
           >
             <Feather name="image" size={20} color={backgroundType === 'custom' && isPremium ? theme.primary : theme.textSecondary} />

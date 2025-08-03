@@ -207,6 +207,22 @@ function HomeScreen() {
       setIsPremium(premium);
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
+      
+      // Update background settings
+      if (!premium && preferences.backgroundType === 'custom') {
+        setBackgroundType('gradient');
+        await UserPreferencesService.updateBackgroundType('gradient');
+      } else {
+        setBackgroundType(preferences.backgroundType || 'gradient');
+      }
+      
+      // Load custom background for premium users
+      if (premium) {
+        const customBg = await UserPreferencesService.getCustomBackground();
+        setCustomBackground(customBg);
+      } else {
+        setCustomBackground(null);
+      }
 
       if (preferences.primaryQRCodeId) {
         const primaryQRData = await QRStorage.getQRCodeById(preferences.primaryQRCodeId);
@@ -296,11 +312,22 @@ function HomeScreen() {
     }
   };
 
-  const changeGradient = (newIndex: number) => {
+  const changeGradient = async (newIndex: number) => {
     setPreviousGradientIndex(currentGradientIndex);
     setCurrentGradientIndex(newIndex);
     gradientTransition.value = 0;
     gradientTransition.value = withTiming(1, { duration: 300 });
+    
+    // Save the new gradient and ensure background type is gradient
+    try {
+      await UserPreferencesService.updateGradient(GRADIENT_PRESETS[newIndex].id);
+      if (backgroundType !== 'gradient') {
+        setBackgroundType('gradient');
+        await UserPreferencesService.updateBackgroundType('gradient');
+      }
+    } catch (error) {
+      console.error('Error saving gradient:', error);
+    }
   };
 
   const swipeGesture = Gesture.Pan()
