@@ -203,6 +203,14 @@ function HomeScreen() {
         scale: preferences.qrScale
       });
       
+      // Update gradient selection
+      const gradientIndex = GRADIENT_PRESETS.findIndex(g => g.id === preferences.selectedGradientId);
+      const validIndex = gradientIndex >= 0 ? gradientIndex : 0;
+      if (validIndex !== currentGradientIndex) {
+        setCurrentGradientIndex(validIndex);
+        setPreviousGradientIndex(validIndex);
+      }
+      
       // Update QR codes, premium status, and display settings
       setIsPremium(premium);
       setShowTitle(preferences.showTitle ?? true);
@@ -240,7 +248,7 @@ function HomeScreen() {
     } catch (error) {
       console.error('Error reloading QR codes:', error);
     }
-  }, []);
+  }, [currentGradientIndex]);
 
   // Reload QR codes when screen comes into focus (returning from modals)
   useFocusEffect(
