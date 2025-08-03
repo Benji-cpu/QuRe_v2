@@ -203,8 +203,10 @@ function HomeScreen() {
         scale: preferences.qrScale
       });
       
-      // Only update QR codes and premium status - nothing else!
+      // Update QR codes, premium status, and display settings
       setIsPremium(premium);
+      setShowTitle(preferences.showTitle ?? true);
+      setQrSlotMode(preferences.qrSlotMode || 'double');
 
       if (preferences.primaryQRCodeId) {
         const primaryQRData = await QRStorage.getQRCodeById(preferences.primaryQRCodeId);
