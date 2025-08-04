@@ -203,14 +203,6 @@ function HomeScreen() {
         scale: preferences.qrScale
       });
       
-      // Update gradient selection
-      const gradientIndex = GRADIENT_PRESETS.findIndex(g => g.id === preferences.selectedGradientId);
-      const validIndex = gradientIndex >= 0 ? gradientIndex : 0;
-      if (validIndex !== currentGradientIndex) {
-        setCurrentGradientIndex(validIndex);
-        setPreviousGradientIndex(validIndex);
-      }
-      
       // Update QR codes, premium status, and display settings
       setIsPremium(premium);
       setShowTitle(preferences.showTitle ?? true);
@@ -248,14 +240,32 @@ function HomeScreen() {
     } catch (error) {
       console.error('Error reloading QR codes:', error);
     }
+  }, []);
+
+  // Function to reload gradient selection from preferences
+  const reloadGradient = useCallback(async () => {
+    try {
+      const preferences = await UserPreferencesService.getPreferences();
+      const gradientIndex = GRADIENT_PRESETS.findIndex(g => g.id === preferences.selectedGradientId);
+      const validIndex = gradientIndex >= 0 ? gradientIndex : 0;
+      
+      // Only update if the gradient has actually changed (e.g., from settings)
+      if (validIndex !== currentGradientIndex) {
+        setPreviousGradientIndex(currentGradientIndex);
+        setCurrentGradientIndex(validIndex);
+      }
+    } catch (error) {
+      console.error('Error reloading gradient:', error);
+    }
   }, [currentGradientIndex]);
 
   // Reload QR codes when screen comes into focus (returning from modals)
   useFocusEffect(
     useCallback(() => {
-      // Only reload QR codes, not positions
+      // Reload QR codes and gradient
       reloadQRCodes();
-    }, [reloadQRCodes])
+      reloadGradient();
+    }, [reloadQRCodes, reloadGradient])
   );
 
   const getSwipeIndicatorCount = async (): Promise<number> => {
