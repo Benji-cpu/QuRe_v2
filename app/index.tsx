@@ -493,11 +493,12 @@ function HomeScreen() {
 
           await EngagementPricingService.trackAction('wallpapersExported');
 
-          // Prepare share content
-          const shareMessage = `🔒 Check out my custom lock screen created with QuRe!\n\n✨ Create your own personalized QR code lock screen with QuRe.\n\n📲 Get QuRe: https://qure.app`;
+          // Simple caption with app link
+          const shareMessage = `Created with QuRe - Custom QR Lock Screens 🔒 qure.app`;
 
-          // For Android, we need to ensure the file is in a shareable location
+          // Share the image with caption
           if (Platform.OS === 'android') {
+            // Android: Copy to shareable location first
             const filename = `qure_lockscreen_${Date.now()}.${captureFormat}`;
             const shareableUri = `${FileSystem.cacheDirectory}${filename}`;
             
@@ -506,27 +507,17 @@ function HomeScreen() {
               to: shareableUri,
             });
 
-            // Use React Native Share API
-            const shareResult = await Share.share({
+            // Share image with caption
+            await Share.share({
               message: shareMessage,
               url: shareableUri,
-              title: 'Share QuRe Lock Screen',
             });
-
-            if (shareResult.action === Share.dismissedAction) {
-              console.log('Share dismissed');
-            }
           } else {
-            // iOS - use React Native Share API
-            const shareResult = await Share.share({
-              message: shareMessage,
+            // iOS: Share directly
+            await Share.share({
               url: uri,
-              title: 'Share QuRe Lock Screen',
+              message: shareMessage,
             });
-
-            if (shareResult.action === Share.dismissedAction) {
-              console.log('Share dismissed');
-            }
           }
 
           // Restore UI elements after sharing

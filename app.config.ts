@@ -14,7 +14,7 @@ export default {
   ios: {
     supportsTablet: true,
     bundleIdentifier: "com.qureapp.app",
-    buildNumber: "22",
+    buildNumber: "21",
     infoPlist: {
       ITSAppUsesNonExemptEncryption: false,
       NSPhotoLibraryUsageDescription: "QuRe needs access to your photo library to save wallpapers and select custom backgrounds.",
@@ -28,7 +28,7 @@ export default {
       backgroundColor: "#ffffff"
     },
     package: "com.anonymous.QuRe",
-    versionCode: 20,
+    versionCode: 21,
     missingDimensionStrategy: {
       store: "play"
     },

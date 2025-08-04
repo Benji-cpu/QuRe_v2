@@ -1,6 +1,5 @@
-import { Feather } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { Modal, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import React from 'react';
+import { StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QRCodeData } from '../../../types/QRCode';
 import QRCodePreview from '../QRCodePreview';
@@ -41,7 +40,6 @@ export default function QRSlots({
   hideEmptySlots = false,
   singleQRMode = false,
 }: QRSlotsProps) {
-  const [showInstructions, setShowInstructions] = useState(false);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
 
@@ -177,41 +175,6 @@ export default function QRSlots({
           {renderQRSlot(primaryQR, 'primary')}
         </TouchableOpacity>
         
-        <TouchableOpacity 
-          style={styles.helpButton}
-          onPress={() => setShowInstructions(true)}
-        >
-          <Feather name="help-circle" size={20} color="white" />
-        </TouchableOpacity>
-        
-        <Modal
-          visible={showInstructions}
-          transparent
-          animationType="fade"
-          onRequestClose={() => setShowInstructions(false)}
-        >
-          <TouchableOpacity 
-            style={styles.instructionsOverlay}
-            onPress={() => setShowInstructions(false)}
-            activeOpacity={1}
-          >
-            <View style={styles.instructionsCard}>
-              <Text style={styles.instructionsTitle}>QR Code Layout</Text>
-              <Text style={styles.instructionsText}>
-                • Single QR: One centered QR code with more horizontal movement{'\n\n'}
-                • Double QR: Two QR codes side by side (Premium){'\n\n'}
-                • Tap on empty slots to add QR codes{'\n\n'}
-                • Tap the X to remove QR codes
-              </Text>
-              <TouchableOpacity 
-                style={styles.instructionsClose}
-                onPress={() => setShowInstructions(false)}
-              >
-                <Text style={styles.instructionsCloseText}>Got it</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        </Modal>
       </View>
     );
   }
@@ -318,53 +281,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
     lineHeight: 18,
-  },
-  helpButton: {
-    position: 'absolute',
-    top: -40,
-    right: 0,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  instructionsOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  instructionsCard: {
-    backgroundColor: 'white',
-    borderRadius: 16,
-    padding: 24,
-    maxWidth: 350,
-    width: '100%',
-  },
-  instructionsTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-  },
-  instructionsText: {
-    fontSize: 16,
-    color: '#666',
-    lineHeight: 24,
-    marginBottom: 20,
-  },
-  instructionsClose: {
-    backgroundColor: '#2196f3',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  instructionsCloseText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
   },
 });
