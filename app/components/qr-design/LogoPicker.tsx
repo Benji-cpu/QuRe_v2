@@ -2,6 +2,7 @@
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState } from 'react';
 import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { ICON_BASE64_MAP } from '../../../constants/IconBase64';
 import LogoIconPicker from './LogoIconPicker';
 
@@ -11,6 +12,7 @@ interface LogoPickerProps {
 }
 
 export default function LogoPicker({ logo, onLogoSelect }: LogoPickerProps) {
+  const { theme } = useTheme();
   const [showIconPicker, setShowIconPicker] = useState(false);
   
   const pickImage = async () => {
@@ -47,25 +49,25 @@ export default function LogoPicker({ logo, onLogoSelect }: LogoPickerProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Logo</Text>
+      <Text style={[styles.label, { color: theme.text }]}>Logo</Text>
       <View style={styles.logoSection}>
         {logo ? (
           <View style={styles.logoPreview}>
             <Image source={{ uri: logo }} style={styles.logoImage} />
-            <TouchableOpacity style={styles.removeButton} onPress={removeLogo}>
+            <TouchableOpacity style={[styles.removeButton, { backgroundColor: theme.error }]} onPress={removeLogo}>
               <Text style={styles.removeButtonText}>×</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.addLogoButtons}>
-            <TouchableOpacity style={styles.addLogoButton} onPress={pickImage}>
+            <TouchableOpacity style={[styles.addLogoButton, { borderColor: theme.border, backgroundColor: theme.surfaceVariant }]} onPress={pickImage}>
               <Text style={styles.addLogoIcon}>📷</Text>
-              <Text style={styles.addLogoText}>Upload</Text>
+              <Text style={[styles.addLogoText, { color: theme.textSecondary }]}>Upload</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.addLogoButton} onPress={() => setShowIconPicker(true)}>
+            <TouchableOpacity style={[styles.addLogoButton, { borderColor: theme.border, backgroundColor: theme.surfaceVariant }]} onPress={() => setShowIconPicker(true)}>
               <Text style={styles.addLogoIcon}>🎨</Text>
-              <Text style={styles.addLogoText}>Icons</Text>
+              <Text style={[styles.addLogoText, { color: theme.textSecondary }]}>Icons</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -87,7 +89,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 10,
   },
   logoSection: {
@@ -97,7 +98,6 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 8,
-    backgroundColor: '#f5f5f5',
     position: 'relative',
   },
   logoImage: {
@@ -112,7 +112,6 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: '#f44336',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -131,11 +130,9 @@ const styles = StyleSheet.create({
     height: 80,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: '#ddd',
     borderStyle: 'dashed',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#f5f5f5',
   },
   addLogoIcon: {
     fontSize: 24,
@@ -143,6 +140,5 @@ const styles = StyleSheet.create({
   },
   addLogoText: {
     fontSize: 12,
-    color: '#999',
   },
 });

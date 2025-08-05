@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme } from '../../../contexts/ThemeContext';
 import { QRCodeDesign } from '../../../types/QRCode';
 import ColorPicker from './ColorPicker';
 import DesignSliders from './DesignSliders';
@@ -15,6 +16,7 @@ interface QRDesignFormProps {
 }
 
 export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDesignFormProps) {
+  const { theme } = useTheme();
   const insets = useSafeAreaInsets();
   const [hasShownLogoWarning, setHasShownLogoWarning] = useState(false);
   
@@ -39,8 +41,8 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
     return (
       <View style={styles.premiumContainer}>
         <Text style={styles.premiumIcon}>🔒</Text>
-        <Text style={styles.premiumTitle}>Premium Feature</Text>
-        <Text style={styles.premiumText}>
+        <Text style={[styles.premiumTitle, { color: theme.text }]}>Premium Feature</Text>
+        <Text style={[styles.premiumText, { color: theme.textSecondary }]}>
           Upgrade to Premium to customize your QR code design
         </Text>
       </View>
@@ -72,13 +74,12 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
         />
 
         <View style={styles.switchContainer}>
-          <Text style={styles.switchLabel}>Enable Gradient</Text>
+          <Text style={[styles.switchLabel, { color: theme.text }]}>Enable Gradient</Text>
           <Switch
             value={design.enableLinearGradient}
             onValueChange={(enableLinearGradient) => updateDesign({ enableLinearGradient })}
-            trackColor={{ false: '#767577', true: '#81b0ff' }}
-            thumbColor={design.enableLinearGradient ? '#2196f3' : '#f4f3f4'}
-            ios_backgroundColor="#3e3e3e"
+            trackColor={{ false: theme.switchTrackOff, true: theme.switchTrackOn }}
+            thumbColor={design.enableLinearGradient ? theme.primary : theme.surfaceVariant}
           />
         </View>
 
@@ -105,9 +106,9 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
         />
         
         {design.logo && (
-          <View style={styles.warningContainer}>
+          <View style={[styles.warningContainer, { backgroundColor: theme.warning + '20' }]}>
             <Text style={styles.warningIcon}>⚠️</Text>
-            <Text style={styles.warningText}>
+            <Text style={[styles.warningText, { color: theme.textSecondary }]}>
               Logos can affect QR code scanning. Test your code after export.
             </Text>
           </View>
@@ -137,12 +138,10 @@ const styles = StyleSheet.create({
   premiumTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#333',
     marginBottom: 10,
   },
   premiumText: {
     fontSize: 16,
-    color: '#666',
     textAlign: 'center',
     lineHeight: 22,
   },
@@ -156,12 +155,10 @@ const styles = StyleSheet.create({
   switchLabel: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
   },
   warningContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFF3CD',
     padding: 12,
     borderRadius: 8,
     marginTop: 10,
@@ -173,7 +170,6 @@ const styles = StyleSheet.create({
   warningText: {
     flex: 1,
     fontSize: 13,
-    color: '#856404',
     lineHeight: 18,
   },
 });

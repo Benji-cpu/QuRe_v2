@@ -2,6 +2,7 @@
 import Slider from '@react-native-community/slider';
 import React from 'react';
 import { Platform, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 interface DesignSlidersProps {
   logoSize: number;
@@ -22,10 +23,12 @@ export default function DesignSliders({
   onLogoBorderRadiusChange,
   hasLogo
 }: DesignSlidersProps) {
-  if (!hasLogo) return null;
-
-  // Use window dimensions for responsive design
+  const { theme } = useTheme();
+  
+  // Use window dimensions for responsive design - must be called before conditional return
   const { width: screenWidth } = useWindowDimensions();
+  
+  if (!hasLogo) return null;
   
   // Responsive scaling functions
   const scale = screenWidth / 375; // Base width of iPhone X
@@ -35,7 +38,7 @@ export default function DesignSliders({
   return (
     <View style={[styles.container, { marginBottom: scaleSpacing(10) }]}>
       <View style={[styles.sliderContainer, { marginBottom: scaleSpacing(12) }]}>
-        <Text style={[styles.sliderLabel, { fontSize: scaleFont(14), marginBottom: scaleSpacing(5) }]}>
+        <Text style={[styles.sliderLabel, { fontSize: scaleFont(14), marginBottom: scaleSpacing(5), color: theme.textSecondary }]}>
           Logo Size: {Math.round(logoSize)}%
         </Text>
         <Slider
@@ -44,14 +47,14 @@ export default function DesignSliders({
           maximumValue={40}
           value={logoSize}
           onValueChange={onLogoSizeChange}
-          minimumTrackTintColor="#2196f3"
-          maximumTrackTintColor="#ddd"
-          thumbTintColor={Platform.OS === 'android' ? '#2196f3' : undefined}
+          minimumTrackTintColor={theme.primary}
+          maximumTrackTintColor={theme.border}
+          thumbTintColor={Platform.OS === 'android' ? theme.primary : undefined}
         />
       </View>
 
       <View style={[styles.sliderContainer, { marginBottom: scaleSpacing(12) }]}>
-        <Text style={[styles.sliderLabel, { fontSize: scaleFont(14), marginBottom: scaleSpacing(5) }]}>
+        <Text style={[styles.sliderLabel, { fontSize: scaleFont(14), marginBottom: scaleSpacing(5), color: theme.textSecondary }]}>
           Logo Margin: {Math.round(logoMargin)}
         </Text>
         <Slider
@@ -60,14 +63,14 @@ export default function DesignSliders({
           maximumValue={10}
           value={logoMargin}
           onValueChange={onLogoMarginChange}
-          minimumTrackTintColor="#2196f3"
-          maximumTrackTintColor="#ddd"
-          thumbTintColor={Platform.OS === 'android' ? '#2196f3' : undefined}
+          minimumTrackTintColor={theme.primary}
+          maximumTrackTintColor={theme.border}
+          thumbTintColor={Platform.OS === 'android' ? theme.primary : undefined}
         />
       </View>
 
       <View style={[styles.sliderContainer, { marginBottom: scaleSpacing(12) }]}>
-        <Text style={[styles.sliderLabel, { fontSize: scaleFont(14), marginBottom: scaleSpacing(5) }]}>
+        <Text style={[styles.sliderLabel, { fontSize: scaleFont(14), marginBottom: scaleSpacing(5), color: theme.textSecondary }]}>
           Logo Corner Radius: {Math.round(logoBorderRadius)}
         </Text>
         <Slider
@@ -76,9 +79,9 @@ export default function DesignSliders({
           maximumValue={20}
           value={logoBorderRadius}
           onValueChange={onLogoBorderRadiusChange}
-          minimumTrackTintColor="#2196f3"
-          maximumTrackTintColor="#ddd"
-          thumbTintColor={Platform.OS === 'android' ? '#2196f3' : undefined}
+          minimumTrackTintColor={theme.primary}
+          maximumTrackTintColor={theme.border}
+          thumbTintColor={Platform.OS === 'android' ? theme.primary : undefined}
         />
       </View>
     </View>
@@ -93,7 +96,6 @@ const styles = StyleSheet.create({
     // Dynamic margin handled inline
   },
   sliderLabel: {
-    color: '#666',
   },
   slider: {
     width: '100%',

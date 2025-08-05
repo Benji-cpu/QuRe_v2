@@ -1,7 +1,8 @@
 // app/components/qr-design/GradientPicker.tsx
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
-import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../../contexts/ThemeContext';
 import ColorPicker from './ColorPicker';
 
 interface GradientPickerProps {
@@ -23,6 +24,7 @@ const PRESET_GRADIENTS = [
 ];
 
 export default function GradientPicker({ selectedGradient, onGradientSelect }: GradientPickerProps) {
+  const { theme } = useTheme();
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [customColor1, setCustomColor1] = useState(selectedGradient[0]);
   const [customColor2, setCustomColor2] = useState(selectedGradient[1]);
@@ -30,14 +32,33 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
   const isSelected = (gradient: string[]) => 
     gradient[0] === selectedGradient[0] && gradient[1] === selectedGradient[1];
 
+  const isValidHex = (color: string) => {
+    return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
+  };
+
   const handleCustomGradient = () => {
-    onGradientSelect([customColor1, customColor2]);
-    setShowCustomPicker(false);
+    // Validate hex colors before applying
+    if (isValidHex(customColor1) && isValidHex(customColor2)) {
+      onGradientSelect([customColor1, customColor2]);
+      setShowCustomPicker(false);
+    }
+  };
+
+  const handleHexInput = (value: string, colorIndex: number) => {
+    // Ensure hex format
+    let formattedValue = value.startsWith('#') ? value : '#' + value;
+    formattedValue = formattedValue.toUpperCase();
+    
+    if (colorIndex === 1) {
+      setCustomColor1(formattedValue);
+    } else {
+      setCustomColor2(formattedValue);
+    }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>Gradient Colors</Text>
+      <Text style={[styles.label, { color: theme.text }]}>Gradient Colors</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.gradientsRow}>
           {PRESET_GRADIENTS.map((gradient, index) => (
@@ -45,7 +66,8 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
               key={index}
               style={[
                 styles.gradientOption,
-                isSelected(gradient) && styles.selectedGradient
+                { borderColor: theme.border },
+                isSelected(gradient) && [styles.selectedGradient, { borderColor: theme.primary }]
               ]}
               onPress={() => onGradientSelect(gradient)}
             >
@@ -57,7 +79,7 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
               />
               {isSelected(gradient) && (
                 <View style={styles.checkmark}>
-                  <Text style={styles.checkmarkText}>✓</Text>
+                  <Text style={[styles.checkmarkText, { color: theme.primary }]}>✓</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -66,7 +88,8 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
           <TouchableOpacity
             style={[
               styles.gradientOption,
-              styles.customGradientButton
+              styles.customGradientButton,
+              { borderColor: theme.border }
             ]}
             onPress={() => setShowCustomPicker(true)}
           >
@@ -77,7 +100,7 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
               end={{ x: 1, y: 1 }}
             />
             <View style={styles.customIcon}>
-              <Text style={styles.customIconText}>+</Text>
+              <Text style={[styles.customIconText, { color: theme.textSecondary }]}>+</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -89,24 +112,60 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
         animationType="slide"
         onRequestClose={() => setShowCustomPicker(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Custom Gradient</Text>
+        <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
+          <View style={[styles.modalContent, { backgroundColor: theme.modalBackground }]}>
+            <Text style={[styles.modalTitle, { color: theme.text }]}>Custom Gradient</Text>
             
-            <ColorPicker
-              label="Start Color"
-              selectedColor={customColor1}
-              onColorSelect={setCustomColor1}
-            />
+            <View style={styles.colorSection}>
+              <ColorPicker
+                label="Start Color"
+                selectedColor={customColor1}
+                onColorSelect={setCustomColor1}
+              />
+              <View style={styles.hexInputContainer}>
+                <Text style={[styles.hexLabel, { color: theme.textSecondary }]}>Hex:</Text>
+                <TextInput
+                  style={[styles.hexInput, { 
+                    backgroundColor: theme.inputBackground, 
+                    borderColor: isValidHex(customColor1) ? theme.border : theme.error,
+                    color: theme.text 
+                  }]}
+                  value={customColor1}
+                  onChangeText={(value) => handleHexInput(value, 1)}
+                  placeholder="#FF0000"
+                  placeholderTextColor={theme.textTertiary}
+                  maxLength={7}
+                  autoCapitalize="characters"
+                />
+              </View>
+            </View>
             
-            <ColorPicker
-              label="End Color"
-              selectedColor={customColor2}
-              onColorSelect={setCustomColor2}
-            />
+            <View style={styles.colorSection}>
+              <ColorPicker
+                label="End Color"
+                selectedColor={customColor2}
+                onColorSelect={setCustomColor2}
+              />
+              <View style={styles.hexInputContainer}>
+                <Text style={[styles.hexLabel, { color: theme.textSecondary }]}>Hex:</Text>
+                <TextInput
+                  style={[styles.hexInput, { 
+                    backgroundColor: theme.inputBackground, 
+                    borderColor: isValidHex(customColor2) ? theme.border : theme.error,
+                    color: theme.text 
+                  }]}
+                  value={customColor2}
+                  onChangeText={(value) => handleHexInput(value, 2)}
+                  placeholder="#00FF00"
+                  placeholderTextColor={theme.textTertiary}
+                  maxLength={7}
+                  autoCapitalize="characters"
+                />
+              </View>
+            </View>
             
             <View style={styles.previewSection}>
-              <Text style={styles.previewLabel}>Preview</Text>
+              <Text style={[styles.previewLabel, { color: theme.text }]}>Preview</Text>
               <LinearGradient
                 colors={[customColor1, customColor2]}
                 style={styles.largePreview}
@@ -117,17 +176,23 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
             
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[styles.modalButton, styles.cancelButton]}
+                style={[styles.modalButton, styles.cancelButton, { backgroundColor: theme.surfaceVariant }]}
                 onPress={() => setShowCustomPicker(false)}
               >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
+                <Text style={[styles.cancelButtonText, { color: theme.text }]}>Cancel</Text>
               </TouchableOpacity>
               
               <TouchableOpacity
-                style={[styles.modalButton, styles.applyButton]}
+                style={[
+                  styles.modalButton, 
+                  styles.applyButton, 
+                  { backgroundColor: theme.primary },
+                  (!isValidHex(customColor1) || !isValidHex(customColor2)) && [styles.disabledButton, { backgroundColor: theme.textTertiary }]
+                ]}
                 onPress={handleCustomGradient}
+                disabled={!isValidHex(customColor1) || !isValidHex(customColor2)}
               >
-                <Text style={styles.applyButtonText}>Apply</Text>
+                <Text style={[styles.applyButtonText, { color: theme.primaryText }]}>Apply</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -144,7 +209,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 10,
   },
   gradientsRow: {
@@ -158,10 +222,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 2,
-    borderColor: '#ddd',
   },
   selectedGradient: {
-    borderColor: '#2196f3',
     borderWidth: 3,
   },
   gradientPreview: {
@@ -182,7 +244,6 @@ const styles = StyleSheet.create({
   checkmarkText: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#2196f3',
   },
   customGradientButton: {
     borderStyle: 'dashed',
@@ -202,16 +263,13 @@ const styles = StyleSheet.create({
   customIconText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#666',
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: 'white',
     borderRadius: 16,
     padding: 24,
     width: '90%',
@@ -247,17 +305,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cancelButton: {
-    backgroundColor: '#f5f5f5',
   },
   cancelButtonText: {
-    color: '#666',
     fontWeight: '600',
   },
   applyButton: {
-    backgroundColor: '#2196f3',
   },
   applyButtonText: {
-    color: 'white',
     fontWeight: 'bold',
+  },
+  colorSection: {
+    marginBottom: 16,
+  },
+  hexInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 8,
+  },
+  hexLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    minWidth: 30,
+  },
+  hexInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    fontSize: 14,
+    fontFamily: 'monospace',
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });

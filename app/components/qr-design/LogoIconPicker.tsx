@@ -1,6 +1,8 @@
 // app/components/qr-design/LogoIconPicker.tsx
 import React from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../../contexts/ThemeContext';
+import { ICON_BASE64_MAP } from '../../../constants/IconBase64';
 
 interface LogoIconPickerProps {
   visible: boolean;
@@ -42,24 +44,27 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function LogoIconPicker({ visible, onClose, onSelectIcon }: LogoIconPickerProps) {
+  const { theme } = useTheme();
   const renderCategory = (category: string) => {
     const categoryIcons = PRESET_ICONS.filter(icon => icon.category === category);
     
     return (
       <View key={category} style={styles.categorySection}>
-        <Text style={styles.categoryTitle}>{CATEGORY_LABELS[category]}</Text>
+        <Text style={[styles.categoryTitle, { color: theme.textSecondary }]}>{CATEGORY_LABELS[category]}</Text>
         <View style={styles.iconsGrid}>
           {categoryIcons.map((icon) => (
             <TouchableOpacity
               key={icon.name}
-              style={styles.iconButton}
+              style={[styles.iconButton, { backgroundColor: theme.surfaceVariant }]}
               onPress={() => {
-                onSelectIcon(icon.emoji);
+                // Map emoji to base64 if available, otherwise pass emoji directly
+                const base64Icon = ICON_BASE64_MAP[icon.emoji];
+                onSelectIcon(base64Icon || icon.emoji);
                 onClose();
               }}
             >
               <Text style={styles.iconEmoji}>{icon.emoji}</Text>
-              <Text style={styles.iconLabel}>{icon.name}</Text>
+              <Text style={[styles.iconLabel, { color: theme.textSecondary }]}>{icon.name}</Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -74,12 +79,12 @@ export default function LogoIconPicker({ visible, onClose, onSelectIcon }: LogoI
       animationType="slide"
       onRequestClose={onClose}
     >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
+      <View style={[styles.modalOverlay, { backgroundColor: theme.overlay }]}>
+        <View style={[styles.modalContent, { backgroundColor: theme.modalBackground }]}>
           <View style={styles.header}>
-            <Text style={styles.title}>Choose an Icon</Text>
+            <Text style={[styles.title, { color: theme.text }]}>Choose an Icon</Text>
             <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>✕</Text>
+              <Text style={[styles.closeButtonText, { color: theme.textSecondary }]}>✕</Text>
             </TouchableOpacity>
           </View>
           
@@ -95,11 +100,9 @@ export default function LogoIconPicker({ visible, onClose, onSelectIcon }: LogoI
 const styles = StyleSheet.create({
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'flex-end',
   },
   modalContent: {
-    backgroundColor: 'white',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     maxHeight: '80%',
@@ -125,7 +128,6 @@ const styles = StyleSheet.create({
   },
   closeButtonText: {
     fontSize: 20,
-    color: '#666',
   },
   categorySection: {
     paddingHorizontal: 20,
@@ -134,7 +136,6 @@ const styles = StyleSheet.create({
   categoryTitle: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666',
     marginBottom: 12,
   },
   iconsGrid: {
@@ -147,7 +148,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 10,
     borderRadius: 8,
-    backgroundColor: '#f5f5f5',
   },
   iconEmoji: {
     fontSize: 32,
@@ -155,7 +155,6 @@ const styles = StyleSheet.create({
   },
   iconLabel: {
     fontSize: 11,
-    color: '#666',
     textAlign: 'center',
   },
 });

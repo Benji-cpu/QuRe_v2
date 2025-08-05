@@ -30,12 +30,17 @@ export default function QRCodePreview({
   const getLogoProps = () => {
     if (!finalDesign.logo) return undefined;
     
-    const logoSizePixels = size * (finalDesign.logoSize || 20) / 100;
+    // Ensure logo size is reasonable (between 10% and 40% of QR code size)
+    const logoSizePercent = Math.max(10, Math.min(40, finalDesign.logoSize || 20));
+    const logoSizePixels = Math.round(size * logoSizePercent / 100);
+    
+    // For very small QR codes, ensure minimum logo size of 20px
+    const finalLogoSize = Math.max(20, logoSizePixels);
     
     return {
       uri: finalDesign.logo,
-      width: logoSizePixels,
-      height: logoSizePixels,
+      width: finalLogoSize,
+      height: finalLogoSize,
     };
   };
   
@@ -55,9 +60,9 @@ export default function QRCodePreview({
         quietZone={0}
         {...gradientProps}
         logo={getLogoProps()}
-        logoBackgroundColor={finalDesign.logoBackgroundColor}
-        logoMargin={finalDesign.logoMargin}
-        logoBorderRadius={finalDesign.logoBorderRadius}
+        logoBackgroundColor={finalDesign.logoBackgroundColor || '#FFFFFF'}
+        logoMargin={Math.max(0, finalDesign.logoMargin || 2)}
+        logoBorderRadius={Math.max(0, finalDesign.logoBorderRadius || 0)}
       />
     </View>
   );

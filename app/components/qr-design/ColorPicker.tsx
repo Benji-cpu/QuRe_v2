@@ -1,5 +1,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 interface ColorPickerProps {
   label: string;
@@ -14,9 +15,11 @@ const PRESET_COLORS = [
 ];
 
 export default function ColorPicker({ label, selectedColor, onColorSelect }: ColorPickerProps) {
+  const { theme } = useTheme();
+  
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <Text style={[styles.label, { color: theme.text }]}>{label}</Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false}>
         <View style={styles.colorsRow}>
           {PRESET_COLORS.map((color) => (
@@ -24,14 +27,14 @@ export default function ColorPicker({ label, selectedColor, onColorSelect }: Col
               key={color}
               style={[
                 styles.colorOption,
-                { backgroundColor: color },
-                selectedColor === color && styles.selectedColor
+                { backgroundColor: color, borderColor: theme.border },
+                selectedColor === color && [styles.selectedColor, { borderColor: theme.primary }]
               ]}
               onPress={() => onColorSelect(color)}
             >
               {selectedColor === color && (
                 <View style={styles.checkmark}>
-                  <Text style={styles.checkmarkText}>✓</Text>
+                  <Text style={[styles.checkmarkText, { color: theme.primary }]}>✓</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -49,7 +52,6 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
     marginBottom: 10,
   },
   colorsRow: {
@@ -62,12 +64,10 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#ddd',
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectedColor: {
-    borderColor: '#2196f3',
     borderWidth: 3,
   },
   checkmark: {
@@ -81,6 +81,5 @@ const styles = StyleSheet.create({
   checkmarkText: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: '#2196f3',
   },
 });

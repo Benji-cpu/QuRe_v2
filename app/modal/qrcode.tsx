@@ -362,19 +362,11 @@ export default function QRCodeModal() {
         
         {activeTab === 'content' ? (
           <>
-            {!isEditMode ? (
+            {!isEditMode && (
               <QRTypeSelector
                 selectedType={selectedType}
                 onTypeSelect={setSelectedType}
               />
-            ) : (
-              <TouchableOpacity style={[styles.typeDisplay, { backgroundColor: theme.surface, borderColor: theme.border }]} disabled>
-                <Text style={[styles.typeLabel, { color: theme.textSecondary }]}>QR Code Type</Text>
-                <View style={styles.typeValue}>
-                  <Text style={[styles.typeText, { color: theme.text }]}>{selectedType.toUpperCase()}</Text>
-                  <Text style={[styles.lockedText, { color: theme.textTertiary }]}>Cannot change</Text>
-                </View>
-              </TouchableOpacity>
             )}
             
             <QRForm
