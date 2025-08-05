@@ -25,8 +25,6 @@ import SwipeIndicator from './components/home/SwipeIndicator';
 import TimeDisplay from './components/home/TimeDisplay';
 import Onboarding from './components/Onboarding';
 
-// No longer need expo-sharing as we're using React Native's built-in Share API
-
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_INDICATOR_KEY = '@qure_swipe_indicator_count';
 
@@ -63,6 +61,7 @@ function HomeScreen() {
   const [exportOverlayOpacity] = useState(new Animated.Value(0));
   const [customBackground, setCustomBackground] = useState<string | null>(null);
   const [backgroundType, setBackgroundType] = useState<'gradient' | 'custom'>('gradient');
+  const [isSwipingGradient, setIsSwipingGradient] = useState(false);
   
   const gradientTransition = useSharedValue(0);
 
@@ -244,6 +243,9 @@ function HomeScreen() {
 
   // Function to reload gradient selection from preferences
   const reloadGradient = useCallback(async () => {
+    // Skip if currently swiping to prevent conflicts
+    if (isSwipingGradient) return;
+    
     try {
       const preferences = await UserPreferencesService.getPreferences();
       const gradientIndex = GRADIENT_PRESETS.findIndex(g => g.id === preferences.selectedGradientId);
@@ -253,11 +255,13 @@ function HomeScreen() {
       if (validIndex !== currentGradientIndex) {
         setPreviousGradientIndex(currentGradientIndex);
         setCurrentGradientIndex(validIndex);
+        // Reset the transition for immediate change from settings
+        gradientTransition.value = 1;
       }
     } catch (error) {
       console.error('Error reloading gradient:', error);
     }
-  }, [currentGradientIndex]);
+  }, [currentGradientIndex, isSwipingGradient, gradientTransition]);
 
   // Reload QR codes when screen comes into focus (returning from modals)
   useFocusEffect(
@@ -331,10 +335,14 @@ function HomeScreen() {
   };
 
   const changeGradient = async (newIndex: number) => {
+    setIsSwipingGradient(true);
     setPreviousGradientIndex(currentGradientIndex);
     setCurrentGradientIndex(newIndex);
     gradientTransition.value = 0;
-    gradientTransition.value = withTiming(1, { duration: 300 });
+    gradientTransition.value = withTiming(1, { duration: 300 }, () => {
+      // Animation complete callback
+      runOnJS(setIsSwipingGradient)(false);
+    });
     
     // Save the new gradient and ensure background type is gradient
     try {
@@ -364,16 +372,7 @@ function HomeScreen() {
     }
   });
 
-  useEffect(() => {
-    const updateGradientPreference = async () => {
-      try {
-        await UserPreferencesService.updateGradient(GRADIENT_PRESETS[currentGradientIndex].id);
-      } catch (error) {
-        console.error('Error updating gradient preference:', error);
-      }
-    };
-    updateGradientPreference();
-  }, [currentGradientIndex]);
+  // Removed duplicate gradient saving - this is already handled in changeGradient function
 
   // Use refs to avoid stale closures in position handlers
   const positionRef = useRef({ x: qrXPosition ?? 50, y: qrYPosition ?? 50, scale: qrScale ?? 1 });
@@ -503,32 +502,20 @@ function HomeScreen() {
 
           await EngagementPricingService.trackAction('wallpapersExported');
 
-          // Simple caption with app link
+          // Convert to base64 for cross-platform compatibility
+          const base64 = await FileSystem.readAsStringAsync(uri, {
+            encoding: FileSystem.EncodingType.Base64,
+          });
+          
           const shareMessage = `Created with QuRe - Custom QR Lock Screens 🔒 qure.app`;
-
-          // Share the image with caption
-          if (Platform.OS === 'android') {
-            // Android: Copy to shareable location first
-            const filename = `qure_lockscreen_${Date.now()}.${captureFormat}`;
-            const shareableUri = `${FileSystem.cacheDirectory}${filename}`;
-            
-            await FileSystem.copyAsync({
-              from: uri,
-              to: shareableUri,
-            });
-
-            // Share image with caption
-            await Share.share({
-              message: shareMessage,
-              url: shareableUri,
-            });
-          } else {
-            // iOS: Share directly
-            await Share.share({
-              url: uri,
-              message: shareMessage,
-            });
-          }
+          
+          // Use base64 data URI which works on both platforms
+          await Share.share({
+            message: shareMessage,
+            url: `data:image/${captureFormat === 'jpg' ? 'jpeg' : 'png'};base64,${base64}`,
+          });
+          
+          await EngagementPricingService.trackAction('wallpapersShared');
 
           // Restore UI elements after sharing
           setShowActionButtons(true);
