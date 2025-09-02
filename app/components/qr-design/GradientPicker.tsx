@@ -59,52 +59,59 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
   return (
     <View style={styles.container}>
       <Text style={[styles.label, { color: theme.text }]}>Gradient Colors</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View style={styles.gradientsRow}>
-          {PRESET_GRADIENTS.map((gradient, index) => (
+      <View style={styles.gradientContainer}>
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          style={styles.scrollView}
+        >
+          <View style={styles.gradientsRow}>
+            {PRESET_GRADIENTS.map((gradient, index) => (
+              <TouchableOpacity
+                key={index}
+                style={[
+                  styles.gradientOption,
+                  { borderColor: theme.border },
+                  isSelected(gradient) && [styles.selectedGradient, { borderColor: theme.primary }]
+                ]}
+                onPress={() => onGradientSelect(gradient)}
+              >
+                <LinearGradient
+                  colors={gradient as unknown as readonly [string, string, ...string[]]}
+                  style={styles.gradientPreview}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                />
+                {isSelected(gradient) && (
+                  <View style={styles.checkmark}>
+                    <Text style={[styles.checkmarkText, { color: theme.primary }]}>✓</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+            
             <TouchableOpacity
-              key={index}
               style={[
                 styles.gradientOption,
-                { borderColor: theme.border },
-                isSelected(gradient) && [styles.selectedGradient, { borderColor: theme.primary }]
+                styles.customGradientButton,
+                { borderColor: theme.border }
               ]}
-              onPress={() => onGradientSelect(gradient)}
+              onPress={() => setShowCustomPicker(true)}
             >
               <LinearGradient
-                colors={gradient as unknown as readonly [string, string, ...string[]]}
+                colors={[customColor1, customColor2]}
                 style={styles.gradientPreview}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
               />
-              {isSelected(gradient) && (
-                <View style={styles.checkmark}>
-                  <Text style={[styles.checkmarkText, { color: theme.primary }]}>✓</Text>
-                </View>
-              )}
+              <View style={styles.customIcon}>
+                <Text style={[styles.customIconText, { color: theme.textSecondary }]}>+</Text>
+              </View>
             </TouchableOpacity>
-          ))}
-          
-          <TouchableOpacity
-            style={[
-              styles.gradientOption,
-              styles.customGradientButton,
-              { borderColor: theme.border }
-            ]}
-            onPress={() => setShowCustomPicker(true)}
-          >
-            <LinearGradient
-              colors={[customColor1, customColor2]}
-              style={styles.gradientPreview}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-            />
-            <View style={styles.customIcon}>
-              <Text style={[styles.customIconText, { color: theme.textSecondary }]}>+</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+          </View>
+        </ScrollView>
+      </View>
 
       <Modal
         visible={showCustomPicker}
@@ -203,18 +210,27 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 20,
-  },
+  container: {},
   label: {
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 10,
   },
+  gradientContainer: {
+    alignItems: 'center', // Center the scroll view within the container
+  },
+  scrollView: {
+    flexGrow: 0, // Prevent scroll view from taking full width
+  },
+  scrollContent: {
+    paddingHorizontal: 0, // Remove padding to let content determine its own width
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   gradientsRow: {
     flexDirection: 'row',
     gap: 10,
-    paddingRight: 20,
+    paddingHorizontal: 16, // Equal padding on both sides for the gradient row
   },
   gradientOption: {
     width: 50,

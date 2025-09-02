@@ -34,6 +34,13 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
       updates.gradientDirection = [0, 0, 1, 1];
     }
     
+    // Auto-update container background when QR background changes to transparent
+    if ('backgroundColor' in updates && updates.backgroundColor === 'transparent') {
+      if (!design.containerBackgroundColor || design.containerBackgroundColor === '#FFFFFF') {
+        updates.containerBackgroundColor = 'transparent';
+      }
+    }
+    
     onDesignChange({ ...design, ...updates });
   };
 
@@ -61,49 +68,79 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
         contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
         keyboardShouldPersistTaps="handled"
       >
-        <ColorPicker
-          label="QR Code Color"
-          selectedColor={design.color}
-          onColorSelect={(color) => updateDesign({ color })}
-        />
+        <Text style={[styles.title, { color: theme.text }]}>
+          🎨 Design Details
+        </Text>
 
-        <ColorPicker
-          label="Background Color"
-          selectedColor={design.backgroundColor}
-          onColorSelect={(backgroundColor) => updateDesign({ backgroundColor })}
-        />
+        <View style={[styles.sectionContainer, { backgroundColor: theme.inputBackground }]}>
+          <View style={styles.fieldContainer}>
+            <ColorPicker
+              label="QR Code Color"
+              selectedColor={design.color}
+              onColorSelect={(color) => updateDesign({ color })}
+            />
+          </View>
 
-        <View style={styles.switchContainer}>
-          <Text style={[styles.switchLabel, { color: theme.text }]}>Enable Gradient</Text>
-          <Switch
-            value={design.enableLinearGradient}
-            onValueChange={(enableLinearGradient) => updateDesign({ enableLinearGradient })}
-            trackColor={{ false: theme.switchTrackOff, true: theme.switchTrackOn }}
-            thumbColor={design.enableLinearGradient ? theme.primary : theme.surfaceVariant}
-          />
+          <View style={styles.fieldContainer}>
+            <ColorPicker
+              label="Background Color"
+              selectedColor={design.backgroundColor}
+              onColorSelect={(backgroundColor) => updateDesign({ backgroundColor })}
+              showTransparent={true}
+            />
+          </View>
+
+          <View style={[styles.fieldContainer, { marginBottom: 0 }]}>
+            <ColorPicker
+              label="Container Background"
+              selectedColor={design.containerBackgroundColor || (design.backgroundColor === 'transparent' ? 'transparent' : '#FFFFFF')}
+              onColorSelect={(containerBackgroundColor) => updateDesign({ containerBackgroundColor })}
+              showTransparent={true}
+            />
+          </View>
         </View>
 
-        {design.enableLinearGradient && (
-          <GradientPicker
-            selectedGradient={design.linearGradient || ['#FF0000', '#00FF00']}
-            onGradientSelect={(linearGradient) => updateDesign({ linearGradient })}
-          />
-        )}
+        <View style={[styles.sectionContainer, { backgroundColor: theme.inputBackground }]}>
+          <View style={[styles.fieldContainer, styles.switchContainer, !design.enableLinearGradient && { marginBottom: 0 }]}>
+            <Text style={[styles.switchLabel, { color: theme.text }]}>Enable Gradient</Text>
+            <Switch
+              value={design.enableLinearGradient}
+              onValueChange={(enableLinearGradient) => updateDesign({ enableLinearGradient })}
+              trackColor={{ false: theme.switchTrackOff, true: theme.switchTrackOn }}
+              thumbColor={design.enableLinearGradient ? theme.primary : theme.surfaceVariant}
+            />
+          </View>
 
-        <LogoPicker
-          logo={design.logo || null}
-          onLogoSelect={(logo) => updateDesign({ logo: logo || undefined })}
-        />
+          {design.enableLinearGradient && (
+            <View style={[styles.fieldContainer, { marginBottom: 0 }]}>
+              <GradientPicker
+                selectedGradient={design.linearGradient || ['#FF0000', '#00FF00']}
+                onGradientSelect={(linearGradient) => updateDesign({ linearGradient })}
+              />
+            </View>
+          )}
+        </View>
 
-        <DesignSliders
-          logoSize={design.logoSize || 20}
-          logoMargin={design.logoMargin || 2}
-          logoBorderRadius={design.logoBorderRadius || 0}
-          onLogoSizeChange={(logoSize) => updateDesign({ logoSize })}
-          onLogoMarginChange={(logoMargin) => updateDesign({ logoMargin })}
-          onLogoBorderRadiusChange={(logoBorderRadius) => updateDesign({ logoBorderRadius })}
-          hasLogo={!!design.logo}
-        />
+        <View style={[styles.sectionContainer, { backgroundColor: theme.inputBackground }]}>
+          <View style={styles.fieldContainer}>
+            <LogoPicker
+              logo={design.logo || null}
+              onLogoSelect={(logo) => updateDesign({ logo: logo || undefined })}
+            />
+          </View>
+
+          <View style={[styles.fieldContainer, { marginBottom: 0 }]}>
+            <DesignSliders
+              logoSize={design.logoSize || 20}
+              logoMargin={design.logoMargin || 2}
+              logoBorderRadius={design.logoBorderRadius || 0}
+              onLogoSizeChange={(logoSize) => updateDesign({ logoSize })}
+              onLogoMarginChange={(logoMargin) => updateDesign({ logoMargin })}
+              onLogoBorderRadiusChange={(logoBorderRadius) => updateDesign({ logoBorderRadius })}
+              hasLogo={!!design.logo}
+            />
+          </View>
+        </View>
         
         {design.logo && (
           <View style={[styles.warningContainer, { backgroundColor: theme.warning + '20' }]}>
@@ -124,6 +161,19 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+  },
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 20,
+  },
+  sectionContainer: {
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 16,
+  },
+  fieldContainer: {
+    marginBottom: 15,
   },
   premiumContainer: {
     flex: 1,
@@ -149,7 +199,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
     paddingVertical: 10,
   },
   switchLabel: {

@@ -12,6 +12,7 @@ export interface QRCodeData {
 export interface QRCodeDesign {
   color: string;
   backgroundColor: string;
+  containerBackgroundColor?: string;
   enableLinearGradient: boolean;
   linearGradient?: string[];
   gradientDirection?: number[];

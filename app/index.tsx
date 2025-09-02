@@ -1,11 +1,11 @@
 // app/index.tsx
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
 import { router, useFocusEffect } from 'expo-router';
+import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, BackHandler, Dimensions, Platform, Pressable, Share, StyleSheet, Text, ToastAndroid, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, BackHandler, Dimensions, Platform, Pressable, StyleSheet, Text, ToastAndroid, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -502,20 +502,19 @@ function HomeScreen() {
 
           await EngagementPricingService.trackAction('wallpapersExported');
 
-          // Convert to base64 for cross-platform compatibility
-          const base64 = await FileSystem.readAsStringAsync(uri, {
-            encoding: FileSystem.EncodingType.Base64,
-          });
+          // Check if sharing is available
+          const isAvailable = await Sharing.isAvailableAsync();
           
-          const shareMessage = `Created with QuRe - Custom QR Lock Screens 🔒 qure.app`;
-          
-          // Use base64 data URI which works on both platforms
-          await Share.share({
-            message: shareMessage,
-            url: `data:image/${captureFormat === 'jpg' ? 'jpeg' : 'png'};base64,${base64}`,
-          });
-          
-          await EngagementPricingService.trackAction('wallpapersShared');
+          if (isAvailable) {
+            // Use expo-sharing to share the file directly
+            await Sharing.shareAsync(uri, {
+              mimeType: `image/${captureFormat === 'jpg' ? 'jpeg' : 'png'}`,
+              dialogTitle: 'Share your QR Lock Screen',
+              UTI: captureFormat === 'jpg' ? 'public.jpeg' : 'public.png', // For iOS
+            });
+          } else {
+            Alert.alert('Sharing not available', 'Sharing is not available on this device.');
+          }
 
           // Restore UI elements after sharing
           setShowActionButtons(true);
@@ -636,8 +635,6 @@ function HomeScreen() {
   if (showOnboarding) {
     return <Onboarding onComplete={handleOnboardingComplete} />;
   }
-
-  const shouldShowTitleArea = !hideElementsForExport;
 
   return (
     <GestureHandlerRootView style={styles.container}>

@@ -2,7 +2,6 @@
 import React from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../../contexts/ThemeContext';
-import { ICON_BASE64_MAP } from '../../../constants/IconBase64';
 
 interface LogoIconPickerProps {
   visible: boolean;
@@ -57,9 +56,8 @@ export default function LogoIconPicker({ visible, onClose, onSelectIcon }: LogoI
               key={icon.name}
               style={[styles.iconButton, { backgroundColor: theme.surfaceVariant }]}
               onPress={() => {
-                // Map emoji to base64 if available, otherwise pass emoji directly
-                const base64Icon = ICON_BASE64_MAP[icon.emoji];
-                onSelectIcon(base64Icon || icon.emoji);
+                // Pass the emoji directly - LogoPicker will handle the conversion
+                onSelectIcon(icon.emoji);
                 onClose();
               }}
             >

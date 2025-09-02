@@ -41,10 +41,9 @@ export default function LogoPicker({ logo, onLogoSelect }: LogoPickerProps) {
   };
 
   const handleIconSelect = (icon: string) => {
+    // If we have a base64 mapping, use it, otherwise use the icon directly
     const base64Icon = ICON_BASE64_MAP[icon];
-    if (base64Icon) {
-      onLogoSelect(base64Icon);
-    }
+    onLogoSelect(base64Icon || icon);
   };
 
   return (
@@ -83,9 +82,7 @@ export default function LogoPicker({ logo, onLogoSelect }: LogoPickerProps) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 20,
-  },
+  container: {},
   label: {
     fontSize: 16,
     fontWeight: '600',

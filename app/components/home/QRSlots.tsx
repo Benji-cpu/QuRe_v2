@@ -84,7 +84,7 @@ export default function QRSlots({
       bottom: bottomOffset,
       left: 0,
       right: 0,
-      paddingHorizontal: 20,
+      paddingHorizontal: 8, // Reduced from 20 to 8 for closer edge positioning
       alignItems: 'center' as const,
     };
   };
@@ -98,7 +98,7 @@ export default function QRSlots({
     
     if (singleQRMode) {
       // Convert x position to horizontal offset from center
-      const maxOffset = Math.min(100, (validScreenWidth / 2) - containerSize / 2 - 20);
+      const maxOffset = Math.min(100, (validScreenWidth / 2) - containerSize / 2 - 8); // Reduced from 20 to 8
       const offsetPercent = ((xPosition - 50) / 50) * 100; // -100 to 100
       const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, (offsetPercent / 100) * maxOffset));
       
@@ -109,7 +109,7 @@ export default function QRSlots({
     
     // For double mode, apply horizontal positioning to both slots
     const spacer = Math.max(40, qrSize * 0.3);
-    const maxOffset = Math.min(50, (validScreenWidth / 4) - containerSize / 2 - spacer / 2 - 10);
+    const maxOffset = Math.min(50, (validScreenWidth / 4) - containerSize / 2 - spacer / 2 - 4); // Reduced from 10 to 4
     const offsetPercent = ((xPosition - 50) / 50) * 100; // -100 to 100
     const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, (offsetPercent / 100) * maxOffset));
     const offset = isLeft ? -clampedOffset : clampedOffset;
@@ -124,9 +124,32 @@ export default function QRSlots({
       const displayQR = qr || DEFAULT_QURE_QR;
       const hasCustomLabel = isDefaultQuRe || (displayQR.data && 'label' in displayQR.data && displayQR.data.label);
       
+      // Determine container background color
+      const getContainerBackgroundColor = () => {
+        // If containerBackgroundColor is explicitly set, use it
+        if (displayQR.design?.containerBackgroundColor) {
+          return displayQR.design.containerBackgroundColor;
+        }
+        
+        // If QR background is transparent, make container transparent too
+        if (displayQR.design?.backgroundColor === 'transparent') {
+          return 'transparent';
+        }
+        
+        // Default to white
+        return '#FFFFFF';
+      };
+      
       return (
         <View style={styles.qrWrapper}>
-          <View style={[styles.qrContainer, { width: getQRSize() + 20, height: getQRSize() + 20 }]}>
+          <View style={[
+            styles.qrContainer, 
+            { 
+              width: getQRSize() + 20, 
+              height: getQRSize() + 20,
+              backgroundColor: getContainerBackgroundColor()
+            }
+          ]}>
             <QRCodePreview 
               value={displayQR.content} 
               size={getQRSize()} 
@@ -229,7 +252,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   qrContainer: {
-    backgroundColor: 'white',
     borderRadius: 14,
     padding: 1,
     alignItems: 'center',
