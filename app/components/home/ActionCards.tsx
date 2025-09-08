@@ -7,9 +7,10 @@ interface ActionCardsProps {
   onExportWallpaper: () => void;
   onShareWallpaper: () => void;
   onSettings: () => void;
+  showShareButton?: boolean;
 }
 
-export default function ActionCards({ onExportWallpaper, onShareWallpaper, onSettings }: ActionCardsProps) {
+export default function ActionCards({ onExportWallpaper, onShareWallpaper, onSettings, showShareButton = false }: ActionCardsProps) {
   return (
     <View style={styles.actionsContainer}>
       <TouchableOpacity style={styles.actionCard} onPress={onExportWallpaper}>
@@ -22,15 +23,17 @@ export default function ActionCards({ onExportWallpaper, onShareWallpaper, onSet
         </View>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.actionCard} onPress={onShareWallpaper}>
-        <View style={styles.iconContainer}>
-          <Feather name="share" size={18} color="white" />
-        </View>
-        <View style={styles.actionContent}>
-          <Text style={styles.actionTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Share</Text>
-          <Text style={styles.actionSubtitle}>Lock Screen</Text>
-        </View>
-      </TouchableOpacity>
+      {showShareButton && (
+        <TouchableOpacity style={styles.actionCard} onPress={onShareWallpaper}>
+          <View style={styles.iconContainer}>
+            <Feather name="share" size={18} color="white" />
+          </View>
+          <View style={styles.actionContent}>
+            <Text style={styles.actionTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Share</Text>
+            <Text style={styles.actionSubtitle}>Lock Screen</Text>
+          </View>
+        </TouchableOpacity>
+      )}
 
       <TouchableOpacity style={styles.actionCard} onPress={onSettings}>
         <View style={styles.iconContainer}>

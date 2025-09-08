@@ -34,11 +34,9 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
       updates.gradientDirection = [0, 0, 1, 1];
     }
     
-    // Auto-update container background when QR background changes to transparent
-    if ('backgroundColor' in updates && updates.backgroundColor === 'transparent') {
-      if (!design.containerBackgroundColor || design.containerBackgroundColor === '#FFFFFF') {
-        updates.containerBackgroundColor = 'transparent';
-      }
+    // Container background always follows QR background
+    if ('backgroundColor' in updates) {
+      updates.containerBackgroundColor = updates.backgroundColor;
     }
     
     onDesignChange({ ...design, ...updates });
@@ -81,20 +79,11 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
             />
           </View>
 
-          <View style={styles.fieldContainer}>
+          <View style={[styles.fieldContainer, { marginBottom: 0 }]}>
             <ColorPicker
               label="Background Color"
               selectedColor={design.backgroundColor}
               onColorSelect={(backgroundColor) => updateDesign({ backgroundColor })}
-              showTransparent={true}
-            />
-          </View>
-
-          <View style={[styles.fieldContainer, { marginBottom: 0 }]}>
-            <ColorPicker
-              label="Container Background"
-              selectedColor={design.containerBackgroundColor || (design.backgroundColor === 'transparent' ? 'transparent' : '#FFFFFF')}
-              onColorSelect={(containerBackgroundColor) => updateDesign({ containerBackgroundColor })}
               showTransparent={true}
             />
           </View>
@@ -129,10 +118,19 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
             />
           </View>
 
+          {design.logo && (
+            <View style={[styles.warningContainer, { backgroundColor: theme.warning + '20', marginBottom: 15 }]}>
+              <Text style={styles.warningIcon}>⚠️</Text>
+              <Text style={[styles.warningText, { color: theme.textSecondary }]}>
+                Logos can affect QR code scanning. Test your code after export.
+              </Text>
+            </View>
+          )}
+
           <View style={[styles.fieldContainer, { marginBottom: 0 }]}>
             <DesignSliders
               logoSize={design.logoSize || 20}
-              logoMargin={design.logoMargin || 2}
+              logoMargin={design.logoMargin || 0}
               logoBorderRadius={design.logoBorderRadius || 0}
               onLogoSizeChange={(logoSize) => updateDesign({ logoSize })}
               onLogoMarginChange={(logoMargin) => updateDesign({ logoMargin })}
@@ -141,15 +139,6 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
             />
           </View>
         </View>
-        
-        {design.logo && (
-          <View style={[styles.warningContainer, { backgroundColor: theme.warning + '20' }]}>
-            <Text style={styles.warningIcon}>⚠️</Text>
-            <Text style={[styles.warningText, { color: theme.textSecondary }]}>
-              Logos can affect QR code scanning. Test your code after export.
-            </Text>
-          </View>
-        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );

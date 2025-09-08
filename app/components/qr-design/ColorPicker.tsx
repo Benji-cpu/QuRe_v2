@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { CustomDesignStorage } from '../../../services/CustomDesignStorage';
 
 interface ColorPickerProps {
   label: string;
@@ -20,9 +21,20 @@ export default function ColorPicker({ label, selectedColor, onColorSelect, showT
   const { theme } = useTheme();
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [customColor, setCustomColor] = useState(selectedColor);
+  const [customColors, setCustomColors] = useState<string[]>([]);
   
   // Check if selected color is a custom color (not in presets and not transparent)
-  const isCustomColor = selectedColor !== 'transparent' && !PRESET_COLORS.includes(selectedColor);
+  const isCustomColor = selectedColor !== 'transparent' && !PRESET_COLORS.includes(selectedColor) && !customColors.includes(selectedColor);
+
+  // Load custom colors when component mounts
+  useEffect(() => {
+    loadCustomColors();
+  }, []);
+
+  const loadCustomColors = async () => {
+    const colors = await CustomDesignStorage.getCustomColors();
+    setCustomColors(colors);
+  };
   
   const isValidHex = (color: string) => {
     return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
@@ -34,8 +46,13 @@ export default function ColorPicker({ label, selectedColor, onColorSelect, showT
     setCustomColor(formattedValue);
   };
 
-  const applyCustomColor = () => {
+  const applyCustomColor = async () => {
     if (isValidHex(customColor)) {
+      // Save to custom colors storage
+      await CustomDesignStorage.saveCustomColor(customColor);
+      // Reload custom colors to show the new one
+      await loadCustomColors();
+      // Apply the color
       onColorSelect(customColor);
       setShowCustomPicker(false);
     }
@@ -100,6 +117,7 @@ export default function ColorPicker({ label, selectedColor, onColorSelect, showT
           <View style={styles.colorsRow}>
             {showTransparent && renderColorOption('transparent', true)}
             {PRESET_COLORS.map(color => renderColorOption(color))}
+            {customColors.map(color => renderColorOption(color))}
             {renderColorOption(isCustomColor ? selectedColor : theme.surfaceVariant, false, true)}
           </View>
         </ScrollView>
@@ -208,7 +226,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', // Center the scroll view within the container
   },
   scrollView: {
-    maxHeight: 60,
+    minHeight: 80, // Increased height for better touch area
+    paddingVertical: 10, // Add vertical padding for easier touch
     flexGrow: 0, // Prevent scroll view from taking full width
   },
   scrollContent: {

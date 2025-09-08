@@ -5,7 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Animated, BackHandler, Dimensions, Platform, Pressable, StyleSheet, Text, ToastAndroid, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
+import { Alert, Animated, BackHandler, Dimensions, Platform, Pressable, Share, StyleSheet, Text, ToastAndroid, TouchableWithoutFeedback, View, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -62,6 +62,7 @@ function HomeScreen() {
   const [customBackground, setCustomBackground] = useState<string | null>(null);
   const [backgroundType, setBackgroundType] = useState<'gradient' | 'custom'>('gradient');
   const [isSwipingGradient, setIsSwipingGradient] = useState(false);
+  const [showShareButton, setShowShareButton] = useState(false);
   
   const gradientTransition = useSharedValue(0);
 
@@ -139,6 +140,7 @@ function HomeScreen() {
       setInitialLoadComplete(true);
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
+      setShowShareButton(preferences.showShareButton ?? false);
       
       if (!premium && preferences.backgroundType === 'custom') {
         setBackgroundType('gradient');
@@ -206,6 +208,7 @@ function HomeScreen() {
       setIsPremium(premium);
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
+      setShowShareButton(preferences.showShareButton ?? false);
       
       // Update background settings
       if (!premium && preferences.backgroundType === 'custom') {
@@ -502,18 +505,34 @@ function HomeScreen() {
 
           await EngagementPricingService.trackAction('wallpapersExported');
 
-          // Check if sharing is available
-          const isAvailable = await Sharing.isAvailableAsync();
-          
-          if (isAvailable) {
-            // Use expo-sharing to share the file directly
-            await Sharing.shareAsync(uri, {
-              mimeType: `image/${captureFormat === 'jpg' ? 'jpeg' : 'png'}`,
-              dialogTitle: 'Share your QR Lock Screen',
-              UTI: captureFormat === 'jpg' ? 'public.jpeg' : 'public.png', // For iOS
+          // Create promotional message
+          const shareMessage = `🔒 Created with QuRe - Transform your lock screen with custom QR codes! 
+
+Create personalized wallpapers with QR codes for instant access to your links, contacts, and more.
+
+Download QuRe: qure.app`;
+
+          try {
+            // Try using React Native Share API first (supports text + images)
+            await Share.share({
+              message: shareMessage,
+              url: Platform.OS === 'ios' ? uri : undefined, // iOS supports url
+              ...(Platform.OS === 'android' && { url: uri }), // Android needs it in the root object
             });
-          } else {
-            Alert.alert('Sharing not available', 'Sharing is not available on this device.');
+          } catch (shareError) {
+            console.log('Share API failed, falling back to expo-sharing:', shareError);
+            
+            // Fallback to expo-sharing for image only
+            const isAvailable = await Sharing.isAvailableAsync();
+            if (isAvailable) {
+              await Sharing.shareAsync(uri, {
+                mimeType: `image/${captureFormat === 'jpg' ? 'jpeg' : 'png'}`,
+                dialogTitle: 'Share your QR Lock Screen - Made with QuRe',
+                UTI: captureFormat === 'jpg' ? 'public.jpeg' : 'public.png',
+              });
+            } else {
+              Alert.alert('Sharing not available', 'Sharing is not available on this device.');
+            }
           }
 
           // Restore UI elements after sharing
@@ -675,6 +694,7 @@ function HomeScreen() {
                               onExportWallpaper={handleExportWallpaper}
                               onShareWallpaper={handleShareWallpaper}
                               onSettings={handleSettings}
+                              showShareButton={showShareButton}
                             />
                           )}
                         </Animated.View>

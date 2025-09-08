@@ -22,6 +22,7 @@ export default function SettingsModal() {
   const [isRestoring, setIsRestoring] = useState(false);
   const [customBackground, setCustomBackground] = useState<string | null>(null);
   const [backgroundType, setBackgroundType] = useState<'gradient' | 'custom'>('gradient');
+  const [showShareButton, setShowShareButton] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -36,6 +37,7 @@ export default function SettingsModal() {
       setIsPremium(premium);
       setShowTitle(preferences.showTitle ?? true);
       setQrSlotMode(preferences.qrSlotMode || 'double');
+      setShowShareButton(preferences.showShareButton ?? false);
       
       // Force gradient mode for non-premium users
       if (!premium && preferences.backgroundType === 'custom') {
@@ -76,6 +78,15 @@ export default function SettingsModal() {
       await UserPreferencesService.updateShowTitle(value);
     } catch (error) {
       Alert.alert('Error', 'Failed to update title visibility');
+    }
+  };
+
+  const handleShowShareButtonToggle = async (value: boolean) => {
+    try {
+      setShowShareButton(value);
+      await UserPreferencesService.updateShowShareButton(value);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to update share button visibility');
     }
   };
 
@@ -410,7 +421,27 @@ export default function SettingsModal() {
 
           <View style={[styles.settingDivider, { backgroundColor: theme.borderLight }]} />
 
-          <View style={styles.settingDivider} />
+          <Pressable 
+            style={styles.settingRow} 
+            onPress={() => handleShowShareButtonToggle(!showShareButton)}
+          >
+            <View style={styles.settingInfo}>
+              <View style={styles.settingTitleRow}>
+                <Text style={[styles.settingTitle, { color: theme.text }]}>Show Share Button</Text>
+              </View>
+              <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>
+                Display the share button on the home screen
+              </Text>
+            </View>
+            <Switch
+              value={showShareButton}
+              onValueChange={handleShowShareButtonToggle}
+              trackColor={{ false: theme.switchTrackOff, true: theme.switchTrackOn }}
+              thumbColor={Platform.OS === 'android' ? theme.primaryText : undefined}
+            />
+          </Pressable>
+
+          <View style={[styles.settingDivider, { backgroundColor: theme.borderLight }]} />
 
           <View style={styles.qrModeContainer}>
             <View style={styles.settingTitleRow}>

@@ -124,30 +124,25 @@ export default function QRSlots({
       const displayQR = qr || DEFAULT_QURE_QR;
       const hasCustomLabel = isDefaultQuRe || (displayQR.data && 'label' in displayQR.data && displayQR.data.label);
       
-      // Determine container background color
+      // Determine container background color - always use QR background color
       const getContainerBackgroundColor = () => {
-        // If containerBackgroundColor is explicitly set, use it
-        if (displayQR.design?.containerBackgroundColor) {
-          return displayQR.design.containerBackgroundColor;
-        }
-        
-        // If QR background is transparent, make container transparent too
-        if (displayQR.design?.backgroundColor === 'transparent') {
-          return 'transparent';
-        }
-        
-        // Default to white
-        return '#FFFFFF';
+        // Container always matches QR background (including transparent)
+        return displayQR.design?.backgroundColor || '#FFFFFF';
       };
+      
+      const containerBg = getContainerBackgroundColor();
+      const isTransparent = containerBg === 'transparent';
       
       return (
         <View style={styles.qrWrapper}>
           <View style={[
             styles.qrContainer, 
             { 
-              width: getQRSize() + 20, 
-              height: getQRSize() + 20,
-              backgroundColor: getContainerBackgroundColor()
+              width: isTransparent ? getQRSize() : getQRSize() + 20, 
+              height: isTransparent ? getQRSize() : getQRSize() + 20,
+              backgroundColor: containerBg,
+              padding: isTransparent ? 0 : 1,
+              borderRadius: isTransparent ? 0 : 14
             }
           ]}>
             <QRCodePreview 
@@ -172,8 +167,18 @@ export default function QRSlots({
       );
     }
 
+    // If hideEmptySlots is true, render an invisible placeholder to maintain layout
     if (hideEmptySlots) {
-      return null;
+      return (
+        <View style={[
+          styles.qrWrapper,
+          { 
+            width: getQRSize() + 20, 
+            height: getQRSize() + 20,
+            opacity: 0 
+          }
+        ]} />
+      );
     }
 
     return (
@@ -184,8 +189,9 @@ export default function QRSlots({
     );
   };
 
-  const shouldShowPrimary = primaryQR || !hideEmptySlots;
-  const shouldShowSecondary = !singleQRMode && (isPremium && (secondaryQR || !hideEmptySlots));
+  // Always show slots in dual mode to maintain layout, regardless of hideEmptySlots
+  const shouldShowPrimary = true;
+  const shouldShowSecondary = !singleQRMode && isPremium;
   const shouldShowDefaultQuRe = !singleQRMode && !isPremium;
 
   if (singleQRMode) {

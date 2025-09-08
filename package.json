@@ -10,7 +10,9 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "prebuild": "expo prebuild",
-    "tunnel": "adb reverse --remove-all && adb reverse tcp:8081 tcp:8081"
+    "tunnel": "adb reverse --remove-all && adb reverse tcp:8081 tcp:8081",
+    "dev": "lsof -ti:8081 | xargs kill -9 2>/dev/null; npx expo start",
+    "cleanup": "./scripts/cleanup.sh"
   },
   "dependencies": {
     "@expo/config-plugins": "~10.1.1",

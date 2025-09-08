@@ -14,6 +14,7 @@ export interface UserPreferences {
   showTitle?: boolean;
   qrSlotMode?: 'single' | 'double';
   backgroundType?: 'gradient' | 'custom';
+  showShareButton?: boolean;
 }
 
 export class UserPreferencesService {
@@ -29,7 +30,8 @@ export class UserPreferencesService {
         qrScale: 1,
         showTitle: true,
         qrSlotMode: 'double',
-        backgroundType: 'gradient'
+        backgroundType: 'gradient',
+        showShareButton: false
       };
       
       const preferences = data ? { ...defaultPreferences, ...JSON.parse(data) } : defaultPreferences;
@@ -79,7 +81,8 @@ export class UserPreferencesService {
         qrScale: 1,
         showTitle: true,
         qrSlotMode: 'double',
-        backgroundType: 'gradient'
+        backgroundType: 'gradient',
+        showShareButton: false
       };
     }
   }
@@ -270,6 +273,17 @@ export class UserPreferencesService {
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating background type:', error);
+      throw error;
+    }
+  }
+
+  static async updateShowShareButton(show: boolean): Promise<void> {
+    try {
+      const preferences = await this.getPreferences();
+      preferences.showShareButton = show;
+      await this.savePreferences(preferences);
+    } catch (error) {
+      console.error('Error updating share button visibility:', error);
       throw error;
     }
   }

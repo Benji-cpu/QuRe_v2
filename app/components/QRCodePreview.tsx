@@ -22,7 +22,7 @@ export default function QRCodePreview({
     enableLinearGradient: false,
     logoSize: 20,
     logoBackgroundColor: '#FFFFFF',
-    logoMargin: 2,
+    logoMargin: 0, // Changed default to 0
     logoBorderRadius: 0,
   };
 
@@ -89,18 +89,40 @@ export default function QRCodePreview({
     gradientDirection: (finalDesign.gradientDirection || [0, 0, 1, 1]).map(String),
   } : {};
 
+  // When background is transparent, don't show container at all
+  if (finalDesign.backgroundColor === 'transparent') {
+    return (
+      <View style={styles.qrContainer}>
+        <QRCode 
+          value={value}
+          size={size}
+          color={finalDesign.enableLinearGradient ? undefined : finalDesign.color}
+          backgroundColor="transparent"
+          quietZone={0}
+          {...gradientProps}
+          logo={getLogoProps()}
+          logoBackgroundColor={finalDesign.logoBackgroundColor || '#FFFFFF'}
+          logoMargin={Math.max(0, finalDesign.logoMargin || 2)}
+          logoBorderRadius={Math.max(0, finalDesign.logoBorderRadius || 0)}
+        />
+        {renderEmojiLogo()}
+      </View>
+    );
+  }
+
+  // Container takes the background color
   return (
     <View style={[styles.container, { 
       width: size + 10, 
       height: size + 10,
-      backgroundColor: finalDesign.backgroundColor === 'transparent' ? 'transparent' : 'white' 
+      backgroundColor: finalDesign.backgroundColor
     }]}>
       <View style={styles.qrContainer}>
         <QRCode 
           value={value}
           size={size}
           color={finalDesign.enableLinearGradient ? undefined : finalDesign.color}
-          backgroundColor={finalDesign.backgroundColor === 'transparent' ? 'transparent' : finalDesign.backgroundColor}
+          backgroundColor={finalDesign.backgroundColor}
           quietZone={0}
           {...gradientProps}
           logo={getLogoProps()}

@@ -1,8 +1,9 @@
 // app/components/qr-design/GradientPicker.tsx
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../../contexts/ThemeContext';
+import { CustomDesignStorage, CustomGradient } from '../../../services/CustomDesignStorage';
 import ColorPicker from './ColorPicker';
 
 interface GradientPickerProps {
@@ -28,6 +29,17 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
   const [showCustomPicker, setShowCustomPicker] = useState(false);
   const [customColor1, setCustomColor1] = useState(selectedGradient[0]);
   const [customColor2, setCustomColor2] = useState(selectedGradient[1]);
+  const [customGradients, setCustomGradients] = useState<CustomGradient[]>([]);
+
+  // Load custom gradients when component mounts
+  useEffect(() => {
+    loadCustomGradients();
+  }, []);
+
+  const loadCustomGradients = async () => {
+    const gradients = await CustomDesignStorage.getCustomGradients();
+    setCustomGradients(gradients);
+  };
   
   const isSelected = (gradient: string[]) => 
     gradient[0] === selectedGradient[0] && gradient[1] === selectedGradient[1];
@@ -36,9 +48,14 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
     return /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(color);
   };
 
-  const handleCustomGradient = () => {
+  const handleCustomGradient = async () => {
     // Validate hex colors before applying
     if (isValidHex(customColor1) && isValidHex(customColor2)) {
+      // Save to custom gradients storage
+      await CustomDesignStorage.saveCustomGradient([customColor1, customColor2]);
+      // Reload custom gradients to show the new one
+      await loadCustomGradients();
+      // Apply the gradient
       onGradientSelect([customColor1, customColor2]);
       setShowCustomPicker(false);
     }
@@ -84,6 +101,30 @@ export default function GradientPicker({ selectedGradient, onGradientSelect }: G
                   end={{ x: 1, y: 1 }}
                 />
                 {isSelected(gradient) && (
+                  <View style={styles.checkmark}>
+                    <Text style={[styles.checkmarkText, { color: theme.primary }]}>✓</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+
+            {customGradients.map((customGradient) => (
+              <TouchableOpacity
+                key={customGradient.id}
+                style={[
+                  styles.gradientOption,
+                  { borderColor: theme.border },
+                  isSelected(customGradient.colors) && [styles.selectedGradient, { borderColor: theme.primary }]
+                ]}
+                onPress={() => onGradientSelect(customGradient.colors)}
+              >
+                <LinearGradient
+                  colors={customGradient.colors as unknown as readonly [string, string, ...string[]]}
+                  style={styles.gradientPreview}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                />
+                {isSelected(customGradient.colors) && (
                   <View style={styles.checkmark}>
                     <Text style={[styles.checkmarkText, { color: theme.primary }]}>✓</Text>
                   </View>
@@ -220,6 +261,8 @@ const styles = StyleSheet.create({
     alignItems: 'center', // Center the scroll view within the container
   },
   scrollView: {
+    minHeight: 80, // Increased height for better touch area
+    paddingVertical: 10, // Add vertical padding for easier touch
     flexGrow: 0, // Prevent scroll view from taking full width
   },
   scrollContent: {
