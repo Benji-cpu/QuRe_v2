@@ -55,7 +55,7 @@ export default {
     [
       "react-native-iap",
       {
-        "paymentProvider": "Play Store"
+        "paymentProvider": "both"
       }
     ]
   ],
