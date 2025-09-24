@@ -13,6 +13,7 @@ import { captureRef } from 'react-native-view-shot';
 import { GRADIENT_PRESETS } from '../constants/Gradients';
 import { useTheme } from '../contexts/ThemeContext';
 import { EngagementPricingService } from '../services/EngagementPricingService';
+import { navigationService } from '../services/NavigationService';
 import { QRStorage } from '../services/QRStorage';
 import { UserPreferencesService } from '../services/UserPreferences';
 import { setLockScreenWallpaper } from '../services/WallpaperService';
@@ -328,7 +329,7 @@ function HomeScreen() {
       if (offer && !isPremium) {
         setTimeout(() => {
           if (!showOnboarding) {
-            router.push('/modal/premium');
+            navigationService.navigateTo('/modal/premium');
           }
         }, 2000);
       }
@@ -403,7 +404,7 @@ function HomeScreen() {
 
   const handleTitlePress = async () => {
     if (!isPremium) {
-      router.push('/modal/premium');
+      navigationService.navigateTo('/modal/premium');
     } else {
       const newShowTitle = !showTitle;
       setShowTitle(newShowTitle);
@@ -463,7 +464,7 @@ function HomeScreen() {
               ToastAndroid.CENTER
             );
           } else {
-            Alert.alert('Success', 'Your lock screen wallpaper has been set successfully!');
+            Alert.alert('Saved to Photos', 'The wallpaper has been saved to your photo library. To set it as your lock screen:\n\n1. Open Settings > Wallpaper\n2. Choose "Add New Wallpaper"\n3. Select the image from your Photos\n4. Set as Lock Screen');
           }
         } else {
           Alert.alert(
@@ -573,27 +574,27 @@ Download QuRe: qure.app`;
 
   const handleSettings = async () => {
     await EngagementPricingService.trackAction('settingsOpened');
-    router.push('/modal/settings');
+    navigationService.navigateTo('/modal/settings');
   };
 
   const handleQRSlotPress = async (slot: 'primary' | 'secondary') => {
     try {
       if (slot === 'primary') {
         if (primaryQR) {
-          router.push(`/modal/qrcode?id=${primaryQR.id}&slot=primary`);
+          navigationService.navigateTo(`/modal/qrcode?id=${primaryQR.id}&slot=primary`);
         } else {
-          router.push('/modal/qrcode?slot=primary');
+          navigationService.navigateTo('/modal/qrcode?slot=primary');
         }
       } else if (slot === 'secondary') {
         if (isPremium) {
           if (secondaryQR) {
-            router.push(`/modal/qrcode?id=${secondaryQR.id}&slot=secondary`);
+            navigationService.navigateTo(`/modal/qrcode?id=${secondaryQR.id}&slot=secondary`);
           } else {
-            router.push('/modal/qrcode?slot=secondary');
+            navigationService.navigateTo('/modal/qrcode?slot=secondary');
           }
         } else {
           await EngagementPricingService.trackAction('secondarySlotAttempts');
-          router.push('/modal/premium');
+          navigationService.navigateTo('/modal/premium');
         }
       }
     } catch (error) {
@@ -825,13 +826,18 @@ const styles = StyleSheet.create({
   },
   middleContent: {
     flex: 1,
+    position: 'relative',
+    zIndex: 20,
   },
   actionSection: {
     gap: 12,
+    position: 'relative',
+    zIndex: 20,
   },
   bottomSection: {
     flex: 1,
     position: 'relative',
+    zIndex: 10,
   },
   exportControls: {
     position: 'absolute',

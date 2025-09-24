@@ -3,12 +3,23 @@ import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, Platform, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
-import { Gesture } from 'react-native-gesture-handler';
+import {
+  Animated,
+  Easing,
+  Modal,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface PositionSliderProps {
-  xPosition: number;  // 0-100 coordinate system (0=left, 100=right)
-  yPosition: number;  // 0-100 coordinate system (0=bottom, 100=top)
+  xPosition: number; // 0-100 coordinate system (0=left, 100=right)
+  yPosition: number; // 0-100 coordinate system (0=bottom, 100=top)
   scaleValue: number;
   onXPositionChange: (value: number) => void;
   onYPositionChange: (value: number) => void;
@@ -23,11 +34,17 @@ interface PositionSliderProps {
   singleQRMode?: boolean;
 }
 
-export default function PositionSlider({ 
-  xPosition, 
+type Anchor = 'top' | 'bottom';
+
+const SNAP_TARGET = 50;
+const SNAP_THRESHOLD = 3;
+const SHEET_HORIZONTAL_PADDING = 20;
+
+export default function PositionSlider({
+  xPosition,
   yPosition,
   scaleValue,
-  onXPositionChange, 
+  onXPositionChange,
   onYPositionChange,
   onScaleChange,
   onXPositionChangeEnd,
@@ -37,41 +54,80 @@ export default function PositionSlider({
   isExpanded,
   onExpand,
   onCollapse,
-  singleQRMode = false
+  singleQRMode = false,
 }: PositionSliderProps) {
-  const [animatedOpacity] = useState(new Animated.Value(0));
-  const [translateY] = useState(new Animated.Value(0));
-  const [containerOpacity] = useState(new Animated.Value(1));
-  const slidersRef = useRef<View>(null);
-  
-  // Snap state tracking
+  const animatedOpacity = useRef(new Animated.Value(0)).current;
+  const anchorAnim = useRef(new Animated.Value(0)).current;
+
   const [hasSnappedX, setHasSnappedX] = useState(false);
   const [hasSnappedY, setHasSnappedY] = useState(false);
-  
-  // Toggle state for snapping to bottom
-  const [isSnappedToBottom, setIsSnappedToBottom] = useState(false);
-  
-  // Use window dimensions for responsive design
+  const [anchor, setAnchor] = useState<Anchor>('top');
+  const [cardHeight, setCardHeight] = useState(0);
+
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  
-  // Responsive scaling functions
+  const insets = useSafeAreaInsets();
+
   const scale = screenWidth / 375; // Base width of iPhone X
   const scaleFont = (size: number) => Math.round(size * Math.min(scale, 1.2));
   const scaleSpacing = (size: number) => Math.round(size * scale);
 
-  // Snap configuration
-  const SNAP_THRESHOLD = 3; // How close to center before snapping (±3 units)
-  const SNAP_TARGET = 50; // Center position
+  useEffect(() => {
+    if (!visible) return;
+    Animated.timing(animatedOpacity, {
+      toValue: 1,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  }, [visible, animatedOpacity]);
 
-  // Handle snap logic with haptic feedback
-  const handleSnapPosition = (value: number, isX: boolean) => {
+  useEffect(() => {
+    if (isExpanded) {
+      setAnchor('top');
+      anchorAnim.stopAnimation(() => {
+        anchorAnim.setValue(0);
+      });
+    } else {
+      setHasSnappedX(false);
+      setHasSnappedY(false);
+    }
+  }, [isExpanded, anchorAnim]);
+
+  if (!visible) {
+    return null;
+  }
+
+  const verticalSpacing = scaleSpacing(16);
+  const topMargin = insets.top + verticalSpacing;
+  const bottomMargin = insets.bottom + verticalSpacing;
+  const availableSpace = Math.max(0, screenHeight - topMargin - bottomMargin - cardHeight);
+  const translateY = anchorAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, availableSpace],
+  });
+
+  const handleBackgroundPress = () => {
+    onCollapse?.();
+  };
+
+  const handleAnchorChange = (next: Anchor) => {
+    if (next === anchor) return;
+    setAnchor(next);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Animated.timing(anchorAnim, {
+      toValue: next === 'top' ? 0 : 1,
+      duration: 250,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleSnapPosition = (value: number, axis: 'x' | 'y') => {
     const distance = Math.abs(value - SNAP_TARGET);
-    const hasSnapped = isX ? hasSnappedX : hasSnappedY;
-    
+    const hasSnapped = axis === 'x' ? hasSnappedX : hasSnappedY;
+
     if (distance <= SNAP_THRESHOLD && !hasSnapped) {
-      // Snap to center and provide haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      if (isX) {
+      if (axis === 'x') {
         setHasSnappedX(true);
         onXPositionChange(SNAP_TARGET);
       } else {
@@ -79,211 +135,188 @@ export default function PositionSlider({
         onYPositionChange(SNAP_TARGET);
       }
       return SNAP_TARGET;
-    } else if (distance > SNAP_THRESHOLD) {
-      // Reset snap state when moving away from center
-      if (isX) {
-        setHasSnappedX(false);
-      } else {
-        setHasSnappedY(false);
-      }
     }
-    
+
+    if (distance > SNAP_THRESHOLD && hasSnapped) {
+      if (axis === 'x') setHasSnappedX(false);
+      else setHasSnappedY(false);
+    }
+
     return value;
   };
 
-  const handleXPositionChange = (value: number) => {
-    const snappedValue = handleSnapPosition(value, true);
-    if (snappedValue !== value) return; // Already handled by snap
+  const handleXChange = (value: number) => {
+    const snapped = handleSnapPosition(value, 'x');
+    if (snapped !== value) return;
     onXPositionChange(value);
   };
 
-  const handleYPositionChange = (value: number) => {
-    const snappedValue = handleSnapPosition(value, false);
-    if (snappedValue !== value) return; // Already handled by snap
+  const handleYChange = (value: number) => {
+    const snapped = handleSnapPosition(value, 'y');
+    if (snapped !== value) return;
     onYPositionChange(value);
   };
 
-  const handleXPositionChangeEnd = (value: number) => {
-    setHasSnappedX(false); // Reset snap state when user stops sliding
+  const handleXEnd = (value: number) => {
+    setHasSnappedX(false);
     onXPositionChangeEnd?.(value);
   };
 
-  const handleYPositionChangeEnd = (value: number) => {
-    setHasSnappedY(false); // Reset snap state when user stops sliding
+  const handleYEnd = (value: number) => {
+    setHasSnappedY(false);
     onYPositionChangeEnd?.(value);
   };
 
-  useEffect(() => {
-    if (visible) {
-      Animated.timing(animatedOpacity, {
-        toValue: 1,
-        duration: 500,
-        useNativeDriver: true,
-      }).start();
-    }
-  }, [visible]);
-
-  useEffect(() => {
-    if (isExpanded) {
-      // Choose position based on toggle state
-      let targetPosition;
-      if (isSnappedToBottom) {
-        // Move to bottom of screen - use a large positive value
-        targetPosition = screenHeight * 0.4; // This will move it to the bottom
-      } else {
-        // Dynamic expanded position based on screen height
-        targetPosition = -(screenHeight * 0.5 - screenHeight * 0.45);
-      }
-      
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: targetPosition,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(containerOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.parallel([
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(containerOpacity, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [isExpanded, screenHeight, isSnappedToBottom]);
-
-  const handleExpand = () => {
-    onExpand?.();
+  const reset = () => {
+    onXPositionChange(SNAP_TARGET);
+    onYPositionChange(SNAP_TARGET);
+    onScaleChange(1);
+    onXPositionChangeEnd?.(SNAP_TARGET);
+    onYPositionChangeEnd?.(SNAP_TARGET);
+    onScaleChangeEnd?.(1);
   };
 
-  const handleTogglePosition = () => {
-    setIsSnappedToBottom(!isSnappedToBottom);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-  };
-
-  const containerGesture = Gesture.Tap()
-    .onEnd(() => {
-      if (isExpanded && onCollapse) {
-        onCollapse();
-      }
-    })
-    .runOnJS(true);
-
-  // Simple coordinate ranges - always 0-100 for positioning
-  const getCoordinateRanges = () => {
-    return {
-      xRange: { min: 0, max: 100 },
-      yRange: { min: 0, max: 100 },
-      scaleRange: singleQRMode ? { min: 0.5, max: 1.5 } : { min: 0.7, max: 1.3 }
-    };
-  };
-
-  if (!visible) return null;
-
-  const { xRange, yRange, scaleRange } = getCoordinateRanges();
+  const scaleRange = singleQRMode ? { min: 0.5, max: 1.5 } : { min: 0.7, max: 1.3 };
 
   return (
-    <Animated.View 
-      style={[
-        styles.container, 
-        { 
-          opacity: animatedOpacity,
-          transform: [{ translateY }],
-          zIndex: isExpanded ? 100 : 1,
-          paddingHorizontal: scaleSpacing(20),
-          marginBottom: scaleSpacing(12),
-        }
-      ]}
-      pointerEvents={isExpanded ? "auto" : "box-none"}
-    >
-      <Animated.View style={{ opacity: containerOpacity }}>
-        {isExpanded ? (
-          <View style={[styles.expandedCard, { borderRadius: scaleSpacing(12) }]}>
-            <View 
-              ref={slidersRef}
-              style={[styles.sliderContent, { padding: scaleSpacing(20) }]}
+    <>
+      {!isExpanded && (
+        <Animated.View
+          style={[
+            styles.collapsedWrapper,
+            {
+              opacity: animatedOpacity,
+              paddingHorizontal: SHEET_HORIZONTAL_PADDING,
+              marginBottom: scaleSpacing(12),
+              zIndex: 50,
+            },
+          ]}
+          pointerEvents="box-none"
+        >
+          <TouchableOpacity
+            style={[
+              styles.collapsedCard,
+              {
+                borderRadius: scaleSpacing(12),
+                padding: scaleSpacing(10),
+                minHeight: scaleSpacing(60),
+              },
+            ]}
+            onPress={onExpand}
+            activeOpacity={0.85}
+          >
+            <View
+              style={[
+                styles.iconContainer,
+                {
+                  width: scaleSpacing(32),
+                  height: scaleSpacing(32),
+                  borderRadius: scaleSpacing(16),
+                  marginRight: scaleSpacing(8),
+                },
+              ]}
             >
-              <View style={[styles.sliderHeader, { marginBottom: scaleSpacing(16) }]}>
-                <TouchableOpacity 
-                  style={[styles.toggleButton, { 
-                    paddingHorizontal: scaleSpacing(8), 
-                    paddingVertical: scaleSpacing(4),
-                    borderRadius: scaleSpacing(6)
-                  }]}
-                  onPress={handleTogglePosition}
-                  activeOpacity={0.7}
+              <Feather name="move" size={scaleFont(20)} color="white" />
+            </View>
+            <View style={styles.notificationContent}>
+              <Text style={[styles.notificationTitle, { fontSize: scaleFont(12) }]}>Adjust QR position</Text>
+              <Text style={[styles.notificationSubtitle, { fontSize: scaleFont(10) }]}>Move and resize QR codes</Text>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
+
+      {isExpanded && (
+        <Modal
+          transparent
+          statusBarTranslucent
+          animationType="fade"
+          visible
+          onRequestClose={handleBackgroundPress}
+        >
+          <View style={styles.modalRoot}>
+            <TouchableWithoutFeedback onPress={handleBackgroundPress}>
+              <View style={styles.backdrop} />
+            </TouchableWithoutFeedback>
+
+            <Animated.View
+              style={[
+                styles.expandedCard,
+                {
+                  borderRadius: scaleSpacing(12),
+                  padding: scaleSpacing(20),
+                  left: SHEET_HORIZONTAL_PADDING,
+                  right: SHEET_HORIZONTAL_PADDING,
+                  top: topMargin,
+                  transform: [{ translateY }],
+                },
+              ]}
+              onLayout={(event) => {
+                const nextHeight = event.nativeEvent.layout.height;
+                if (Math.abs(nextHeight - cardHeight) > 1) {
+                  setCardHeight(nextHeight);
+                }
+              }}
+            >
+              <View style={[styles.sheetHeader, { marginBottom: scaleSpacing(16) }]}> 
+                <View style={styles.anchorButtons}>
+                  <TouchableOpacity
+                    style={[styles.anchorButton, anchor === 'top' && styles.anchorButtonActive]}
+                    onPress={() => handleAnchorChange('top')}
+                    activeOpacity={0.8}
+                  >
+                    <Feather name="arrow-up" size={scaleFont(16)} color="white" />
+                    <Text style={[styles.anchorLabel, { fontSize: scaleFont(12) }]}>Top</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.anchorButton, anchor === 'bottom' && styles.anchorButtonActive]}
+                    onPress={() => handleAnchorChange('bottom')}
+                    activeOpacity={0.8}
+                  >
+                    <Feather name="arrow-down" size={scaleFont(16)} color="white" />
+                    <Text style={[styles.anchorLabel, { fontSize: scaleFont(12) }]}>Bottom</Text>
+                  </TouchableOpacity>
+                </View>
+                <TouchableOpacity
+                  style={[styles.resetButton, { padding: scaleSpacing(8), borderRadius: scaleSpacing(6) }]}
+                  onPress={reset}
+                  activeOpacity={0.8}
                 >
-                  <Feather 
-                    name={isSnappedToBottom ? "chevron-up" : "chevron-down"} 
-                    size={scaleFont(20)} 
-                    color="white" 
-                  />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={[styles.resetButton, { 
-                    paddingHorizontal: scaleSpacing(8), 
-                    paddingVertical: scaleSpacing(4),
-                    borderRadius: scaleSpacing(6)
-                  }]}
-                  onPress={() => {
-                    // Reset to default values (centered at 50, 50)
-                    onXPositionChange(50); // Center horizontally
-                    onYPositionChange(50); // Center vertically (consistent with system default)
-                    onScaleChange(1.0); // Default scale
-                    
-                    // Trigger end callbacks for persistence
-                    onXPositionChangeEnd?.(50);
-                    onYPositionChangeEnd?.(50);
-                    onScaleChangeEnd?.(1.0);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Feather name="rotate-ccw" size={scaleFont(16)} color="rgba(255, 255, 255, 0.8)" />
+                  <Feather name="rotate-ccw" size={scaleFont(16)} color="rgba(255, 255, 255, 0.85)" />
                 </TouchableOpacity>
               </View>
-              
-              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(16) }]}>
+
+              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(16) }]}> 
                 <Feather name="arrow-up" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
                 <Slider
                   style={styles.slider}
-                  minimumValue={yRange.min}
-                  maximumValue={yRange.max}
+                  minimumValue={0}
+                  maximumValue={100}
                   value={yPosition}
-                  onValueChange={handleYPositionChange}
-                  onSlidingComplete={handleYPositionChangeEnd}
-                  minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-                  maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                  onValueChange={handleYChange}
+                  onSlidingComplete={handleYEnd}
+                  minimumTrackTintColor="rgba(255,255,255,0.8)"
+                  maximumTrackTintColor="rgba(255,255,255,0.3)"
                   thumbTintColor="white"
                 />
               </View>
- 
-              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(16) }]}>
+
+              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(16) }]}> 
                 <Feather name="arrow-left" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
                 <Slider
                   style={styles.slider}
-                  minimumValue={xRange.min}
-                  maximumValue={xRange.max}
+                  minimumValue={0}
+                  maximumValue={100}
                   value={xPosition}
-                  onValueChange={handleXPositionChange}
-                  onSlidingComplete={handleXPositionChangeEnd}
-                  minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-                  maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                  onValueChange={handleXChange}
+                  onSlidingComplete={handleXEnd}
+                  minimumTrackTintColor="rgba(255,255,255,0.8)"
+                  maximumTrackTintColor="rgba(255,255,255,0.3)"
                   thumbTintColor="white"
                 />
               </View>
- 
-              <View style={[styles.sliderRow, { marginBottom: scaleSpacing(8) }]}>
+
+              <View style={styles.sliderRow}> 
                 <Feather name="maximize-2" size={scaleFont(16)} color="rgba(255, 255, 255, 0.6)" />
                 <Slider
                   style={styles.slider}
@@ -292,51 +325,22 @@ export default function PositionSlider({
                   value={scaleValue}
                   onValueChange={onScaleChange}
                   onSlidingComplete={onScaleChangeEnd}
-                  minimumTrackTintColor="rgba(255, 255, 255, 0.8)"
-                  maximumTrackTintColor="rgba(255, 255, 255, 0.3)"
+                  minimumTrackTintColor="rgba(255,255,255,0.8)"
+                  maximumTrackTintColor="rgba(255,255,255,0.3)"
                   thumbTintColor="white"
                 />
               </View>
-            </View>
+            </Animated.View>
           </View>
-        ) : (
-          <TouchableOpacity 
-            style={[
-              styles.collapsedCard, 
-              { 
-                borderRadius: scaleSpacing(12),
-                padding: scaleSpacing(14),
-                minHeight: scaleSpacing(64)
-              }
-            ]} 
-            onPress={handleExpand}
-            activeOpacity={0.8}
-          >
-            <View style={[
-              styles.iconContainer,
-              {
-                width: scaleSpacing(36),
-                height: scaleSpacing(36),
-                borderRadius: scaleSpacing(18),
-                marginRight: scaleSpacing(10)
-              }
-            ]}>
-              <Feather name="move" size={scaleFont(20)} color="white" />
-            </View>
-            <View style={styles.notificationContent}>
-              <Text style={[styles.notificationTitle, { fontSize: scaleFont(14) }]}>Adjust QR position</Text>
-              <Text style={[styles.notificationSubtitle, { fontSize: scaleFont(12) }]}>Move and resize QR codes</Text>
-            </View>
-          </TouchableOpacity>
-        )}
-      </Animated.View>
-    </Animated.View>
+        </Modal>
+      )}
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    // Dynamic padding handled inline
+  collapsedWrapper: {
+    width: '100%',
   },
   collapsedCard: {
     flexDirection: 'row',
@@ -356,41 +360,51 @@ const styles = StyleSheet.create({
   notificationTitle: {
     fontWeight: '600',
     color: 'white',
-    marginBottom: 1,
+    marginBottom: 2,
   },
   notificationSubtitle: {
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255,255,255,0.8)',
+  },
+  modalRoot: {
+    flex: 1,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   expandedCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    overflow: 'hidden',
+    position: 'absolute',
+    backgroundColor: 'rgba(24, 24, 24, 0.94)',
   },
-  sliderContent: {
-    // Dynamic padding handled inline
-  },
-  sliderHeader: {
+  sheetHeader: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  headerLeft: {
+  anchorButtons: {
     flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
   },
-  toggleButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+  anchorButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  anchorButtonActive: {
+    backgroundColor: 'rgba(255,255,255,0.22)',
+  },
+  anchorLabel: {
+    color: 'white',
+    fontWeight: '600',
   },
   resetButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255,255,255,0.12)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  sliderLabel: {
-    fontWeight: '600',
-    color: 'white',
   },
   sliderRow: {
     flexDirection: 'row',

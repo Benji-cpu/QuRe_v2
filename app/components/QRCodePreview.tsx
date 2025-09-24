@@ -70,10 +70,11 @@ export default function QRCodePreview({
       <View style={[
         styles.emojiLogo,
         {
-          width: finalLogoSize + (finalDesign.logoMargin || 2) * 2,
-          height: finalLogoSize + (finalDesign.logoMargin || 2) * 2,
+          width: finalLogoSize + (finalDesign.logoMargin ?? 2) * 2,
+          height: finalLogoSize + (finalDesign.logoMargin ?? 2) * 2,
           backgroundColor: finalDesign.logoBackgroundColor || '#FFFFFF',
-          borderRadius: finalDesign.logoBorderRadius || 0,
+          borderRadius: finalDesign.logoBorderRadius ?? 0,
+          overflow: 'hidden',
         }
       ]}>
         <Text style={{ fontSize: finalLogoSize * 0.7 }}>
@@ -102,8 +103,8 @@ export default function QRCodePreview({
           {...gradientProps}
           logo={getLogoProps()}
           logoBackgroundColor={finalDesign.logoBackgroundColor || '#FFFFFF'}
-          logoMargin={Math.max(0, finalDesign.logoMargin || 2)}
-          logoBorderRadius={Math.max(0, finalDesign.logoBorderRadius || 0)}
+          logoMargin={finalDesign.logoMargin ?? 2}
+          logoBorderRadius={finalDesign.logoBorderRadius ?? 0}
         />
         {renderEmojiLogo()}
       </View>
@@ -127,8 +128,8 @@ export default function QRCodePreview({
           {...gradientProps}
           logo={getLogoProps()}
           logoBackgroundColor={finalDesign.logoBackgroundColor || '#FFFFFF'}
-          logoMargin={Math.max(0, finalDesign.logoMargin || 2)}
-          logoBorderRadius={Math.max(0, finalDesign.logoBorderRadius || 0)}
+          logoMargin={finalDesign.logoMargin ?? 2}
+          logoBorderRadius={finalDesign.logoBorderRadius ?? 0}
         />
         {renderEmojiLogo()}
       </View>

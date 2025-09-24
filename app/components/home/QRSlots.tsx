@@ -119,10 +119,17 @@ export default function QRSlots({
     };
   };
 
+  // Check if QR codes need vertical alignment adjustment
+  const primaryHasLabel = primaryQR && primaryQR.label && primaryQR.label !== primaryQR.type;
+  const secondaryQRToCheck = secondaryQR || (!isPremium ? DEFAULT_QURE_QR : null);
+  const secondaryHasLabel = secondaryQRToCheck && secondaryQRToCheck.label && secondaryQRToCheck.label !== secondaryQRToCheck.type;
+  const needsAlignment = !singleQRMode && primaryQR && secondaryQRToCheck &&
+    ((primaryHasLabel && !secondaryHasLabel) || (!primaryHasLabel && secondaryHasLabel));
+
   const renderQRSlot = (qr: QRCodeData | null, slot: 'primary' | 'secondary', isDefaultQuRe: boolean = false) => {
     if (qr || isDefaultQuRe) {
       const displayQR = qr || DEFAULT_QURE_QR;
-      const hasCustomLabel = isDefaultQuRe || (displayQR.data && 'label' in displayQR.data && displayQR.data.label);
+      const hasCustomLabel = displayQR.label && displayQR.label !== displayQR.type;
       
       // Determine container background color - always use QR background color
       const getContainerBackgroundColor = () => {
@@ -133,12 +140,15 @@ export default function QRSlots({
       const containerBg = getContainerBackgroundColor();
       const isTransparent = containerBg === 'transparent';
       
+      // Add padding when there's alignment needed and this QR doesn't have a label
+      const alignmentPadding = needsAlignment && !hasCustomLabel ? 28 : 0;
+
       return (
-        <View style={styles.qrWrapper}>
+        <View style={[styles.qrWrapper, { paddingBottom: alignmentPadding }]}>
           <View style={[
-            styles.qrContainer, 
-            { 
-              width: isTransparent ? getQRSize() : getQRSize() + 20, 
+            styles.qrContainer,
+            {
+              width: isTransparent ? getQRSize() : getQRSize() + 20,
               height: isTransparent ? getQRSize() : getQRSize() + 20,
               backgroundColor: containerBg,
               padding: isTransparent ? 0 : 1,

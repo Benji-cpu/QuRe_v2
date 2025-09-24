@@ -21,11 +21,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Primary Development
 - `npm install` - Install dependencies
-- `npx expo start` - Start development server with Expo Dev Client
+- `npx expo start --port 8081` - Start development server with Expo Dev Client on port 8081
 - `npm run start` - Alias for expo start with dev-client flag
-- `npm run android` - Run on Android emulator/device
-- `npm run ios` - Run on iOS simulator/device
+- `npx expo run:android --port 8081` - Run on Android emulator/device on port 8081
+- `npx expo run:ios --port 8081` - Run on iOS simulator/device on port 8081
 - `npm run web` - Run web version
+
+### Port Management
+- **ALWAYS use port 8081** for development servers
+- Before starting builds, kill existing processes: `lsof -ti:8081 | xargs kill -9`
+- Standard commands with port specification:
+  - Android: `npx expo run:android --port 8081`
+  - iOS: `npx expo run:ios --port 8081`
 
 ### Build and Testing
 - `npm run prebuild` - Generate native code for development builds

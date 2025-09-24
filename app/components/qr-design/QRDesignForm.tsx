@@ -95,8 +95,8 @@ export default function QRDesignForm({ design, onDesignChange, isPremium }: QRDe
             <Switch
               value={design.enableLinearGradient}
               onValueChange={(enableLinearGradient) => updateDesign({ enableLinearGradient })}
-              trackColor={{ false: theme.switchTrackOff, true: theme.switchTrackOn }}
-              thumbColor={design.enableLinearGradient ? theme.primary : theme.surfaceVariant}
+              trackColor={{ false: '#767577', true: '#81b0ff' }}
+              thumbColor={Platform.OS === 'android' ? (design.enableLinearGradient ? theme.primary : '#f4f3f4') : undefined}
             />
           </View>
 
