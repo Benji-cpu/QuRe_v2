@@ -2,7 +2,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Linking, NativeModules, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
@@ -20,6 +20,9 @@ export default function QRCodeModal() {
   const insets = useSafeAreaInsets();
   const { theme } = useTheme();
   const { id, slot } = useLocalSearchParams<{ id?: string; slot?: string }>();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const fieldLayouts = useRef<Record<string, number>>({});
+  const formOffset = useRef(0);
   const [selectedType, setSelectedType] = useState<QRCodeType>('link');
   const [formData, setFormData] = useState<QRCodeTypeData>({} as QRCodeTypeData);
   const [activeTab, setActiveTab] = useState<'content' | 'design'>('content');
@@ -42,6 +45,12 @@ export default function QRCodeModal() {
   const isEditMode = !!id;
   
   useEffect(() => {
+    return () => {
+      navigationService.clearModalState('/modal/qrcode');
+    };
+  }, []);
+
+  useEffect(() => {
     formDataRef.current = formData;
   }, [formData]);
 
@@ -52,6 +61,11 @@ export default function QRCodeModal() {
     }
     loadQRHistory();
   }, [id]);
+
+  useEffect(() => {
+    fieldLayouts.current = {};
+    formOffset.current = 0;
+  }, [selectedType]);
 
   const loadPremiumStatus = async () => {
     const premium = await UserPreferencesService.isPremium();
@@ -246,6 +260,85 @@ export default function QRCodeModal() {
     }
   };
 
+  const handleFieldLayout = useCallback((fieldKey: string, layoutY: number) => {
+    fieldLayouts.current[fieldKey] = formOffset.current + layoutY;
+  }, []);
+
+  const handleFieldFocus = useCallback((fieldKey: string) => {
+    const layoutY = fieldLayouts.current[fieldKey];
+    if (layoutY === undefined) return;
+
+    if (scrollViewRef.current) {
+      scrollViewRef.current.scrollTo({
+        y: Math.max(0, layoutY - 80),
+        animated: true,
+      });
+    }
+  }, []);
+
+  const qrContent = canSave() ? QRGenerator.generateContent(selectedType, formData) : '';
+
+  const copyToClipboard = useCallback(async (value: string) => {
+    if (!value) return false;
+
+    if (Platform.OS === 'web') {
+      if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(value);
+        return true;
+      }
+      return false;
+    }
+
+    try {
+      const clipboardModule = await import('expo-clipboard');
+      if (clipboardModule?.setStringAsync) {
+        await clipboardModule.setStringAsync(value);
+        return true;
+      }
+    } catch (error) {
+      console.warn('expo-clipboard unavailable, attempting legacy clipboard fallback', error);
+    }
+
+    try {
+      if (NativeModules?.Clipboard?.setString) {
+        NativeModules.Clipboard.setString(value);
+        return true;
+      }
+    } catch (fallbackError) {
+      console.warn('Legacy clipboard fallback failed', fallbackError);
+    }
+
+    return false;
+  }, []);
+
+  const handleCopyLink = useCallback(async () => {
+    if (!qrContent) return;
+    try {
+      const success = await copyToClipboard(qrContent);
+      if (success) {
+        Alert.alert('Copied', 'Link copied to clipboard.');
+      } else {
+        Alert.alert('Unavailable', 'Clipboard is not available in this environment.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to copy link to clipboard.');
+    }
+  }, [copyToClipboard, qrContent]);
+
+  const handleOpenLink = useCallback(async () => {
+    if (!qrContent) return;
+    try {
+      const supported = await Linking.canOpenURL(qrContent);
+      if (!supported) {
+        Alert.alert('Unavailable', 'This QR content cannot be opened on this device.');
+        return;
+      }
+      await Linking.openURL(qrContent);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to open the link.');
+    }
+  }, [qrContent]);
+
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
@@ -254,7 +347,7 @@ export default function QRCodeModal() {
     );
   }
 
-  const qrContent = canSave() ? QRGenerator.generateContent(selectedType, formData) : '';
+  const showOpenButton = selectedType !== 'contact' && !!qrContent;
 
   const renderHistorySelector = () => {
     if (!showHistorySelector) return null;
@@ -347,6 +440,7 @@ export default function QRCodeModal() {
       </View>
 
       <ScrollView 
+        ref={scrollViewRef}
         style={styles.content} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
@@ -369,11 +463,15 @@ export default function QRCodeModal() {
               />
             )}
             
-            <QRForm
-              type={selectedType}
-              initialData={formData}
-              onDataChange={handleFormDataChange}
-            />
+            <View onLayout={(event) => { formOffset.current = event.nativeEvent.layout.y; }}>
+              <QRForm
+                type={selectedType}
+                initialData={formData}
+                onDataChange={handleFormDataChange}
+                onFieldLayout={handleFieldLayout}
+                onFieldFocus={handleFieldFocus}
+              />
+            </View>
           </>
         ) : (
           <TouchableOpacity 
@@ -398,6 +496,24 @@ export default function QRCodeModal() {
                 size={150} 
                 design={isPremium ? design : undefined}
               />
+              <View style={styles.previewActions}>
+                <TouchableOpacity
+                  style={[styles.previewActionButton, { backgroundColor: theme.surfaceVariant, borderColor: theme.border }]}
+                  onPress={handleCopyLink}
+                >
+                  <Ionicons name="copy-outline" size={18} color={theme.text} />
+                  <Text style={[styles.previewActionText, { color: theme.text }]}>Copy Link</Text>
+                </TouchableOpacity>
+                {showOpenButton && (
+                  <TouchableOpacity
+                    style={[styles.previewActionButton, styles.previewActionPrimary, { backgroundColor: theme.primary }]}
+                    onPress={handleOpenLink}
+                  >
+                    <Ionicons name="open-outline" size={18} color={theme.primaryText} />
+                    <Text style={[styles.previewActionText, { color: theme.primaryText }]}>Open Link</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
           </View>
         ) : null}
@@ -568,6 +684,30 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
+  },
+  previewActions: {
+    marginTop: 16,
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+    width: '100%',
+  },
+  previewActionButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  previewActionPrimary: {
+    borderWidth: 0,
+  },
+  previewActionText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
   footer: {
     flexDirection: 'row',

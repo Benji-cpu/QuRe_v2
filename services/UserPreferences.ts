@@ -1,5 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import {
+  DEFAULT_QR_SCALE,
+  DEFAULT_QR_X_POSITION,
+  DEFAULT_QR_Y_POSITION,
+} from '../constants/qrPlacement';
+
 const PREFERENCES_KEY = '@qure_user_preferences';
 const PREMIUM_KEY = '@qure_premium_status';
 const ONBOARDING_KEY = '@qure_onboarding_complete';
@@ -17,6 +23,7 @@ export interface UserPreferences {
   showShareButton?: boolean;
 }
 
+
 export class UserPreferencesService {
   static async getPreferences(): Promise<UserPreferences> {
     try {
@@ -25,9 +32,9 @@ export class UserPreferencesService {
       
       const defaultPreferences = { 
         selectedGradientId: 'sunset', 
-        qrXPosition: 50,  // Default centered horizontally
-        qrYPosition: 50,  // Default centered vertically (changed from 30)
-        qrScale: 1,
+        qrXPosition: DEFAULT_QR_X_POSITION,
+        qrYPosition: DEFAULT_QR_Y_POSITION,
+        qrScale: DEFAULT_QR_SCALE,
         showTitle: true,
         qrSlotMode: 'double',
         backgroundType: 'gradient',
@@ -68,17 +75,17 @@ export class UserPreferencesService {
       // Ensure Y position is valid
       if (typeof preferences.qrYPosition !== 'number' || isNaN(preferences.qrYPosition)) {
         console.log('⚠️ Invalid Y position detected, using default');
-        preferences.qrYPosition = 50;
+        preferences.qrYPosition = DEFAULT_QR_Y_POSITION;
       }
-      
+
       return preferences;
     } catch (error) {
       console.error('Error loading user preferences:', error);
       return { 
         selectedGradientId: 'sunset', 
-        qrXPosition: 50,  // Default centered horizontally
-        qrYPosition: 50,  // Default centered vertically (changed from 30)
-        qrScale: 1,
+        qrXPosition: DEFAULT_QR_X_POSITION,
+        qrYPosition: DEFAULT_QR_Y_POSITION,
+        qrScale: DEFAULT_QR_SCALE,
         showTitle: true,
         qrSlotMode: 'double',
         backgroundType: 'gradient',
@@ -134,7 +141,7 @@ export class UserPreferencesService {
       const preferences = await this.getPreferences();
       // Validate and clamp position to 0-100 range
       // Ensure the value is a valid number
-      const validPosition = typeof xPosition === 'number' && !isNaN(xPosition) ? xPosition : 50;
+      const validPosition = typeof xPosition === 'number' && !isNaN(xPosition) ? xPosition : DEFAULT_QR_X_POSITION;
       preferences.qrXPosition = Math.max(0, Math.min(100, validPosition));
       await this.savePreferences(preferences);
     } catch (error) {
@@ -148,7 +155,7 @@ export class UserPreferencesService {
       const preferences = await this.getPreferences();
       // Validate and clamp position to 0-100 range
       // Ensure the value is a valid number
-      const validPosition = typeof yPosition === 'number' && !isNaN(yPosition) ? yPosition : 50;
+      const validPosition = typeof yPosition === 'number' && !isNaN(yPosition) ? yPosition : DEFAULT_QR_Y_POSITION;
       preferences.qrYPosition = Math.max(0, Math.min(100, validPosition));
       
       

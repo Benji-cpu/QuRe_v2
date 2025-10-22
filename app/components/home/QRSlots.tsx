@@ -119,13 +119,6 @@ export default function QRSlots({
     };
   };
 
-  // Check if QR codes need vertical alignment adjustment
-  const primaryHasLabel = primaryQR && primaryQR.label && primaryQR.label !== primaryQR.type;
-  const secondaryQRToCheck = secondaryQR || (!isPremium ? DEFAULT_QURE_QR : null);
-  const secondaryHasLabel = secondaryQRToCheck && secondaryQRToCheck.label && secondaryQRToCheck.label !== secondaryQRToCheck.type;
-  const needsAlignment = !singleQRMode && primaryQR && secondaryQRToCheck &&
-    ((primaryHasLabel && !secondaryHasLabel) || (!primaryHasLabel && secondaryHasLabel));
-
   const renderQRSlot = (qr: QRCodeData | null, slot: 'primary' | 'secondary', isDefaultQuRe: boolean = false) => {
     if (qr || isDefaultQuRe) {
       const displayQR = qr || DEFAULT_QURE_QR;
@@ -139,12 +132,9 @@ export default function QRSlots({
       
       const containerBg = getContainerBackgroundColor();
       const isTransparent = containerBg === 'transparent';
-      
-      // Add padding when there's alignment needed and this QR doesn't have a label
-      const alignmentPadding = needsAlignment && !hasCustomLabel ? 28 : 0;
 
       return (
-        <View style={[styles.qrWrapper, { paddingBottom: alignmentPadding }]}>
+        <View style={styles.qrWrapper}>
           <View style={[
             styles.qrContainer,
             {
@@ -161,7 +151,7 @@ export default function QRSlots({
               design={displayQR.design}
             />
             {showActionButtons && !isDefaultQuRe && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.removeButton}
                 onPress={(e) => {
                   e.stopPropagation();
@@ -172,7 +162,13 @@ export default function QRSlots({
               </TouchableOpacity>
             )}
           </View>
-          {hasCustomLabel && <Text style={styles.qrLabel}>{displayQR.label}</Text>}
+          <View style={styles.labelContainer}>
+            {hasCustomLabel && (
+              <Text style={styles.qrLabel} numberOfLines={2} ellipsizeMode="tail">
+                {displayQR.label}
+              </Text>
+            )}
+          </View>
         </View>
       );
     }
@@ -180,21 +176,29 @@ export default function QRSlots({
     // If hideEmptySlots is true, render an invisible placeholder to maintain layout
     if (hideEmptySlots) {
       return (
-        <View style={[
-          styles.qrWrapper,
-          { 
-            width: getQRSize() + 20, 
-            height: getQRSize() + 20,
-            opacity: 0 
-          }
-        ]} />
+        <View style={styles.qrWrapper}>
+          <View
+            style={[
+              styles.qrContainer,
+              {
+                width: getQRSize() + 20,
+                height: getQRSize() + 20,
+                opacity: 0,
+              },
+            ]}
+          />
+          <View style={styles.labelContainer} />
+        </View>
       );
     }
 
     return (
-      <View style={[styles.qrContainer, styles.qrPlaceholder, { width: getQRSize() + 20, height: getQRSize() + 20 }]}>
-        <Text style={styles.qrPlaceholderIcon}>+</Text>
-        <Text style={styles.qrPlaceholderText}>CREATE QR{'\n'}CODE</Text>
+      <View style={styles.qrWrapper}>
+        <View style={[styles.qrContainer, styles.qrPlaceholder, { width: getQRSize() + 20, height: getQRSize() + 20 }]}>
+          <Text style={styles.qrPlaceholderIcon}>+</Text>
+          <Text style={styles.qrPlaceholderText}>CREATE QR{'\n'}CODE</Text>
+        </View>
+        <View style={styles.labelContainer} />
       </View>
     );
   };
@@ -260,12 +264,22 @@ const styles = StyleSheet.create({
   qrSlot: {
     flex: 1,
     alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   qrSpacer: {
     width: 40,
   },
   qrWrapper: {
     alignItems: 'center',
+    width: '100%',
+  },
+  labelContainer: {
+    marginTop: 6,
+    minHeight: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+    width: '100%',
   },
   qrContainer: {
     borderRadius: 14,
@@ -279,10 +293,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: 'white',
     textAlign: 'center',
-    marginTop: 10,
     textShadowColor: 'rgba(0, 0, 0, 0.3)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+    width: '100%',
   },
   qrPlaceholder: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',

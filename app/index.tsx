@@ -11,6 +11,11 @@ import { runOnJS, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { captureRef } from 'react-native-view-shot';
 import { GRADIENT_PRESETS } from '../constants/Gradients';
+import {
+  DEFAULT_QR_SCALE,
+  DEFAULT_QR_X_POSITION,
+  DEFAULT_QR_Y_POSITION,
+} from '../constants/qrPlacement';
 import { useTheme } from '../contexts/ThemeContext';
 import { EngagementPricingService } from '../services/EngagementPricingService';
 import { navigationService } from '../services/NavigationService';
@@ -120,11 +125,11 @@ function HomeScreen() {
       setPreviousGradientIndex(validIndex);
       setIsPremium(premium);
       
-      // Load position values - UserPreferencesService already provides proper defaults (50, 50)
+      // Load position values - UserPreferencesService already provides proper defaults
       // Use nullish coalescing to preserve 0 values
-      const newX = preferences.qrXPosition ?? 50;
-      const newY = preferences.qrYPosition ?? 50;
-      const newScale = preferences.qrScale ?? 1;
+      const newX = preferences.qrXPosition ?? DEFAULT_QR_X_POSITION;
+      const newY = preferences.qrYPosition ?? DEFAULT_QR_Y_POSITION;
+      const newScale = preferences.qrScale ?? DEFAULT_QR_SCALE;
       
       console.log('📊 Loading positions in loadUserData:', { 
         stored: { x: preferences.qrXPosition, y: preferences.qrYPosition, scale: preferences.qrScale },
@@ -379,27 +384,46 @@ function HomeScreen() {
   // Removed duplicate gradient saving - this is already handled in changeGradient function
 
   // Use refs to avoid stale closures in position handlers
-  const positionRef = useRef({ x: qrXPosition ?? 50, y: qrYPosition ?? 50, scale: qrScale ?? 1 });
+  const positionRef = useRef({
+    x: qrXPosition ?? DEFAULT_QR_X_POSITION,
+    y: qrYPosition ?? DEFAULT_QR_Y_POSITION,
+    scale: qrScale ?? DEFAULT_QR_SCALE,
+  });
   
   useEffect(() => {
-    positionRef.current = { x: qrXPosition ?? 50, y: qrYPosition ?? 50, scale: qrScale ?? 1 };
+    positionRef.current = {
+      x: qrXPosition ?? DEFAULT_QR_X_POSITION,
+      y: qrYPosition ?? DEFAULT_QR_Y_POSITION,
+      scale: qrScale ?? DEFAULT_QR_SCALE,
+    };
   }, [qrXPosition, qrYPosition, qrScale]);
 
   const handleXPositionChange = useCallback((value: number) => {
     console.log('🎯 X Position changed to:', value);
     setQrXPosition(value);
+    positionRef.current.x = value;
     savePositionChanges(value, positionRef.current.y, positionRef.current.scale);
   }, [savePositionChanges]);
 
   const handleYPositionChange = useCallback((value: number) => {
     console.log('🎯 Y Position changed to:', value);
     setQrYPosition(value);
+    positionRef.current.y = value;
     savePositionChanges(positionRef.current.x, value, positionRef.current.scale);
   }, [savePositionChanges]);
 
   const handleScaleChange = useCallback((value: number) => {
     setQrScale(value);
+    positionRef.current.scale = value;
     savePositionChanges(positionRef.current.x, positionRef.current.y, value);
+  }, [savePositionChanges]);
+
+  const handleResetPosition = useCallback((x: number, y: number, scale: number) => {
+    setQrXPosition(x);
+    setQrYPosition(y);
+    setQrScale(scale);
+    positionRef.current = { x, y, scale };
+    savePositionChanges(x, y, scale);
   }, [savePositionChanges]);
 
   const handleTitlePress = async () => {
@@ -435,6 +459,18 @@ function HomeScreen() {
       useNativeDriver: true,
     }).start();
   };
+
+  const closeExportPreview = useCallback(() => {
+    Animated.timing(exportOverlayOpacity, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowExportPreview(false);
+      setShowActionButtons(true);
+      setHideElementsForExport(false);
+    });
+  }, [exportOverlayOpacity]);
 
   const handleSaveWallpaper = async () => {
     try {
@@ -562,6 +598,10 @@ Download QuRe: qure.app`;
 
   useEffect(() => {
     const backAction = () => {
+      if (showExportPreview) {
+        closeExportPreview();
+        return true;
+      }
       if (sliderExpanded) {
         handleSliderCollapse();
         return true;
@@ -570,7 +610,7 @@ Download QuRe: qure.app`;
     };
     const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
     return () => backHandler.remove();
-  }, [sliderExpanded]);
+  }, [sliderExpanded, showExportPreview, closeExportPreview, handleSliderCollapse]);
 
   const handleSettings = async () => {
     await EngagementPricingService.trackAction('settingsOpened');
@@ -625,23 +665,23 @@ Download QuRe: qure.app`;
     }, 1000);
   };
 
-  const handleSliderExpand = () => {
+  const handleSliderExpand = useCallback(() => {
     setSliderExpanded(true);
     Animated.timing(elementsOpacity, {
       toValue: 0.3,
       duration: 200,
       useNativeDriver: true,
     }).start();
-  };
+  }, [elementsOpacity]);
 
-  const handleSliderCollapse = () => {
+  const handleSliderCollapse = useCallback(() => {
     setSliderExpanded(false);
     Animated.timing(elementsOpacity, {
       toValue: 1,
       duration: 200,
       useNativeDriver: true,
     }).start();
-  };
+  }, [elementsOpacity]);
 
   const handleBackgroundPress = () => {
     if (sliderExpanded) {
@@ -702,17 +742,23 @@ Download QuRe: qure.app`;
                         
                         {showPositionSlider && (
                           <PositionSlider
-                            xPosition={qrXPosition ?? 50}
-                            yPosition={qrYPosition ?? 50}
-                            scaleValue={qrScale ?? 1}
+                            xPosition={qrXPosition ?? DEFAULT_QR_X_POSITION}
+                            yPosition={qrYPosition ?? DEFAULT_QR_Y_POSITION}
+                            scaleValue={qrScale ?? DEFAULT_QR_SCALE}
                             onXPositionChange={handleXPositionChange}
                             onYPositionChange={handleYPositionChange}
                             onScaleChange={handleScaleChange}
+                            onResetPosition={handleResetPosition}
                             visible={showPositionSlider}
                             isExpanded={sliderExpanded}
                             onExpand={handleSliderExpand}
                             onCollapse={handleSliderCollapse}
                             singleQRMode={qrSlotMode === 'single'}
+                            collapsedAccessory={
+                              showSwipeIndicator && !sliderExpanded ? (
+                                <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
+                              ) : null
+                            }
                           />
                         )}
                       </View>
@@ -725,18 +771,14 @@ Download QuRe: qure.app`;
                       secondaryQR={secondaryQR}
                       isPremium={isPremium}
                       showActionButtons={showActionButtons}
-                      xPosition={qrXPosition ?? 50}
-                      yPosition={qrYPosition ?? 50}
-                      scale={qrScale ?? 1}
+                      xPosition={qrXPosition ?? DEFAULT_QR_X_POSITION}
+                      yPosition={qrYPosition ?? DEFAULT_QR_Y_POSITION}
+                      scale={qrScale ?? DEFAULT_QR_SCALE}
                       onSlotPress={handleQRSlotPress}
                       onRemoveQR={handleRemoveQR}
                       hideEmptySlots={hideElementsForExport}
                       singleQRMode={qrSlotMode === 'single'}
                     />
-                    
-                    {showSwipeIndicator && (
-                      <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
-                    )}
                   </View>
                 </View>
               </GradientBackground>
@@ -752,24 +794,14 @@ Download QuRe: qure.app`;
                 <View style={styles.exportControlsContent}>
                   <Text style={styles.exportPreviewTitle}>Lock Screen Preview</Text>
                   <Text style={styles.exportPreviewSubtitle}>How your lock screen will look</Text>
-                  <View style={styles.exportButtons}>
-                    <Pressable
-                      style={styles.exportCancelButton}
-                      onPress={() => {
-                        Animated.timing(exportOverlayOpacity, {
-                          toValue: 0,
-                          duration: 200,
-                          useNativeDriver: true,
-                        }).start(() => {
-                          setShowExportPreview(false);
-                          setShowActionButtons(true);
-                          setHideElementsForExport(false);
-                        });
-                      }}
-                    >
-                      <Feather name="x" size={20} color="white" />
-                      <Text style={styles.exportButtonText}>Cancel</Text>
-                    </Pressable>
+                <View style={styles.exportButtons}>
+                  <Pressable
+                    style={styles.exportCancelButton}
+                    onPress={closeExportPreview}
+                  >
+                    <Feather name="x" size={20} color="white" />
+                    <Text style={styles.exportButtonText}>Cancel</Text>
+                  </Pressable>
                     <Pressable
                       style={styles.exportSaveButton}
                       onPress={handleSaveWallpaper}

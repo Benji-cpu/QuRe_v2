@@ -27,6 +27,10 @@ export default function SettingsModal() {
   useEffect(() => {
     loadSettings();
     EngagementPricingService.trackAction('settingsOpened');
+
+    return () => {
+      navigationService.clearModalState('/modal/settings');
+    };
   }, []);
 
   const loadSettings = async () => {

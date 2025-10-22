@@ -18,8 +18,22 @@ export default function ActionCards({ onExportWallpaper, onShareWallpaper, onSet
           <Feather name="download" size={18} color="white" />
         </View>
         <View style={styles.actionContent}>
-          <Text style={styles.actionTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Set as</Text>
-          <Text style={styles.actionSubtitle}>Lock Screen</Text>
+          <Text
+            style={styles.actionTitle}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            Set as
+          </Text>
+          <Text
+            style={styles.actionSubtitle}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            Lock Screen
+          </Text>
         </View>
       </TouchableOpacity>
 
@@ -29,8 +43,22 @@ export default function ActionCards({ onExportWallpaper, onShareWallpaper, onSet
             <Feather name="share" size={18} color="white" />
           </View>
           <View style={styles.actionContent}>
-            <Text style={styles.actionTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Share</Text>
-            <Text style={styles.actionSubtitle}>Lock Screen</Text>
+            <Text
+              style={styles.actionTitle}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              Share
+            </Text>
+            <Text
+              style={styles.actionSubtitle}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.7}
+            >
+              Lock Screen
+            </Text>
           </View>
         </TouchableOpacity>
       )}
@@ -40,8 +68,22 @@ export default function ActionCards({ onExportWallpaper, onShareWallpaper, onSet
           <Feather name="settings" size={18} color="white" />
         </View>
         <View style={styles.actionContent}>
-          <Text style={styles.actionTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>Settings</Text>
-          <Text style={styles.actionSubtitle}>& Plans</Text>
+          <Text
+            style={styles.actionTitle}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            Settings
+          </Text>
+          <Text
+            style={styles.actionSubtitle}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            & Plans
+          </Text>
         </View>
       </TouchableOpacity>
     </View>
@@ -77,6 +119,7 @@ const styles = StyleSheet.create({
   },
   actionContent: {
     flex: 1,
+    minWidth: 0,
   },
   actionTitle: {
     fontSize: 12,

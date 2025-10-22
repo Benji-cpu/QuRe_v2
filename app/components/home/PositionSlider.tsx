@@ -2,7 +2,13 @@
 import { Feather } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import * as Haptics from 'expo-haptics';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { ReactNode, useEffect, useRef, useState } from 'react';
+import {
+  DEFAULT_QR_X_POSITION,
+  DEFAULT_QR_Y_POSITION,
+  MIN_DOUBLE_QR_SCALE,
+  MIN_SINGLE_QR_SCALE,
+} from '../../../constants/qrPlacement';
 import {
   Animated,
   Easing,
@@ -27,17 +33,20 @@ interface PositionSliderProps {
   onXPositionChangeEnd?: (value: number) => void;
   onYPositionChangeEnd?: (value: number) => void;
   onScaleChangeEnd?: (value: number) => void;
+  onResetPosition?: (x: number, y: number, scale: number) => void;
   visible: boolean;
   isExpanded: boolean;
   onExpand?: () => void;
   onCollapse?: () => void;
   singleQRMode?: boolean;
+  collapsedAccessory?: ReactNode;
 }
 
 type Anchor = 'top' | 'bottom';
 
-const SNAP_TARGET = 50;
 const SNAP_THRESHOLD = 3;
+const SNAP_TARGETS_X = Array.from(new Set([DEFAULT_QR_X_POSITION, 50]));
+const SNAP_TARGETS_Y = Array.from(new Set([DEFAULT_QR_Y_POSITION, 50]));
 const SHEET_HORIZONTAL_PADDING = 20;
 
 export default function PositionSlider({
@@ -50,17 +59,19 @@ export default function PositionSlider({
   onXPositionChangeEnd,
   onYPositionChangeEnd,
   onScaleChangeEnd,
+  onResetPosition,
   visible,
   isExpanded,
   onExpand,
   onCollapse,
   singleQRMode = false,
+  collapsedAccessory,
 }: PositionSliderProps) {
   const animatedOpacity = useRef(new Animated.Value(0)).current;
   const anchorAnim = useRef(new Animated.Value(0)).current;
 
-  const [hasSnappedX, setHasSnappedX] = useState(false);
-  const [hasSnappedY, setHasSnappedY] = useState(false);
+  const [snappedTargetX, setSnappedTargetX] = useState<number | null>(null);
+  const [snappedTargetY, setSnappedTargetY] = useState<number | null>(null);
   const [anchor, setAnchor] = useState<Anchor>('top');
   const [cardHeight, setCardHeight] = useState(0);
 
@@ -87,8 +98,8 @@ export default function PositionSlider({
         anchorAnim.setValue(0);
       });
     } else {
-      setHasSnappedX(false);
-      setHasSnappedY(false);
+      setSnappedTargetX(null);
+      setSnappedTargetY(null);
     }
   }, [isExpanded, anchorAnim]);
 
@@ -97,8 +108,9 @@ export default function PositionSlider({
   }
 
   const verticalSpacing = scaleSpacing(16);
+  const safeBottomPadding = Math.max(insets.bottom, scaleSpacing(20)) + 12;
   const topMargin = insets.top + verticalSpacing;
-  const bottomMargin = insets.bottom + verticalSpacing;
+  const bottomMargin = safeBottomPadding + verticalSpacing;
   const availableSpace = Math.max(0, screenHeight - topMargin - bottomMargin - cardHeight);
   const translateY = anchorAnim.interpolate({
     inputRange: [0, 1],
@@ -122,24 +134,24 @@ export default function PositionSlider({
   };
 
   const handleSnapPosition = (value: number, axis: 'x' | 'y') => {
-    const distance = Math.abs(value - SNAP_TARGET);
-    const hasSnapped = axis === 'x' ? hasSnappedX : hasSnappedY;
+    const snapTargets = axis === 'x' ? SNAP_TARGETS_X : SNAP_TARGETS_Y;
+    const currentSnap = axis === 'x' ? snappedTargetX : snappedTargetY;
+    const setSnapTarget = axis === 'x' ? setSnappedTargetX : setSnappedTargetY;
+    const handleChange = axis === 'x' ? onXPositionChange : onYPositionChange;
 
-    if (distance <= SNAP_THRESHOLD && !hasSnapped) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      if (axis === 'x') {
-        setHasSnappedX(true);
-        onXPositionChange(SNAP_TARGET);
-      } else {
-        setHasSnappedY(true);
-        onYPositionChange(SNAP_TARGET);
+    const nextTarget = snapTargets.find((target) => Math.abs(value - target) <= SNAP_THRESHOLD);
+
+    if (nextTarget !== undefined) {
+      if (currentSnap !== nextTarget) {
+        setSnapTarget(nextTarget);
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        handleChange(nextTarget);
       }
-      return SNAP_TARGET;
+      return nextTarget;
     }
 
-    if (distance > SNAP_THRESHOLD && hasSnapped) {
-      if (axis === 'x') setHasSnappedX(false);
-      else setHasSnappedY(false);
+    if (currentSnap !== null) {
+      setSnapTarget(null);
     }
 
     return value;
@@ -158,25 +170,39 @@ export default function PositionSlider({
   };
 
   const handleXEnd = (value: number) => {
-    setHasSnappedX(false);
+    setSnappedTargetX(null);
     onXPositionChangeEnd?.(value);
   };
 
   const handleYEnd = (value: number) => {
-    setHasSnappedY(false);
+    setSnappedTargetY(null);
     onYPositionChangeEnd?.(value);
   };
 
   const reset = () => {
-    onXPositionChange(SNAP_TARGET);
-    onYPositionChange(SNAP_TARGET);
-    onScaleChange(1);
-    onXPositionChangeEnd?.(SNAP_TARGET);
-    onYPositionChangeEnd?.(SNAP_TARGET);
-    onScaleChangeEnd?.(1);
+    const defaultScale = singleQRMode ? MIN_SINGLE_QR_SCALE : MIN_DOUBLE_QR_SCALE;
+    setSnappedTargetX(null);
+    setSnappedTargetY(null);
+
+    if (onResetPosition) {
+      onResetPosition(
+        DEFAULT_QR_X_POSITION,
+        DEFAULT_QR_Y_POSITION,
+        defaultScale,
+      );
+    } else {
+      onXPositionChange(DEFAULT_QR_X_POSITION);
+      onYPositionChange(DEFAULT_QR_Y_POSITION);
+      onScaleChange(defaultScale);
+    }
+    onXPositionChangeEnd?.(DEFAULT_QR_X_POSITION);
+    onYPositionChangeEnd?.(DEFAULT_QR_Y_POSITION);
+    onScaleChangeEnd?.(defaultScale);
   };
 
-  const scaleRange = singleQRMode ? { min: 0.5, max: 1.5 } : { min: 0.7, max: 1.3 };
+  const scaleRange = singleQRMode
+    ? { min: MIN_SINGLE_QR_SCALE, max: 1.5 }
+    : { min: MIN_DOUBLE_QR_SCALE, max: 1.3 };
 
   return (
     <>
@@ -187,7 +213,8 @@ export default function PositionSlider({
             {
               opacity: animatedOpacity,
               paddingHorizontal: SHEET_HORIZONTAL_PADDING,
-              marginBottom: scaleSpacing(12),
+              marginBottom: scaleSpacing(8),
+              paddingBottom: safeBottomPadding,
               zIndex: 50,
             },
           ]}
@@ -223,6 +250,12 @@ export default function PositionSlider({
               <Text style={[styles.notificationSubtitle, { fontSize: scaleFont(10) }]}>Move and resize QR codes</Text>
             </View>
           </TouchableOpacity>
+
+          {collapsedAccessory && (
+            <View style={{ marginTop: scaleSpacing(8) }}>
+              {collapsedAccessory}
+            </View>
+          )}
         </Animated.View>
       )}
 
@@ -244,7 +277,8 @@ export default function PositionSlider({
                 styles.expandedCard,
                 {
                   borderRadius: scaleSpacing(12),
-                  padding: scaleSpacing(20),
+                  paddingVertical: scaleSpacing(20),
+                  paddingHorizontal: scaleSpacing(20),
                   left: SHEET_HORIZONTAL_PADDING,
                   right: SHEET_HORIZONTAL_PADDING,
                   top: topMargin,

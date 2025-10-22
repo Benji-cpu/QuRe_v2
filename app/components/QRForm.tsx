@@ -9,9 +9,11 @@ interface QRFormProps {
   type: QRCodeType;
   initialData?: QRCodeTypeData;
   onDataChange: (data: QRCodeTypeData) => void;
+  onFieldLayout?: (fieldKey: string, layoutY: number) => void;
+  onFieldFocus?: (fieldKey: string) => void;
 }
 
-export default function QRForm({ type, initialData, onDataChange }: QRFormProps) {
+export default function QRForm({ type, initialData, onDataChange, onFieldLayout, onFieldFocus }: QRFormProps) {
   const { theme } = useTheme();
   const [formData, setFormData] = useState<Record<string, string>>({});
   const hasInitialized = useRef(false);
@@ -27,10 +29,12 @@ export default function QRForm({ type, initialData, onDataChange }: QRFormProps)
 
   useEffect(() => {
     // Initialize form data only once when initialData is provided
-    if (initialData && !hasInitialized.current) {
+    const isObjectLike = initialData && typeof initialData === 'object' && !Array.isArray(initialData);
+
+    if (isObjectLike && !hasInitialized.current) {
       const newFormData: Record<string, string> = {};
-      Object.entries(initialData).forEach(([key, value]) => {
-        newFormData[key] = String(value || '');
+      Object.entries(initialData as Record<string, unknown>).forEach(([key, value]) => {
+        newFormData[key] = String(value ?? '');
       });
       setFormData(newFormData);
       hasInitialized.current = true;
@@ -39,6 +43,10 @@ export default function QRForm({ type, initialData, onDataChange }: QRFormProps)
       setTimeout(() => {
         onDataChange(newFormData as unknown as QRCodeTypeData);
       }, 0);
+    } else if (!isObjectLike && initialData && !hasInitialized.current) {
+      // Fallback for malformed persisted data
+      hasInitialized.current = true;
+      setFormData({});
     }
   }, [initialData, onDataChange]);
 
@@ -77,7 +85,11 @@ export default function QRForm({ type, initialData, onDataChange }: QRFormProps)
       </Text>
       
       {typeConfig.fields.map((field) => (
-        <View key={field.key} style={styles.fieldContainer}>
+        <View
+          key={field.key}
+          style={styles.fieldContainer}
+          onLayout={(event) => onFieldLayout?.(field.key, event.nativeEvent.layout.y)}
+        >
           <Text style={[styles.fieldLabel, { color: theme.text }]}>
             {field.label}
             {field.required && <Text style={[styles.required, { color: theme.error }]}> *</Text>}
@@ -101,6 +113,7 @@ export default function QRForm({ type, initialData, onDataChange }: QRFormProps)
             numberOfLines={field.multiline ? 4 : 1}
             autoCapitalize="none"
             autoCorrect={false}
+            onFocus={() => onFieldFocus?.(field.key)}
           />
         </View>
       ))}
