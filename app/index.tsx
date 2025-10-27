@@ -29,13 +29,10 @@ import ActionCards from './components/home/ActionCards';
 import GradientBackground from './components/home/GradientBackground';
 import PositionSlider from './components/home/PositionSlider';
 import QRSlots from './components/home/QRSlots';
-import SwipeIndicator from './components/home/SwipeIndicator';
 import TimeDisplay from './components/home/TimeDisplay';
 import Onboarding from './components/Onboarding';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-const SWIPE_INDICATOR_KEY = '@qure_swipe_indicator_count';
-const MAX_SWIPE_INDICATOR_SHOWS = 3;
 
 function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -57,7 +54,6 @@ function HomeScreen() {
   const [qrYPosition, setQrYPosition] = useState<number | null>(null);
   const [qrScale, setQrScale] = useState<number | null>(null);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
-  const [showSwipeIndicator, setShowSwipeIndicator] = useState(false);
   const [showPositionSlider, setShowPositionSlider] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [hideElementsForExport, setHideElementsForExport] = useState(false);
@@ -76,8 +72,6 @@ function HomeScreen() {
   const gradientTransition = useSharedValue(0);
 
   // Swipe indicator session control
-  const swipeIndicatorShownThisSession = useRef(false);
-  const swipeIndicatorHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const savePositionChanges = useCallback((x: number, y: number, scale: number) => {
     // Don't save if initial load hasn't completed
@@ -183,14 +177,6 @@ function HomeScreen() {
         setCustomBackground(customBg);
       } else {
         setCustomBackground(null);
-      }
-
-      const swipeCount = await getSwipeIndicatorCount();
-      const shouldShowSwipeIndicator = hasCompletedOnboarding && swipeCount < MAX_SWIPE_INDICATOR_SHOWS;
-      if (shouldShowSwipeIndicator) {
-        await showSwipeIndicatorForSession(swipeCount);
-      } else {
-        setShowSwipeIndicator(false);
       }
 
       if (preferences.primaryQRCodeId) {
@@ -306,45 +292,6 @@ function HomeScreen() {
     }, [reloadQRCodes, reloadGradient])
   );
 
-  const getSwipeIndicatorCount = async (): Promise<number> => {
-    try {
-      const countStr = await AsyncStorage.getItem(SWIPE_INDICATOR_KEY);
-      return countStr ? parseInt(countStr) : 0;
-    } catch {
-      return 0;
-    }
-  };
-
-  const incrementSwipeIndicatorCount = async (currentCount?: number) => {
-    try {
-      const baseCount = currentCount ?? await getSwipeIndicatorCount();
-      if (baseCount >= MAX_SWIPE_INDICATOR_SHOWS) {
-        return baseCount;
-      }
-      const nextCount = baseCount + 1;
-      await AsyncStorage.setItem(SWIPE_INDICATOR_KEY, nextCount.toString());
-      return nextCount;
-    } catch (error) {
-      console.error('Error incrementing swipe count:', error);
-      return currentCount ?? 0;
-    }
-  };
-
-  const showSwipeIndicatorForSession = async (existingCount?: number) => {
-    if (swipeIndicatorShownThisSession.current || showSwipeIndicator) {
-      return;
-    }
-
-    const count = existingCount ?? await getSwipeIndicatorCount();
-    if (count >= MAX_SWIPE_INDICATOR_SHOWS) {
-      return;
-    }
-
-    swipeIndicatorShownThisSession.current = true;
-    await incrementSwipeIndicatorCount(count);
-    setShowSwipeIndicator(true);
-  };
-
   // Initial load only - empty dependency array ensures this runs once
   useEffect(() => {
     loadUserData();
@@ -372,29 +319,6 @@ function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
-  // Manage swipe indicator lifecycle
-  useEffect(() => {
-    if (showSwipeIndicator) {
-      if (swipeIndicatorHideTimer.current) {
-        clearTimeout(swipeIndicatorHideTimer.current);
-      }
-      swipeIndicatorHideTimer.current = setTimeout(() => {
-        setShowSwipeIndicator(false);
-        swipeIndicatorHideTimer.current = null;
-      }, 6500);
-    } else if (swipeIndicatorHideTimer.current) {
-      clearTimeout(swipeIndicatorHideTimer.current);
-      swipeIndicatorHideTimer.current = null;
-    }
-
-    return () => {
-      if (swipeIndicatorHideTimer.current) {
-        clearTimeout(swipeIndicatorHideTimer.current);
-        swipeIndicatorHideTimer.current = null;
-      }
-    };
-  }, [showSwipeIndicator]);
-
   const checkForOffer = async () => {
     if (showOnboarding) return;
     
@@ -413,14 +337,6 @@ function HomeScreen() {
   };
 
   const changeGradient = async (newIndex: number) => {
-    // If the swipe indicator is visible, dismiss it immediately on first swipe
-    if (showSwipeIndicator) {
-      setShowSwipeIndicator(false);
-      if (swipeIndicatorHideTimer.current) {
-        clearTimeout(swipeIndicatorHideTimer.current);
-        swipeIndicatorHideTimer.current = null;
-      }
-    }
     setIsSwipingGradient(true);
     setPreviousGradientIndex(currentGradientIndex);
     setCurrentGradientIndex(newIndex);
@@ -517,11 +433,6 @@ function HomeScreen() {
         useNativeDriver: true,
       }).start();
     }
-  };
-
-  const handleSwipeFadeComplete = async () => {
-    // Auto-dismiss callback from indicator; count handled on first show
-    setShowSwipeIndicator(false);
   };
 
   const handleExportWallpaper = async () => {
@@ -736,11 +647,6 @@ Download QuRe: qure.app`;
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
     setShowPositionSlider(true);
-
-    setTimeout(async () => {
-      const swipeCount = await getSwipeIndicatorCount();
-      await showSwipeIndicatorForSession(swipeCount);
-    }, 1000);
   };
 
   const handleSliderExpand = useCallback(() => {
@@ -833,11 +739,6 @@ Download QuRe: qure.app`;
                             onCollapse={handleSliderCollapse}
                             singleQRMode={qrSlotMode === 'single'}
                             safeAreaInsets={insets}
-                            collapsedAccessory={
-                              showSwipeIndicator && !sliderExpanded ? (
-                                <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />
-                              ) : null
-                            }
                           />
                         )}
                       </View>
