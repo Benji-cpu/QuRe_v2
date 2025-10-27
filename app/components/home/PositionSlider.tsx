@@ -6,6 +6,7 @@ import React, { ReactNode, useEffect, useRef, useState } from 'react';
 import {
   DEFAULT_QR_X_POSITION,
   DEFAULT_QR_Y_POSITION,
+  DEFAULT_SINGLE_QR_X_POSITION,
   MIN_DOUBLE_QR_SCALE,
   MIN_SINGLE_QR_SCALE,
 } from '../../../constants/qrPlacement';
@@ -21,7 +22,7 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { EdgeInsets, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface PositionSliderProps {
   xPosition: number; // 0-100 coordinate system (0=left, 100=right)
@@ -40,12 +41,13 @@ interface PositionSliderProps {
   onCollapse?: () => void;
   singleQRMode?: boolean;
   collapsedAccessory?: ReactNode;
+  safeAreaInsets?: EdgeInsets;
 }
 
 type Anchor = 'top' | 'bottom';
 
 const SNAP_THRESHOLD = 3;
-const SNAP_TARGETS_X = Array.from(new Set([DEFAULT_QR_X_POSITION, 50]));
+const SNAP_TARGETS_X = Array.from(new Set([DEFAULT_QR_X_POSITION, DEFAULT_SINGLE_QR_X_POSITION, 50]));
 const SNAP_TARGETS_Y = Array.from(new Set([DEFAULT_QR_Y_POSITION, 50]));
 const SHEET_HORIZONTAL_PADDING = 20;
 
@@ -66,6 +68,7 @@ export default function PositionSlider({
   onCollapse,
   singleQRMode = false,
   collapsedAccessory,
+  safeAreaInsets,
 }: PositionSliderProps) {
   const animatedOpacity = useRef(new Animated.Value(0)).current;
   const anchorAnim = useRef(new Animated.Value(0)).current;
@@ -76,7 +79,8 @@ export default function PositionSlider({
   const [cardHeight, setCardHeight] = useState(0);
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
+  const defaultInsets = useSafeAreaInsets();
+  const insets = safeAreaInsets ?? defaultInsets;
 
   const scale = screenWidth / 375; // Base width of iPhone X
   const scaleFont = (size: number) => Math.round(size * Math.min(scale, 1.2));
@@ -108,9 +112,9 @@ export default function PositionSlider({
   }
 
   const verticalSpacing = scaleSpacing(16);
-  const safeBottomPadding = Math.max(insets.bottom, scaleSpacing(20)) + 12;
+  const bottomSafeSpacing = Math.max(insets.bottom + scaleSpacing(32), scaleSpacing(52));
   const topMargin = insets.top + verticalSpacing;
-  const bottomMargin = safeBottomPadding + verticalSpacing;
+  const bottomMargin = bottomSafeSpacing + verticalSpacing;
   const availableSpace = Math.max(0, screenHeight - topMargin - bottomMargin - cardHeight);
   const translateY = anchorAnim.interpolate({
     inputRange: [0, 1],
@@ -181,21 +185,22 @@ export default function PositionSlider({
 
   const reset = () => {
     const defaultScale = singleQRMode ? MIN_SINGLE_QR_SCALE : MIN_DOUBLE_QR_SCALE;
+    const defaultX = singleQRMode ? DEFAULT_SINGLE_QR_X_POSITION : DEFAULT_QR_X_POSITION;
     setSnappedTargetX(null);
     setSnappedTargetY(null);
 
     if (onResetPosition) {
       onResetPosition(
-        DEFAULT_QR_X_POSITION,
+        defaultX,
         DEFAULT_QR_Y_POSITION,
         defaultScale,
       );
     } else {
-      onXPositionChange(DEFAULT_QR_X_POSITION);
+      onXPositionChange(defaultX);
       onYPositionChange(DEFAULT_QR_Y_POSITION);
       onScaleChange(defaultScale);
     }
-    onXPositionChangeEnd?.(DEFAULT_QR_X_POSITION);
+    onXPositionChangeEnd?.(defaultX);
     onYPositionChangeEnd?.(DEFAULT_QR_Y_POSITION);
     onScaleChangeEnd?.(defaultScale);
   };
@@ -214,7 +219,7 @@ export default function PositionSlider({
               opacity: animatedOpacity,
               paddingHorizontal: SHEET_HORIZONTAL_PADDING,
               marginBottom: scaleSpacing(8),
-              paddingBottom: safeBottomPadding,
+              paddingBottom: bottomSafeSpacing,
               zIndex: 50,
             },
           ]}

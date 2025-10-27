@@ -147,8 +147,13 @@ export class QRGenerator {
   }
 
   static generateLabel(type: QRCodeType, data: QRCodeTypeData): string {
-    if ('label' in data && data.label) {
-      return data.label;
+    // Respect explicit blank labels: if a label field exists but is empty, keep it blank.
+    if ('label' in data) {
+      const explicit = (data as any).label as string | undefined;
+      if (explicit !== undefined) {
+        const trimmed = (explicit ?? '').trim();
+        return trimmed; // may be empty string
+      }
     }
 
     switch (type) {

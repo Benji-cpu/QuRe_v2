@@ -28,27 +28,28 @@ export default function QRForm({ type, initialData, onDataChange, onFieldLayout,
   }, [type]);
 
   useEffect(() => {
-    // Initialize form data only once when initialData is provided
-    const isObjectLike = initialData && typeof initialData === 'object' && !Array.isArray(initialData);
+    // Initialize form data only once per type; ensure all fields exist with default '' values
+    if (!typeConfig || hasInitialized.current) return;
 
-    if (isObjectLike && !hasInitialized.current) {
-      const newFormData: Record<string, string> = {};
-      Object.entries(initialData as Record<string, unknown>).forEach(([key, value]) => {
-        newFormData[key] = String(value ?? '');
-      });
-      setFormData(newFormData);
-      hasInitialized.current = true;
-      
-      // Notify parent of initial data after a slight delay to avoid render loop
-      setTimeout(() => {
-        onDataChange(newFormData as unknown as QRCodeTypeData);
-      }, 0);
-    } else if (!isObjectLike && initialData && !hasInitialized.current) {
-      // Fallback for malformed persisted data
-      hasInitialized.current = true;
-      setFormData({});
+    const baseFormData: Record<string, string> = {};
+    const src = (initialData && typeof initialData === 'object' && !Array.isArray(initialData))
+      ? (initialData as Record<string, unknown>)
+      : {};
+
+    // Ensure every field key exists; pull value from initialData if provided
+    for (const field of typeConfig.fields) {
+      const raw = src[field.key];
+      baseFormData[field.key] = String(raw ?? '');
     }
-  }, [initialData, onDataChange]);
+
+    setFormData(baseFormData);
+    hasInitialized.current = true;
+
+    // Notify parent after microtask to avoid render loop
+    setTimeout(() => {
+      onDataChange(baseFormData as unknown as QRCodeTypeData);
+    }, 0);
+  }, [typeConfig, initialData, onDataChange]);
 
   const updateField = useCallback((key: string, value: string) => {
     setFormData(prev => {

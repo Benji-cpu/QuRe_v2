@@ -15,6 +15,8 @@ import {
   DEFAULT_QR_SCALE,
   DEFAULT_QR_X_POSITION,
   DEFAULT_QR_Y_POSITION,
+  DEFAULT_SINGLE_QR_X_POSITION,
+  MIN_SINGLE_QR_SCALE,
 } from '../constants/qrPlacement';
 import { useTheme } from '../contexts/ThemeContext';
 import { EngagementPricingService } from '../services/EngagementPricingService';
@@ -33,6 +35,7 @@ import Onboarding from './components/Onboarding';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_INDICATOR_KEY = '@qure_swipe_indicator_count';
+const MAX_SWIPE_INDICATOR_SHOWS = 3;
 
 function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -71,6 +74,10 @@ function HomeScreen() {
   const [showShareButton, setShowShareButton] = useState(false);
   
   const gradientTransition = useSharedValue(0);
+
+  // Swipe indicator session control
+  const swipeIndicatorShownThisSession = useRef(false);
+  const swipeIndicatorHideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const savePositionChanges = useCallback((x: number, y: number, scale: number) => {
     // Don't save if initial load hasn't completed
@@ -124,28 +131,41 @@ function HomeScreen() {
       setCurrentGradientIndex(validIndex);
       setPreviousGradientIndex(validIndex);
       setIsPremium(premium);
-      
-      // Load position values - UserPreferencesService already provides proper defaults
-      // Use nullish coalescing to preserve 0 values
-      const newX = preferences.qrXPosition ?? DEFAULT_QR_X_POSITION;
-      const newY = preferences.qrYPosition ?? DEFAULT_QR_Y_POSITION;
-      const newScale = preferences.qrScale ?? DEFAULT_QR_SCALE;
-      
+
+      const slotMode = preferences.qrSlotMode || 'double';
+      const defaultXForMode = slotMode === 'single' ? DEFAULT_SINGLE_QR_X_POSITION : DEFAULT_QR_X_POSITION;
+      const defaultScaleForMode = slotMode === 'single' ? MIN_SINGLE_QR_SCALE : DEFAULT_QR_SCALE;
+
+      let resolvedX = preferences.qrXPosition;
+      if (resolvedX === undefined || resolvedX === null) {
+        resolvedX = defaultXForMode;
+      } else if (slotMode === 'single' && resolvedX === DEFAULT_QR_X_POSITION) {
+        resolvedX = DEFAULT_SINGLE_QR_X_POSITION;
+      }
+
+      const resolvedY = preferences.qrYPosition ?? DEFAULT_QR_Y_POSITION;
+
+      let resolvedScale = preferences.qrScale;
+      if (resolvedScale === undefined || resolvedScale === null) {
+        resolvedScale = defaultScaleForMode;
+      } else if (slotMode === 'single' && resolvedScale === DEFAULT_QR_SCALE) {
+        resolvedScale = defaultScaleForMode;
+      }
+
       console.log('📊 Loading positions in loadUserData:', { 
         stored: { x: preferences.qrXPosition, y: preferences.qrYPosition, scale: preferences.qrScale },
-        calculated: { newX, newY, newScale }, 
+        calculated: { x: resolvedX, y: resolvedY, scale: resolvedScale }, 
         currentState: { x: qrXPosition, y: qrYPosition, scale: qrScale } 
       });
       
+      setQrXPosition(resolvedX);
+      setQrYPosition(resolvedY);
+      setQrScale(resolvedScale);
       
-      setQrXPosition(newX);
-      setQrYPosition(newY);
-      setQrScale(newScale);
-      
-      console.log('✅ Position state updated in loadUserData to:', { x: newX, y: newY, scale: newScale });
+      console.log('✅ Position state updated in loadUserData to:', { x: resolvedX, y: resolvedY, scale: resolvedScale });
       setInitialLoadComplete(true);
       setShowTitle(preferences.showTitle ?? true);
-      setQrSlotMode(preferences.qrSlotMode || 'double');
+      setQrSlotMode(slotMode);
       setShowShareButton(preferences.showShareButton ?? false);
       
       if (!premium && preferences.backgroundType === 'custom') {
@@ -166,7 +186,12 @@ function HomeScreen() {
       }
 
       const swipeCount = await getSwipeIndicatorCount();
-      setShowSwipeIndicator(hasCompletedOnboarding && swipeCount < 5);
+      const shouldShowSwipeIndicator = hasCompletedOnboarding && swipeCount < MAX_SWIPE_INDICATOR_SHOWS;
+      if (shouldShowSwipeIndicator) {
+        await showSwipeIndicatorForSession(swipeCount);
+      } else {
+        setShowSwipeIndicator(false);
+      }
 
       if (preferences.primaryQRCodeId) {
         const primaryQRData = await QRStorage.getQRCodeById(preferences.primaryQRCodeId);
@@ -290,13 +315,34 @@ function HomeScreen() {
     }
   };
 
-  const incrementSwipeIndicatorCount = async () => {
+  const incrementSwipeIndicatorCount = async (currentCount?: number) => {
     try {
-      const count = await getSwipeIndicatorCount();
-      await AsyncStorage.setItem(SWIPE_INDICATOR_KEY, (count + 1).toString());
+      const baseCount = currentCount ?? await getSwipeIndicatorCount();
+      if (baseCount >= MAX_SWIPE_INDICATOR_SHOWS) {
+        return baseCount;
+      }
+      const nextCount = baseCount + 1;
+      await AsyncStorage.setItem(SWIPE_INDICATOR_KEY, nextCount.toString());
+      return nextCount;
     } catch (error) {
       console.error('Error incrementing swipe count:', error);
+      return currentCount ?? 0;
     }
+  };
+
+  const showSwipeIndicatorForSession = async (existingCount?: number) => {
+    if (swipeIndicatorShownThisSession.current || showSwipeIndicator) {
+      return;
+    }
+
+    const count = existingCount ?? await getSwipeIndicatorCount();
+    if (count >= MAX_SWIPE_INDICATOR_SHOWS) {
+      return;
+    }
+
+    swipeIndicatorShownThisSession.current = true;
+    await incrementSwipeIndicatorCount(count);
+    setShowSwipeIndicator(true);
   };
 
   // Initial load only - empty dependency array ensures this runs once
@@ -326,6 +372,29 @@ function HomeScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  // Manage swipe indicator lifecycle
+  useEffect(() => {
+    if (showSwipeIndicator) {
+      if (swipeIndicatorHideTimer.current) {
+        clearTimeout(swipeIndicatorHideTimer.current);
+      }
+      swipeIndicatorHideTimer.current = setTimeout(() => {
+        setShowSwipeIndicator(false);
+        swipeIndicatorHideTimer.current = null;
+      }, 6500);
+    } else if (swipeIndicatorHideTimer.current) {
+      clearTimeout(swipeIndicatorHideTimer.current);
+      swipeIndicatorHideTimer.current = null;
+    }
+
+    return () => {
+      if (swipeIndicatorHideTimer.current) {
+        clearTimeout(swipeIndicatorHideTimer.current);
+        swipeIndicatorHideTimer.current = null;
+      }
+    };
+  }, [showSwipeIndicator]);
+
   const checkForOffer = async () => {
     if (showOnboarding) return;
     
@@ -344,6 +413,14 @@ function HomeScreen() {
   };
 
   const changeGradient = async (newIndex: number) => {
+    // If the swipe indicator is visible, dismiss it immediately on first swipe
+    if (showSwipeIndicator) {
+      setShowSwipeIndicator(false);
+      if (swipeIndicatorHideTimer.current) {
+        clearTimeout(swipeIndicatorHideTimer.current);
+        swipeIndicatorHideTimer.current = null;
+      }
+    }
     setIsSwipingGradient(true);
     setPreviousGradientIndex(currentGradientIndex);
     setCurrentGradientIndex(newIndex);
@@ -443,7 +520,7 @@ function HomeScreen() {
   };
 
   const handleSwipeFadeComplete = async () => {
-    await incrementSwipeIndicatorCount();
+    // Auto-dismiss callback from indicator; count handled on first show
     setShowSwipeIndicator(false);
   };
 
@@ -659,9 +736,10 @@ Download QuRe: qure.app`;
   const handleOnboardingComplete = () => {
     setShowOnboarding(false);
     setShowPositionSlider(true);
-    
-    setTimeout(() => {
-      setShowSwipeIndicator(true);
+
+    setTimeout(async () => {
+      const swipeCount = await getSwipeIndicatorCount();
+      await showSwipeIndicatorForSession(swipeCount);
     }, 1000);
   };
 
@@ -754,6 +832,7 @@ Download QuRe: qure.app`;
                             onExpand={handleSliderExpand}
                             onCollapse={handleSliderCollapse}
                             singleQRMode={qrSlotMode === 'single'}
+                            safeAreaInsets={insets}
                             collapsedAccessory={
                               showSwipeIndicator && !sliderExpanded ? (
                                 <SwipeIndicator onFadeComplete={handleSwipeFadeComplete} />

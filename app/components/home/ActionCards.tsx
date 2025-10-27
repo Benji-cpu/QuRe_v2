@@ -12,51 +12,31 @@ interface ActionCardsProps {
 
 export default function ActionCards({ onExportWallpaper, onShareWallpaper, onSettings, showShareButton = false }: ActionCardsProps) {
   return (
-    <View style={styles.actionsContainer}>
-      <TouchableOpacity style={styles.actionCard} onPress={onExportWallpaper}>
+    <View style={styles.actionsRow}>
+      <TouchableOpacity style={[styles.actionCard, styles.cardSpacing]} onPress={onExportWallpaper}>
         <View style={styles.iconContainer}>
           <Feather name="download" size={18} color="white" />
         </View>
-        <View style={styles.actionContent}>
-          <Text
-            style={styles.actionTitle}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-          >
+        <View style={styles.textContainer}>
+          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
             Set as
           </Text>
-          <Text
-            style={styles.actionSubtitle}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-          >
+          <Text style={styles.subtitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
             Lock Screen
           </Text>
         </View>
       </TouchableOpacity>
 
       {showShareButton && (
-        <TouchableOpacity style={styles.actionCard} onPress={onShareWallpaper}>
+        <TouchableOpacity style={[styles.actionCard, styles.cardSpacing]} onPress={onShareWallpaper}>
           <View style={styles.iconContainer}>
             <Feather name="share" size={18} color="white" />
           </View>
-          <View style={styles.actionContent}>
-            <Text
-              style={styles.actionTitle}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-            >
+          <View style={styles.textContainer}>
+            <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               Share
             </Text>
-            <Text
-              style={styles.actionSubtitle}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-            >
+            <Text style={styles.subtitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
               Lock Screen
             </Text>
           </View>
@@ -67,21 +47,11 @@ export default function ActionCards({ onExportWallpaper, onShareWallpaper, onSet
         <View style={styles.iconContainer}>
           <Feather name="settings" size={18} color="white" />
         </View>
-        <View style={styles.actionContent}>
-          <Text
-            style={styles.actionTitle}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-          >
+        <View style={styles.textContainer}>
+          <Text style={styles.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
             Settings
           </Text>
-          <Text
-            style={styles.actionSubtitle}
-            numberOfLines={1}
-            adjustsFontSizeToFit
-            minimumFontScale={0.7}
-          >
+          <Text style={styles.subtitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
             & Plans
           </Text>
         </View>
@@ -91,22 +61,25 @@ export default function ActionCards({ onExportWallpaper, onShareWallpaper, onSet
 }
 
 const styles = StyleSheet.create({
-  actionsContainer: {
+  actionsRow: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    height: 60,
-    gap: 8,
     zIndex: 10,
   },
   actionCard: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    height: 60,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 12,
-    padding: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  cardSpacing: {
+    marginRight: 8,
   },
   iconContainer: {
     width: 32,
@@ -117,17 +90,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginRight: 8,
   },
-  actionContent: {
+  textContainer: {
     flex: 1,
     minWidth: 0,
+    justifyContent: 'center',
   },
-  actionTitle: {
+  title: {
     fontSize: 12,
     fontWeight: '600',
     color: 'white',
     marginBottom: 1,
   },
-  actionSubtitle: {
+  subtitle: {
     fontSize: 10,
     color: 'rgba(255, 255, 255, 0.8)',
   },

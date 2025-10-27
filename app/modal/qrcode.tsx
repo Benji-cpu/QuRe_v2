@@ -21,6 +21,7 @@ export default function QRCodeModal() {
   const { theme } = useTheme();
   const { id, slot } = useLocalSearchParams<{ id?: string; slot?: string }>();
   const scrollViewRef = useRef<ScrollView>(null);
+  // Store field layout as RELATIVE offsets to the form container.
   const fieldLayouts = useRef<Record<string, number>>({});
   const formOffset = useRef(0);
   const [selectedType, setSelectedType] = useState<QRCodeType>('link');
@@ -261,20 +262,28 @@ export default function QRCodeModal() {
   };
 
   const handleFieldLayout = useCallback((fieldKey: string, layoutY: number) => {
-    fieldLayouts.current[fieldKey] = formOffset.current + layoutY;
+    // Save relative Y (inside the form). We'll add the form's offset when focusing.
+    fieldLayouts.current[fieldKey] = layoutY;
   }, []);
 
   const handleFieldFocus = useCallback((fieldKey: string) => {
-    const layoutY = fieldLayouts.current[fieldKey];
-    if (layoutY === undefined) return;
+    const relativeY = fieldLayouts.current[fieldKey];
+    if (relativeY === undefined) return;
+
+    const BASELINE_PADDING = 120;
+    const FOCUS_PADDING = 100; // Keep field comfortably below the header/tabs
+    const baselineOffset = formOffset.current || insets.top + BASELINE_PADDING;
+    const targetY = Math.max(0, baselineOffset + relativeY - FOCUS_PADDING);
 
     if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({
-        y: Math.max(0, layoutY - 80),
-        animated: true,
+      requestAnimationFrame(() => {
+        scrollViewRef.current?.scrollTo({
+          y: targetY,
+          animated: true,
+        });
       });
     }
-  }, []);
+  }, [insets.top]);
 
   const qrContent = canSave() ? QRGenerator.generateContent(selectedType, formData) : '';
 
@@ -391,7 +400,7 @@ export default function QRCodeModal() {
     <KeyboardAvoidingView 
       style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 110 : 0}
     >
       <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: insets.top + 15 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -444,7 +453,7 @@ export default function QRCodeModal() {
         style={styles.content} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="always"
       >
         {slot && (
           <View style={[styles.slotIndicator, { backgroundColor: theme.primary + '20' }]}>

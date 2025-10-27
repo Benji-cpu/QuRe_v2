@@ -1,7 +1,7 @@
 // app/components/home/SwipeIndicator.tsx
 import { Feather } from '@expo/vector-icons';
 import React, { useEffect, useRef } from 'react';
-import { Animated, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
+import { Animated, Easing, StyleProp, StyleSheet, Text, View, ViewStyle } from 'react-native';
 
 interface SwipeIndicatorProps {
   onFadeComplete?: () => void;
@@ -14,62 +14,131 @@ export default function SwipeIndicator({ onFadeComplete, style }: SwipeIndicator
   const rightChevronX = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    const showSequence = Animated.sequence([
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.loop(
-        Animated.sequence([
-          Animated.parallel([
-            Animated.timing(leftChevronX, {
-              toValue: -10,
-              duration: 600,
-              useNativeDriver: true,
-            }),
-            Animated.timing(rightChevronX, {
-              toValue: 10,
-              duration: 600,
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.parallel([
-            Animated.timing(leftChevronX, {
-              toValue: 0,
-              duration: 600,
-              useNativeDriver: true,
-            }),
-            Animated.timing(rightChevronX, {
-              toValue: 0,
-              duration: 600,
-              useNativeDriver: true,
-            }),
-          ]),
-        ]),
-        { iterations: 3 }
-      ),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 300,
-        delay: 400,
-        useNativeDriver: true,
-      }),
-    ]);
+    const OFFSET = 18;
+    const SEGMENT_DURATION = 600;
+    const DISPLAY_DURATION = 5200;
 
-    showSequence.start(() => {
-      onFadeComplete?.();
+    opacity.setValue(0);
+    leftChevronX.setValue(0);
+    rightChevronX.setValue(0);
+
+    const fadeIn = Animated.timing(opacity, {
+      toValue: 1,
+      duration: 450,
+      easing: Easing.out(Easing.quad),
+      useNativeDriver: true,
     });
 
+    const leftCycle = Animated.loop(
+      Animated.sequence([
+        Animated.timing(leftChevronX, {
+          toValue: -OFFSET,
+          duration: SEGMENT_DURATION,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(leftChevronX, {
+          toValue: 0,
+          duration: SEGMENT_DURATION,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(leftChevronX, {
+          toValue: OFFSET,
+          duration: SEGMENT_DURATION,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(leftChevronX, {
+          toValue: 0,
+          duration: SEGMENT_DURATION,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+      { resetBeforeIteration: true }
+    );
+
+    const rightCycle = Animated.loop(
+      Animated.sequence([
+        Animated.timing(rightChevronX, {
+          toValue: OFFSET,
+          duration: SEGMENT_DURATION,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(rightChevronX, {
+          toValue: 0,
+          duration: SEGMENT_DURATION,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(rightChevronX, {
+          toValue: -OFFSET,
+          duration: SEGMENT_DURATION,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(rightChevronX, {
+          toValue: 0,
+          duration: SEGMENT_DURATION,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]),
+      { resetBeforeIteration: true }
+    );
+
+    const fadeOut = () => {
+      Animated.parallel([
+        Animated.timing(leftChevronX, {
+          toValue: 0,
+          duration: 320,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(rightChevronX, {
+          toValue: 0,
+          duration: 320,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        Animated.timing(opacity, {
+          toValue: 0,
+          duration: 450,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }).start(() => {
+          onFadeComplete?.();
+        });
+      });
+    };
+
+    fadeIn.start(() => {
+      leftCycle.start();
+      rightCycle.start();
+    });
+
+    const fadeOutTimeout = setTimeout(() => {
+      leftCycle.stop();
+      rightCycle.stop();
+      fadeOut();
+    }, DISPLAY_DURATION);
+
     return () => {
+      fadeIn.stop();
+      leftCycle.stop();
+      rightCycle.stop();
+      clearTimeout(fadeOutTimeout);
       opacity.stopAnimation();
       leftChevronX.stopAnimation();
       rightChevronX.stopAnimation();
     };
-  }, []);
+  }, [leftChevronX, rightChevronX, opacity, onFadeComplete]);
 
   return (
-    <Animated.View style={[styles.container, style, { opacity }]}>
+    <Animated.View style={[styles.container, style, { opacity }]} pointerEvents="none">
       <View style={styles.card}>
         <View style={styles.iconContainer}>
           <Animated.View style={{ transform: [{ translateX: leftChevronX }] }}>
@@ -99,8 +168,8 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: '100%',
-    padding: 10,
+    height: 60,
+    paddingHorizontal: 16,
     backgroundColor: 'rgba(255, 255, 255, 0.15)',
     borderRadius: 12,
     borderWidth: 1,
@@ -116,13 +185,13 @@ const styles = StyleSheet.create({
   },
   textContainer: {
     flex: 1,
-    marginHorizontal: 8,
+    marginHorizontal: 12,
   },
   title: {
     color: 'white',
     fontWeight: '600',
     fontSize: 12,
-    marginBottom: 1,
+    marginBottom: 2,
   },
   subtitle: {
     color: 'rgba(255, 255, 255, 0.8)',
