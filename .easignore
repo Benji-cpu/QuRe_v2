@@ -1,0 +1,66 @@
+# EAS Build ignore file
+# Files and directories listed here will be excluded from upload
+
+# Dependencies (EAS automatically excludes these, but explicit for clarity)
+node_modules/
+.npm/
+.yarn/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+pnpm-lock.yaml
+.yarn-integrity
+
+# Build outputs
+dist/
+.expo/
+.expo-shared/
+web-build/
+*.aab
+*.apk
+*.ipa
+
+# iOS
+ios/Pods/
+ios/build/
+ios/**/*.xcuserdatad/
+ios/**/*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
+DerivedData/
+
+# Android
+android/app/build/
+android/build/
+android/.gradle/
+android/**/*.iml
+android/local.properties
+*.keystore
+
+# Development files
+.git/
+.gitignore
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Environment files
+.env*.local
+
+# Large directories that shouldn't be uploaded
+android/.gradle/
+android/app/.cxx/
+ios/Pods/
+ios/build/
+
