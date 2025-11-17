@@ -9,13 +9,28 @@
 - **Expected**: Build will complete (~10-25 min), then automatically submit to Google Play Internal track
 
 ### iOS ⚠️
-- **Status**: Requires interactive authentication
-- **Issue**: iOS builds need Apple ID credentials (interactive prompt)
-- **Action Needed**: Run iOS build manually:
-  ```bash
-  eas build --platform ios --profile production --auto-submit
-  ```
-  Then provide Apple ID when prompted.
+- **Status**: Build finished, submission blocked
+- **Build ID**: `71fef491-b2c6-4cae-b64e-d8469778abd3`
+- **Artifact**: https://expo.dev/artifacts/eas/f5s2v7CNoTJ8CWz2WXSSsF.ipa
+- **Issue**: Auto-submit failed with `ascAppId` missing from `eas.json`
+- **Next Action**:
+  1. Grab the App Store Connect **Apple ID** / `ascAppId` for `com.qureapp.app` (App Store Connect → App Information → Apple ID)
+  2. Update `eas.json` submit profile:
+     ```json
+     "submit": {
+       "production": {
+         "ios": {
+           "appleTeamId": "6G62Q6BH3X",
+           "ascAppId": "<APPLE_ID>"
+         }
+       }
+     }
+     ```
+  3. Submit the newly finished build:
+     ```bash
+     eas submit --platform ios --profile production --latest --non-interactive --wait
+     ```
+- **Workaround**: Re-run `eas submit` without `--non-interactive` and select the app manually if interactive login is acceptable.
 
 ## What Happens Next
 

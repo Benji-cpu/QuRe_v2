@@ -16,7 +16,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const iosBundleIdentifier = isDevVariant ? "com.qureapp.app.dev" : "com.qureapp.app";
 
   const androidConfig = {
-    versionCode: 46,
+    versionCode: 48,
     adaptiveIcon: {
       foregroundImage: "./assets/images/adaptive-icon.png",
       backgroundColor: "#ffffff"
@@ -37,7 +37,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
     slug: "QuRe",
     owner: "benji000",
     version: "1.0.5",
-    runtimeVersion: "1.0.4",
+    runtimeVersion: "1.0.5",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
     scheme: "qure",
@@ -54,7 +54,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         NSPhotoLibraryAddUsageDescription:
           "QuRe needs permission to save generated wallpapers to your photo library."
       },
-      buildNumber: "46"
+      buildNumber: "48"
     },
 
     android: androidConfig,
