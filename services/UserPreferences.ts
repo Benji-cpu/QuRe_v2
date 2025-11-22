@@ -4,6 +4,7 @@ import {
   DEFAULT_QR_SCALE,
   DEFAULT_QR_X_POSITION,
   DEFAULT_QR_Y_POSITION,
+  DEFAULT_SINGLE_QR_X_POSITION,
 } from '../constants/qrPlacement';
 import {
   MIN_DOUBLE_QR_SCALE,
@@ -18,9 +19,12 @@ export interface UserPreferences {
   selectedGradientId: string;
   primaryQRCodeId?: string;
   secondaryQRCodeId?: string;
-  qrXPosition?: number;  // 0-100 coordinate system (0=left, 100=right)
+  qrXPosition?: number;  // 0-100 coordinate system (0=left, 100=right) - for double mode
   qrYPosition?: number;  // 0-100 coordinate system (0=bottom, 100=top)
-  qrScale?: number;
+  qrScale?: number;  // for double mode
+  singleQRXPosition?: number;  // 0-100 coordinate system (0=left, 100=right) - for single mode
+  singleQRYPosition?: number;  // 0-100 coordinate system (0=bottom, 100=top) - for single mode
+  singleQRScale?: number;  // for single mode
   showTitle?: boolean;
   qrSlotMode?: 'single' | 'double';
   backgroundType?: 'gradient' | 'custom';
@@ -39,6 +43,9 @@ export class UserPreferencesService {
         qrXPosition: DEFAULT_QR_X_POSITION,
         qrYPosition: DEFAULT_QR_Y_POSITION,
         qrScale: DEFAULT_QR_SCALE,
+        singleQRXPosition: DEFAULT_SINGLE_QR_X_POSITION,
+        singleQRYPosition: DEFAULT_QR_Y_POSITION,
+        singleQRScale: MIN_SINGLE_QR_SCALE,
         showTitle: true,
         qrSlotMode: 'double',
         backgroundType: 'gradient',
@@ -92,6 +99,9 @@ export class UserPreferencesService {
         qrXPosition: DEFAULT_QR_X_POSITION,
         qrYPosition: DEFAULT_QR_Y_POSITION,
         qrScale: DEFAULT_QR_SCALE,
+        singleQRXPosition: DEFAULT_SINGLE_QR_X_POSITION,
+        singleQRYPosition: DEFAULT_QR_Y_POSITION,
+        singleQRScale: MIN_SINGLE_QR_SCALE,
         showTitle: true,
         qrSlotMode: 'double',
         backgroundType: 'gradient',
@@ -142,13 +152,22 @@ export class UserPreferencesService {
     }
   }
 
-  static async updateQRXPosition(xPosition: number): Promise<void> {
+  static async updateQRXPosition(xPosition: number, mode?: 'single' | 'double'): Promise<void> {
     try {
       const preferences = await this.getPreferences();
+      const slotMode = mode || preferences.qrSlotMode || 'double';
       // Validate and clamp position to 0-100 range
       // Ensure the value is a valid number
-      const validPosition = typeof xPosition === 'number' && !isNaN(xPosition) ? xPosition : DEFAULT_QR_X_POSITION;
-      preferences.qrXPosition = Math.max(0, Math.min(100, validPosition));
+      const validPosition = typeof xPosition === 'number' && !isNaN(xPosition) 
+        ? xPosition 
+        : (slotMode === 'single' ? DEFAULT_SINGLE_QR_X_POSITION : DEFAULT_QR_X_POSITION);
+      const clampedPosition = Math.max(0, Math.min(100, validPosition));
+      
+      if (slotMode === 'single') {
+        preferences.singleQRXPosition = clampedPosition;
+      } else {
+        preferences.qrXPosition = clampedPosition;
+      }
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR X position:', error);
@@ -156,15 +175,20 @@ export class UserPreferencesService {
     }
   }
 
-  static async updateQRYPosition(yPosition: number): Promise<void> {
+  static async updateQRYPosition(yPosition: number, mode?: 'single' | 'double'): Promise<void> {
     try {
       const preferences = await this.getPreferences();
+      const slotMode = mode || preferences.qrSlotMode || 'double';
       // Validate and clamp position to 0-100 range
       // Ensure the value is a valid number
       const validPosition = typeof yPosition === 'number' && !isNaN(yPosition) ? yPosition : DEFAULT_QR_Y_POSITION;
-      preferences.qrYPosition = Math.max(0, Math.min(100, validPosition));
+      const clampedPosition = Math.max(0, Math.min(100, validPosition));
       
-      
+      if (slotMode === 'single') {
+        preferences.singleQRYPosition = clampedPosition;
+      } else {
+        preferences.qrYPosition = clampedPosition;
+      }
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR Y position:', error);
@@ -172,13 +196,18 @@ export class UserPreferencesService {
     }
   }
 
-  static async updateQRScale(scale: number): Promise<void> {
+  static async updateQRScale(scale: number, mode?: 'single' | 'double'): Promise<void> {
     try {
       const preferences = await this.getPreferences();
-      const mode = preferences.qrSlotMode || 'double';
-      const minScale = mode === 'single' ? MIN_SINGLE_QR_SCALE : MIN_DOUBLE_QR_SCALE;
+      const slotMode = mode || preferences.qrSlotMode || 'double';
+      const minScale = slotMode === 'single' ? MIN_SINGLE_QR_SCALE : MIN_DOUBLE_QR_SCALE;
       const clamped = Math.max(minScale, Math.min(2, scale));
-      preferences.qrScale = clamped;
+      
+      if (slotMode === 'single') {
+        preferences.singleQRScale = clamped;
+      } else {
+        preferences.qrScale = clamped;
+      }
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR scale:', error);
@@ -186,12 +215,21 @@ export class UserPreferencesService {
     }
   }
 
-  static async updateQRPosition(xPosition: number, yPosition: number): Promise<void> {
+  static async updateQRPosition(xPosition: number, yPosition: number, mode?: 'single' | 'double'): Promise<void> {
     try {
       const preferences = await this.getPreferences();
+      const slotMode = mode || preferences.qrSlotMode || 'double';
       // Validate and clamp positions to 0-100 range
-      preferences.qrXPosition = Math.max(0, Math.min(100, xPosition));
-      preferences.qrYPosition = Math.max(0, Math.min(100, yPosition));
+      const clampedX = Math.max(0, Math.min(100, xPosition));
+      const clampedY = Math.max(0, Math.min(100, yPosition));
+      
+      if (slotMode === 'single') {
+        preferences.singleQRXPosition = clampedX;
+        preferences.singleQRYPosition = clampedY;
+      } else {
+        preferences.qrXPosition = clampedX;
+        preferences.qrYPosition = clampedY;
+      }
       await this.savePreferences(preferences);
     } catch (error) {
       console.error('Error updating QR position:', error);

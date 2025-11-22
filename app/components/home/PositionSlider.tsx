@@ -47,12 +47,12 @@ interface PositionSliderProps {
 
 type Anchor = 'top' | 'bottom';
 
-const SNAP_THRESHOLD = 3;
-const CENTER_SNAP_THRESHOLD = 10;
+const SNAP_THRESHOLD = 5; // Gentle snap threshold for horizontal axis
+const CENTER_SNAP_THRESHOLD = 8; // Slightly larger threshold for center position
 const SNAP_TARGETS_X = Array.from(
   new Set([DEFAULT_QR_X_POSITION, DEFAULT_SINGLE_QR_X_POSITION, 50]),
 );
-const SNAP_TARGETS_Y = Array.from(new Set([DEFAULT_QR_Y_POSITION, 50]));
+// No vertical snapping - removed SNAP_TARGETS_Y
 const SHEET_HORIZONTAL_PADDING = 20;
 
 function PositionSlider({
@@ -79,7 +79,6 @@ function PositionSlider({
   const { theme } = useTheme();
 
   const [snappedTargetX, setSnappedTargetX] = useState<number | null>(null);
-  const [snappedTargetY, setSnappedTargetY] = useState<number | null>(null);
   const [anchor, setAnchor] = useState<Anchor>('top');
   const [cardHeight, setCardHeight] = useState(0);
   const [xSliderValue, setXSliderValue] = useState(xPosition);
@@ -110,7 +109,6 @@ function PositionSlider({
       });
     } else {
       setSnappedTargetX(null);
-      setSnappedTargetY(null);
     }
   }, [isExpanded, anchorAnim]);
 
@@ -152,19 +150,16 @@ function PositionSlider({
     }).start();
   };
 
-  const handleSnapPosition = (value: number, axis: 'x' | 'y') => {
-    const snapTargets = axis === 'x' ? SNAP_TARGETS_X : SNAP_TARGETS_Y;
-    const currentSnap = axis === 'x' ? snappedTargetX : snappedTargetY;
-    const setSnapTarget = axis === 'x' ? setSnappedTargetX : setSnappedTargetY;
-
+  const handleSnapPosition = (value: number) => {
+    // Only snap on horizontal axis
     const getThreshold = (target: number) => {
-      if (axis === 'x' && singleQRMode && target === 50) {
+      if (singleQRMode && target === 50) {
         return CENTER_SNAP_THRESHOLD;
       }
       return SNAP_THRESHOLD;
     };
 
-    const nextTarget = snapTargets.reduce<number | undefined>((closest, target) => {
+    const nextTarget = SNAP_TARGETS_X.reduce<number | undefined>((closest, target) => {
       const threshold = getThreshold(target);
       const withinThreshold = Math.abs(value - target) <= threshold;
       if (!withinThreshold) {
@@ -186,30 +181,30 @@ function PositionSlider({
     }, undefined);
 
     if (nextTarget !== undefined) {
-      if (currentSnap !== nextTarget) {
-        setSnapTarget(nextTarget);
+      if (snappedTargetX !== nextTarget) {
+        setSnappedTargetX(nextTarget);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }
       return nextTarget;
     }
 
-    if (currentSnap !== null) {
-      setSnapTarget(null);
+    if (snappedTargetX !== null) {
+      setSnappedTargetX(null);
     }
 
     return value;
   };
 
   const handleXChange = (value: number) => {
-    const nextValue = handleSnapPosition(value, 'x');
+    const nextValue = handleSnapPosition(value);
     setXSliderValue(nextValue);
     onXPositionChange(nextValue);
   };
 
   const handleYChange = (value: number) => {
-    const nextValue = handleSnapPosition(value, 'y');
-    setYSliderValue(nextValue);
-    onYPositionChange(nextValue);
+    // No snapping on Y axis
+    setYSliderValue(value);
+    onYPositionChange(value);
   };
 
   const handleXEnd = (value: number) => {
@@ -219,8 +214,7 @@ function PositionSlider({
   };
 
   const handleYEnd = (value: number) => {
-    const finalValue = snappedTargetY ?? ySliderValue ?? value;
-    setSnappedTargetY(null);
+    const finalValue = ySliderValue ?? value;
     onYPositionChangeEnd?.(finalValue);
   };
 
@@ -228,7 +222,6 @@ function PositionSlider({
     const defaultScale = singleQRMode ? MIN_SINGLE_QR_SCALE : MIN_DOUBLE_QR_SCALE;
     const defaultX = singleQRMode ? DEFAULT_SINGLE_QR_X_POSITION : DEFAULT_QR_X_POSITION;
     setSnappedTargetX(null);
-    setSnappedTargetY(null);
 
     if (onResetPosition) {
       onResetPosition(

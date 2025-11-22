@@ -113,16 +113,26 @@ function HomeScreen() {
       pendingSaveInteractionRef.current = null;
     }
     
+    const currentMode = qrSlotMode;
+    
     saveTimeoutRef.current = setTimeout(async () => {
       pendingSaveInteractionRef.current = InteractionManager.runAfterInteractions(async () => {
         try {
-          console.log('Saving position changes:', { x, y, scale });
-          // Save all values atomically using preferences cache
-          await PreferencesCache.savePartial({
-            qrXPosition: x,
-            qrYPosition: y,
-            qrScale: scale,
-          });
+          console.log('Saving position changes:', { x, y, scale, mode: currentMode });
+          // Save all values atomically using preferences cache, based on current mode
+          if (currentMode === 'single') {
+            await PreferencesCache.savePartial({
+              singleQRXPosition: x,
+              singleQRYPosition: y,
+              singleQRScale: scale,
+            });
+          } else {
+            await PreferencesCache.savePartial({
+              qrXPosition: x,
+              qrYPosition: y,
+              qrScale: scale,
+            });
+          }
           console.log('Position changes saved successfully');
         } catch (error) {
           console.error('Error saving position changes:', error);
@@ -131,7 +141,7 @@ function HomeScreen() {
         }
       });
     }, 500);
-  }, [initialLoadComplete]);
+  }, [initialLoadComplete, qrSlotMode]);
   
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -188,20 +198,19 @@ function HomeScreen() {
       const defaultXForMode = slotMode === 'single' ? DEFAULT_SINGLE_QR_X_POSITION : DEFAULT_QR_X_POSITION;
       const defaultScaleForMode = slotMode === 'single' ? MIN_SINGLE_QR_SCALE : DEFAULT_QR_SCALE;
 
-      let resolvedX = preferences.qrXPosition;
-      if (resolvedX === undefined || resolvedX === null) {
-        resolvedX = defaultXForMode;
-      } else if (slotMode === 'single' && resolvedX === DEFAULT_QR_X_POSITION) {
-        resolvedX = DEFAULT_SINGLE_QR_X_POSITION;
-      }
+      // Load position based on mode - use separate storage for single vs double
+      let resolvedX: number;
+      let resolvedY: number;
+      let resolvedScale: number;
 
-      const resolvedY = preferences.qrYPosition ?? DEFAULT_QR_Y_POSITION;
-
-      let resolvedScale = preferences.qrScale;
-      if (resolvedScale === undefined || resolvedScale === null) {
-        resolvedScale = defaultScaleForMode;
-      } else if (slotMode === 'single' && resolvedScale === DEFAULT_QR_SCALE) {
-        resolvedScale = defaultScaleForMode;
+      if (slotMode === 'single') {
+        resolvedX = preferences.singleQRXPosition ?? defaultXForMode;
+        resolvedY = preferences.singleQRYPosition ?? DEFAULT_QR_Y_POSITION;
+        resolvedScale = preferences.singleQRScale ?? defaultScaleForMode;
+      } else {
+        resolvedX = preferences.qrXPosition ?? defaultXForMode;
+        resolvedY = preferences.qrYPosition ?? DEFAULT_QR_Y_POSITION;
+        resolvedScale = preferences.qrScale ?? defaultScaleForMode;
       }
 
       console.log('📊 Loading positions in loadUserData:', {
@@ -292,8 +301,34 @@ function HomeScreen() {
       // Update QR codes, premium status, and display settings
       setIsPremium(premium);
       setShowTitle(preferences.showTitle ?? true);
-      setQrSlotMode(preferences.qrSlotMode || 'double');
+      
+      // Determine slot mode - premium users can choose, free users always double
+      const preferenceSlotMode = preferences.qrSlotMode || 'double';
+      const slotMode = premium ? preferenceSlotMode : 'double';
+      setQrSlotMode(slotMode);
       setShowShareButton(preferences.showShareButton ?? false);
+
+      // Load positions based on current mode
+      const defaultXForMode = slotMode === 'single' ? DEFAULT_SINGLE_QR_X_POSITION : DEFAULT_QR_X_POSITION;
+      const defaultScaleForMode = slotMode === 'single' ? MIN_SINGLE_QR_SCALE : DEFAULT_QR_SCALE;
+
+      let resolvedX: number;
+      let resolvedY: number;
+      let resolvedScale: number;
+
+      if (slotMode === 'single') {
+        resolvedX = preferences.singleQRXPosition ?? defaultXForMode;
+        resolvedY = preferences.singleQRYPosition ?? DEFAULT_QR_Y_POSITION;
+        resolvedScale = preferences.singleQRScale ?? defaultScaleForMode;
+      } else {
+        resolvedX = preferences.qrXPosition ?? defaultXForMode;
+        resolvedY = preferences.qrYPosition ?? DEFAULT_QR_Y_POSITION;
+        resolvedScale = preferences.qrScale ?? defaultScaleForMode;
+      }
+
+      setQrXPosition(resolvedX);
+      setQrYPosition(resolvedY);
+      setQrScale(resolvedScale);
       
       // Update background settings
       if (!premium && preferences.backgroundType === 'custom') {
