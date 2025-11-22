@@ -14,7 +14,6 @@ import { UserPreferencesService } from '../../services/UserPreferences';
 export default function PremiumModal() {
   const { theme, mode } = useTheme();
   const insets = useSafeAreaInsets();
-  const headerPadding = Math.max(insets.top - 42, 10);
   const [offer, setOffer] = useState<PricingOffer | null>(null);
   const [baseProduct, setBaseProduct] = useState<Product | null>(null); // tier1 (normal price)
   const [offerProduct, setOfferProduct] = useState<Product | null>(null); // current offer
@@ -316,7 +315,7 @@ export default function PremiumModal() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.headerBar, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: headerPadding, paddingBottom: headerPadding }]}>
+      <View style={[styles.headerBar, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: Platform.OS === 'ios' ? 12 : insets.top + 12, paddingBottom: 12 }]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
@@ -441,11 +440,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingVertical: 12,
     borderBottomWidth: 1,
   },
   backButton: {
-    marginRight: 15,
+    marginRight: 12,
+    padding: 4,
   },
   headerTitle: {
     fontSize: 20,

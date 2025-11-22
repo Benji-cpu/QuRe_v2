@@ -33,7 +33,7 @@ function QRSlots({
 }: QRSlotsProps) {
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const insets = useSafeAreaInsets();
-  const isSingleSlotMode = singleQRMode || !isPremium;
+  const isSingleSlotMode = !!singleQRMode;
 
   const getQRSize = () => {
     const baseSize = isSingleSlotMode ? 120 : 90;
@@ -196,7 +196,7 @@ function QRSlots({
 
   // Always show slots in dual mode to maintain layout, regardless of hideEmptySlots
   const shouldShowPrimary = true;
-  const shouldShowSecondary = !isSingleSlotMode && isPremium;
+  const shouldShowSecondary = !isSingleSlotMode;
 
   if (isSingleSlotMode) {
     return (

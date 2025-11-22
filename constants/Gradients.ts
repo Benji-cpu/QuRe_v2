@@ -62,12 +62,5 @@ export interface GradientPreset {
       colors: ['#536976', '#292E49'],
       start: { x: 0, y: 0 },
       end: { x: 1, y: 1 }
-  },
-  {
-    id: 'aurora',
-    name: 'Aurora',
-    colors: ['#7F7FD5', '#86A8E7', '#91EAE4'],
-    start: { x: 0, y: 0 },
-    end: { x: 1, y: 1 }
     }
   ];

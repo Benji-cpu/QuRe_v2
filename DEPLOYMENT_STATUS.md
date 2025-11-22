@@ -117,3 +117,7 @@ https://expo.dev/accounts/benji000/projects/QuRe/builds
 **Repository**: https://github.com/Benji-cpu/QuRe_v2
 
 
+
+
+
+

@@ -1,5 +1,6 @@
 import { Feather, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as Updates from 'expo-updates';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -14,7 +15,7 @@ import { UserPreferencesService } from '../../services/UserPreferences';
 
 export default function SettingsModal() {
   const insets = useSafeAreaInsets();
-  const headerPadding = Math.max(insets.top - 42, 10);
+  const headerTopPadding = Platform.OS === 'ios' ? 12 : insets.top + 12;
   const { theme, mode, toggleTheme } = useTheme();
   const [selectedGradientId, setSelectedGradientId] = useState('sunset');
   const [isPremium, setIsPremium] = useState(false);
@@ -223,7 +224,7 @@ export default function SettingsModal() {
       style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: headerPadding, paddingBottom: headerPadding }]}>
+      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: headerTopPadding, paddingBottom: 12 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
@@ -574,6 +575,79 @@ export default function SettingsModal() {
               <Text style={[styles.buttonText, styles.settingActionButtonText, { color: theme.primary }]}>Launch</Text>
             </Pressable>
           </View>
+
+          {__DEV__ && (
+            <>
+              <View style={[styles.settingDivider, { backgroundColor: theme.borderLight }]} />
+
+              <View style={styles.settingRow}>
+                <View style={styles.settingInfo}>
+                  <View style={styles.settingTitleRow}>
+                    <Text style={[styles.settingTitle, { color: theme.text }]}>Reset App Data</Text>
+                  </View>
+                  <Text style={[styles.settingDescription, { color: theme.textSecondary }]}>
+                    Clear all stored data and reset to fresh install state
+                  </Text>
+                </View>
+                <Pressable 
+                  style={[
+                    styles.buttonBase,
+                    styles.settingActionButton,
+                    { borderColor: theme.error, backgroundColor: theme.surfaceVariant }
+                  ]}
+                  onPress={async () => {
+                    Alert.alert(
+                      'Reset App Data',
+                      'This will clear all your data including QR codes, preferences, and settings. The app will reload to a fresh state. Continue?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Reset',
+                          style: 'destructive',
+                          onPress: async () => {
+                            try {
+                              // Clear all data first
+                              await UserPreferencesService.clearAllData();
+                              
+                              // Close the settings modal immediately
+                              router.dismissAll();
+                              
+                              // Small delay to ensure AsyncStorage operations complete
+                              await new Promise(resolve => setTimeout(resolve, 300));
+                              
+                              // Force a full app reload to ensure all state is reset
+                              // This ensures components remount and fresh data is loaded
+                              try {
+                                // Use Updates.reloadAsync() for a full JS bundle reload
+                                // This works in both dev and prod, ensuring complete state reset
+                                if (Updates.isEnabled) {
+                                  await Updates.reloadAsync();
+                                } else {
+                                  // Fallback for dev mode: navigate with timestamp to force remount
+                                  console.log('Updates not enabled, using navigation with timestamp');
+                                  router.replace(`/?reset=${Date.now()}`);
+                                }
+                              } catch (reloadError) {
+                                // Final fallback: navigate to root
+                                console.log('Reload failed, using navigation fallback:', reloadError);
+                                router.replace(`/?reset=${Date.now()}`);
+                              }
+                            } catch (error) {
+                              Alert.alert('Error', 'Failed to clear app data. Please try again.');
+                              console.error('Error clearing data:', error);
+                            }
+                          }
+                        }
+                      ]
+                    );
+                  }}
+                  android_ripple={{ color: theme.overlay }}
+                >
+                  <Text style={[styles.buttonText, styles.settingActionButtonText, { color: theme.error }]}>Reset</Text>
+                </Pressable>
+              </View>
+            </>
+          )}
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -636,12 +710,12 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   gradientOption: {
-    flexBasis: '30%',
-    maxWidth: '30%',
+    flexBasis: '23%',
+    maxWidth: '23%',
     aspectRatio: 9 / 16,
-    borderRadius: 18,
+    borderRadius: 12,
     overflow: 'hidden',
-    borderWidth: 3,
+    borderWidth: 2,
     borderColor: 'transparent',
   },
   selectedGradient: {
@@ -654,18 +728,18 @@ const styles = StyleSheet.create({
   },
   selectedIndicator: {
     position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 26,
-    height: 26,
-    borderRadius: 13,
+    top: 6,
+    right: 6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: '#2196f3',
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkmark: {
     color: 'white',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
   },
   customBackgroundContainer: {

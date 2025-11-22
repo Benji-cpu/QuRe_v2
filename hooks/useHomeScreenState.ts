@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { GRADIENT_PRESETS } from '../constants/Gradients';
-import { QRStorage } from '../services/QRStorage';
+import { QRStorage, BRAND_PLACEHOLDER_QR_ID } from '../services/QRStorage';
 import { UserPreferencesService } from '../services/UserPreferences';
 import { QRCodeData } from '../types/QRCode';
 
@@ -32,9 +32,19 @@ export function useHomeScreenState() {
         setPrimaryQR(primaryQRData);
       }
 
-      if (preferences.secondaryQRCodeId && premium) {
-        const secondaryQRData = await QRStorage.getQRCodeById(preferences.secondaryQRCodeId);
-        setSecondaryQR(secondaryQRData);
+      if (premium) {
+        if (preferences.secondaryQRCodeId) {
+          const secondaryQRData = await QRStorage.getQRCodeById(preferences.secondaryQRCodeId);
+          setSecondaryQR(secondaryQRData);
+        } else {
+          setSecondaryQR(null);
+        }
+      } else {
+        const placeholderQR = await QRStorage.ensureBrandPlaceholder();
+        if (preferences.secondaryQRCodeId !== BRAND_PLACEHOLDER_QR_ID) {
+          await UserPreferencesService.updateSecondaryQR(placeholderQR.id);
+        }
+        setSecondaryQR(placeholderQR);
       }
     } catch (error) {
       console.error('Error loading user data:', error);
@@ -50,9 +60,13 @@ export function useHomeScreenState() {
       if (slot === 'primary') {
         await UserPreferencesService.updatePrimaryQR(undefined);
         setPrimaryQR(null);
-      } else {
-        await UserPreferencesService.updateSecondaryQR(undefined);
-        setSecondaryQR(null);
+      } else if (slot === 'secondary') {
+        if (isPremium) {
+          await UserPreferencesService.updateSecondaryQR(undefined);
+          setSecondaryQR(null);
+        } else {
+          console.warn('Cannot remove secondary QR without premium access');
+        }
       }
     } catch (error) {
       console.error('Error removing QR code:', error);

@@ -3,6 +3,7 @@ import { Feather, FontAwesome, FontAwesome5, MaterialIcons } from '@expo/vector-
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useMemo, useRef } from 'react';
 import { Animated, Dimensions, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { UserPreferencesService } from '../../services/UserPreferences';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -27,6 +28,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const scrollX = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef<any>(null);
   const [currentIndex, setCurrentIndex] = React.useState(0);
+  const insets = useSafeAreaInsets();
 
   const pages: OnboardingPage[] = useMemo(
     () => [
@@ -83,9 +85,18 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     onComplete();
   };
 
+  const isLastPage = currentIndex === pages.length - 1;
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.closeButton} onPress={handleGetStarted} hitSlop={16}>
+      <TouchableOpacity 
+        style={[
+          styles.closeButton, 
+          { top: Math.max(insets.top, 0) + 14 }
+        ]} 
+        onPress={handleGetStarted} 
+        hitSlop={16}
+      >
         <Feather name="x" size={22} color="white" />
       </TouchableOpacity>
       <Animated.ScrollView
@@ -145,48 +156,48 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         ))}
       </Animated.ScrollView>
 
-      <View style={styles.pagination}>
-        {pages.map((_, index) => {
-          const inputRange = [
-            (index - 1) * SCREEN_WIDTH,
-            index * SCREEN_WIDTH,
-            (index + 1) * SCREEN_WIDTH
-          ];
-          
-          const dotWidth = scrollX.interpolate({
-            inputRange,
-            outputRange: [8, 20, 8],
-            extrapolate: 'clamp'
-          });
-          
-          const opacity = scrollX.interpolate({
-            inputRange,
-            outputRange: [0.3, 1, 0.3],
-            extrapolate: 'clamp'
-          });
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom + 16, 40) }]}>
+        <View style={[styles.pagination, isLastPage && styles.paginationWithButton]}>
+          {pages.map((_, index) => {
+            const inputRange = [
+              (index - 1) * SCREEN_WIDTH,
+              index * SCREEN_WIDTH,
+              (index + 1) * SCREEN_WIDTH
+            ];
+            
+            const dotWidth = scrollX.interpolate({
+              inputRange,
+              outputRange: [8, 20, 8],
+              extrapolate: 'clamp'
+            });
+            
+            const opacity = scrollX.interpolate({
+              inputRange,
+              outputRange: [0.3, 1, 0.3],
+              extrapolate: 'clamp'
+            });
 
-          return (
-            <Animated.View
-              key={index}
-              style={[
-                styles.dot,
-                {
-                  width: dotWidth,
-                  opacity
-                }
-              ]}
-            />
-          );
-        })}
-      </View>
+            return (
+              <Animated.View
+                key={index}
+                style={[
+                  styles.dot,
+                  {
+                    width: dotWidth,
+                    opacity
+                  }
+                ]}
+              />
+            );
+          })}
+        </View>
 
-      {currentIndex === pages.length - 1 && (
-        <View style={styles.footer}>
+        {isLastPage && (
           <TouchableOpacity style={styles.getStartedButton} onPress={handleGetStarted}>
             <Text style={styles.getStartedText}>{pages[currentIndex].ctaLabel ?? 'Get Started'}</Text>
           </TouchableOpacity>
-        </View>
-      )}
+        )}
+      </View>
     </View>
   );
 }
@@ -367,11 +378,13 @@ const styles = StyleSheet.create({
     lineHeight: 22,
   },
   pagination: {
-    position: 'absolute',
-    bottom: 150,
     flexDirection: 'row',
-    alignSelf: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 8,
+  },
+  paginationWithButton: {
+    marginBottom: 16,
   },
   dot: {
     height: 8,
@@ -380,27 +393,34 @@ const styles = StyleSheet.create({
   },
   footer: {
     position: 'absolute',
-    bottom: 60,
+    bottom: 0,
     left: 0,
     right: 0,
     paddingHorizontal: 40,
     alignItems: 'center',
+    gap: 20,
   },
   getStartedButton: {
-    minHeight: 48,
+    width: '100%',
+    minHeight: 52,
     paddingHorizontal: 24,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 2,
-    borderColor: 'rgba(255,255,255,0.2)',
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderColor: 'rgba(255,255,255,0.28)',
+    backgroundColor: 'rgba(15,15,15,0.85)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 14 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 8,
   },
   getStartedText: {
-    fontSize: 16,
+    fontSize: 17,
     fontWeight: '600',
-    color: '#171717',
+    color: 'white',
   },
   illustrationBubble: {
     width: 84,

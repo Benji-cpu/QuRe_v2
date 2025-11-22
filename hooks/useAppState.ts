@@ -1,7 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback, useState } from 'react';
 import { GRADIENT_PRESETS } from '../constants/Gradients';
-import { QRStorage } from '../services/QRStorage';
+import { QRStorage, BRAND_PLACEHOLDER_QR_ID } from '../services/QRStorage';
 import { UserPreferencesService } from '../services/UserPreferences';
 import { QRCodeData } from '../types/QRCode';
 
@@ -38,8 +38,16 @@ export function useAppState() {
         primaryQRData = await QRStorage.getQRCodeById(preferences.primaryQRCodeId);
       }
 
-      if (preferences.secondaryQRCodeId && premium) {
-        secondaryQRData = await QRStorage.getQRCodeById(preferences.secondaryQRCodeId);
+      if (premium) {
+        if (preferences.secondaryQRCodeId) {
+          secondaryQRData = await QRStorage.getQRCodeById(preferences.secondaryQRCodeId);
+        }
+      } else {
+        const placeholderQR = await QRStorage.ensureBrandPlaceholder();
+        if (preferences.secondaryQRCodeId !== BRAND_PLACEHOLDER_QR_ID) {
+          await UserPreferencesService.updateSecondaryQR(placeholderQR.id);
+        }
+        secondaryQRData = placeholderQR;
       }
 
       setState({
@@ -76,13 +84,17 @@ export function useAppState() {
         await UserPreferencesService.updatePrimaryQR(undefined);
         setState(prev => ({ ...prev, primaryQR: null }));
       } else {
+        if (!state.isPremium) {
+          console.warn('Secondary QR removal blocked - premium required');
+          return;
+        }
         await UserPreferencesService.updateSecondaryQR(undefined);
         setState(prev => ({ ...prev, secondaryQR: null }));
       }
     } catch (error) {
       console.error('Error removing QR code:', error);
     }
-  }, []);
+  }, [state.isPremium]);
 
   return {
     state,

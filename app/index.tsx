@@ -2,6 +2,7 @@
 import { Feather } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router, useFocusEffect } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
@@ -21,7 +22,7 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import { EngagementPricingService } from '../services/EngagementPricingService';
 import { navigationService } from '../services/NavigationService';
-import { QRStorage } from '../services/QRStorage';
+import { QRStorage, BRAND_PLACEHOLDER_QR_ID } from '../services/QRStorage';
 import { UserPreferencesService } from '../services/UserPreferences';
 import { PreferencesCache } from '../services/PreferencesCache';
 import { setLockScreenWallpaper } from '../services/WallpaperService';
@@ -93,6 +94,7 @@ function HomeScreen() {
   }, [dismissSwipeHelper]);
   
   const gradientTransition = useSharedValue(0);
+  const isSingleSlotMode = isPremium ? qrSlotMode === 'single' : false;
 
   // Swipe indicator session control
 
@@ -180,7 +182,9 @@ function HomeScreen() {
       setPreviousGradientIndex(validIndex);
       setIsPremium(premium);
 
-      const slotMode = preferences.qrSlotMode || 'double';
+      const preferenceSlotMode = preferences.qrSlotMode || 'double';
+      const slotMode = premium ? preferenceSlotMode : 'double';
+      preferences.qrSlotMode = slotMode;
       const defaultXForMode = slotMode === 'single' ? DEFAULT_SINGLE_QR_X_POSITION : DEFAULT_QR_X_POSITION;
       const defaultScaleForMode = slotMode === 'single' ? MIN_SINGLE_QR_SCALE : DEFAULT_QR_SCALE;
 
@@ -240,11 +244,20 @@ function HomeScreen() {
         setPrimaryQR(null);
       }
 
-      if (preferences.secondaryQRCodeId && premium) {
-        const secondaryQRData = await QRStorage.getQRCodeById(preferences.secondaryQRCodeId);
-        setSecondaryQR(secondaryQRData);
-      } else if (!premium) {
-        setSecondaryQR(null);
+      if (premium) {
+        if (preferences.secondaryQRCodeId) {
+          const secondaryQRData = await QRStorage.getQRCodeById(preferences.secondaryQRCodeId);
+          setSecondaryQR(secondaryQRData);
+        } else {
+          setSecondaryQR(null);
+        }
+      } else {
+        const placeholderQR = await QRStorage.ensureBrandPlaceholder();
+        if (preferences.secondaryQRCodeId !== BRAND_PLACEHOLDER_QR_ID) {
+          await UserPreferencesService.updateSecondaryQR(placeholderQR.id);
+          preferences.secondaryQRCodeId = placeholderQR.id;
+        }
+        setSecondaryQR(placeholderQR);
       }
 
       Animated.timing(titleOpacity, {
@@ -305,11 +318,19 @@ function HomeScreen() {
         setPrimaryQR(null);
       }
 
-      if (preferences.secondaryQRCodeId && premium) {
-        const secondaryQRData = await QRStorage.getQRCodeById(preferences.secondaryQRCodeId);
-        setSecondaryQR(secondaryQRData);
-      } else if (!premium) {
-        setSecondaryQR(null);
+      if (premium) {
+        if (preferences.secondaryQRCodeId) {
+          const secondaryQRData = await QRStorage.getQRCodeById(preferences.secondaryQRCodeId);
+          setSecondaryQR(secondaryQRData);
+        } else {
+          setSecondaryQR(null);
+        }
+      } else {
+        const placeholderQR = await QRStorage.ensureBrandPlaceholder();
+        if (preferences.secondaryQRCodeId !== BRAND_PLACEHOLDER_QR_ID) {
+          await UserPreferencesService.updateSecondaryQR(placeholderQR.id);
+        }
+        setSecondaryQR(placeholderQR);
       }
     } catch (error) {
       console.error('Error reloading QR codes:', error);
@@ -639,12 +660,22 @@ Create personalized wallpapers with QR codes for instant access to your links, c
 
 Download QuRe: qure.app`;
 
+          // Ensure Android gets a sharable content URI instead of a raw file path
+          let shareUri: string | undefined = uri;
+          if (Platform.OS === 'android') {
+            try {
+              shareUri = await FileSystem.getContentUriAsync(uri);
+            } catch (contentUriError) {
+              console.warn('Failed to create content URI for sharing, falling back to file URI', contentUriError);
+              shareUri = uri;
+            }
+          }
+
           try {
             // Try using React Native Share API first (supports text + images)
             await Share.share({
               message: shareMessage,
-              url: Platform.OS === 'ios' ? uri : undefined, // iOS supports url
-              ...(Platform.OS === 'android' && { url: uri }), // Android needs it in the root object
+              ...(shareUri ? { url: shareUri } : {}),
             });
           } catch (shareError) {
             console.log('Share API failed, falling back to expo-sharing:', shareError);
@@ -685,6 +716,24 @@ Download QuRe: qure.app`;
       setHideElementsForExport(false);
     }
   };
+
+  const handleSliderCollapse = useCallback(() => {
+    setSliderExpanded(false);
+    Animated.timing(elementsOpacity, {
+      toValue: 1,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [elementsOpacity]);
+
+  const handleSliderExpand = useCallback(() => {
+    setSliderExpanded(true);
+    Animated.timing(elementsOpacity, {
+      toValue: 0.3,
+      duration: 200,
+      useNativeDriver: true,
+    }).start();
+  }, [elementsOpacity]);
 
   useEffect(() => {
     const backAction = () => {
@@ -738,6 +787,10 @@ Download QuRe: qure.app`;
         setPrimaryQR(null);
         await UserPreferencesService.updatePrimaryQR(undefined);
       } else if (slot === 'secondary') {
+        if (!isPremium) {
+          navigationService.navigateToPremium();
+          return;
+        }
         setSecondaryQR(null);
         await UserPreferencesService.updateSecondaryQR(undefined);
       }
@@ -753,24 +806,6 @@ Download QuRe: qure.app`;
       navigationService.navigateTo('/modal/qrcode?slot=primary');
     }, 150);
   };
-
-  const handleSliderExpand = useCallback(() => {
-    setSliderExpanded(true);
-    Animated.timing(elementsOpacity, {
-      toValue: 0.3,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [elementsOpacity]);
-
-  const handleSliderCollapse = useCallback(() => {
-    setSliderExpanded(false);
-    Animated.timing(elementsOpacity, {
-      toValue: 1,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  }, [elementsOpacity]);
 
   const handleBackgroundPress = () => {
     if (sliderExpanded) {
@@ -806,7 +841,7 @@ Download QuRe: qure.app`;
                 )}
                 
                 <View style={styles.content}>
-                  <View style={[styles.header, { paddingTop: insets.top + 15 }]}>
+                  <View style={[styles.header, { paddingTop: Math.max(insets.top, 0) }]}>
                   </View>
 
                   <Animated.View style={{ opacity: elementsOpacity }}>
@@ -842,7 +877,7 @@ Download QuRe: qure.app`;
                             isExpanded={sliderExpanded}
                             onExpand={handleSliderExpand}
                             onCollapse={handleSliderCollapse}
-                            singleQRMode={!isPremium || qrSlotMode === 'single'}
+                            singleQRMode={isSingleSlotMode}
                             safeAreaInsets={insets}
                           />
                         )}
@@ -859,7 +894,7 @@ Download QuRe: qure.app`;
                     )}
                   </View>
 
-                  <View style={[styles.bottomSection, { paddingBottom: insets.bottom + 15 }]}>
+                  <View style={[styles.bottomSection, { paddingBottom: Math.max(insets.bottom, 0) + 15 }]}>
                     <QRSlots
                       primaryQR={primaryQR}
                       secondaryQR={secondaryQR}
@@ -871,7 +906,7 @@ Download QuRe: qure.app`;
                       onSlotPress={handleQRSlotPress}
                       onRemoveQR={handleRemoveQR}
                       hideEmptySlots={hideElementsForExport}
-                      singleQRMode={!isPremium || qrSlotMode === 'single'}
+                      singleQRMode={isSingleSlotMode}
                     />
                   </View>
                 </View>
@@ -891,7 +926,7 @@ Download QuRe: qure.app`;
                   style={[
                     styles.exportControlsCard,
                     {
-                      marginTop: insets.top + 20,
+                      marginTop: Math.max(insets.top, 0) + 20,
                       backgroundColor: theme.cardBackground,
                       borderColor: theme.border,
                     },
@@ -985,7 +1020,7 @@ const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
     marginBottom: 20,
-    height: 40,
+    minHeight: 40,
     justifyContent: 'center',
   },
   titleContainer: {

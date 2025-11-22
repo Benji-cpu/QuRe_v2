@@ -1,6 +1,8 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppStateProvider } from '../contexts/AppStateContext';
 import { ThemeProvider, useTheme } from '../contexts/ThemeContext';
 import { IAPService } from '../services/IAPService';
@@ -87,17 +89,23 @@ function RootLayoutContent() {
           }} 
         />
       </Stack>
-      <StatusBar style={mode === 'dark' ? 'light' : 'dark'} />
+      <StatusBar 
+        style={mode === 'dark' ? 'light' : 'dark'} 
+        translucent={Platform.OS === 'android'}
+        backgroundColor="transparent"
+      />
     </>
   );
 }
 
 export default function RootLayout() {
   return (
-    <AppStateProvider>
-      <ThemeProvider>
-        <RootLayoutContent />
-      </ThemeProvider>
-    </AppStateProvider>
+    <SafeAreaProvider>
+      <AppStateProvider>
+        <ThemeProvider>
+          <RootLayoutContent />
+        </ThemeProvider>
+      </AppStateProvider>
+    </SafeAreaProvider>
   );
 }

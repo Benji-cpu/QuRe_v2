@@ -1,6 +1,6 @@
 // app/components/QRForm.tsx
 import type { ReactNode } from 'react';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { QR_TYPES } from '../../constants/QRTypes';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -15,7 +15,11 @@ interface QRFormProps {
   headerAccessory?: ReactNode;
 }
 
-export default function QRForm({ type, initialData, onDataChange, onFieldLayout, onFieldFocus, headerAccessory }: QRFormProps) {
+export interface QRFormRef {
+  focusFirstField: () => void;
+}
+
+const QRForm = forwardRef<QRFormRef, QRFormProps>(({ type, initialData, onDataChange, onFieldLayout, onFieldFocus, headerAccessory }, ref) => {
   const { theme } = useTheme();
   const [formData, setFormData] = useState<Record<string, string>>({});
   const hasInitialized = useRef(false);
@@ -23,6 +27,30 @@ export default function QRForm({ type, initialData, onDataChange, onFieldLayout,
   const inputRefs = useRef<Record<string, TextInput | null>>({});
 
   const typeConfig = QR_TYPES.find(t => t.type === type);
+
+  useImperativeHandle(ref, () => ({
+    focusFirstField: () => {
+      if (typeConfig && typeConfig.fields.length > 0) {
+        const firstFieldKey = typeConfig.fields[0].key;
+        
+        // Try to focus with retries in case the ref isn't ready yet
+        const attemptFocus = (retries = 5) => {
+          const firstInput = inputRefs.current[firstFieldKey];
+          if (firstInput) {
+            setTimeout(() => {
+              firstInput.focus();
+              onFieldFocus?.(firstFieldKey, firstInput);
+            }, 50);
+          } else if (retries > 0) {
+            // Retry after a short delay if ref isn't ready
+            setTimeout(() => attemptFocus(retries - 1), 50);
+          }
+        };
+        
+        attemptFocus();
+      }
+    },
+  }), [typeConfig, onFieldFocus]);
 
   useEffect(() => {
     // Reset when type changes
@@ -90,13 +118,11 @@ export default function QRForm({ type, initialData, onDataChange, onFieldLayout,
       const Icon = iconDefinition.Icon;
       const iconColor = iconDefinition.color || theme.primary;
       return (
-        <View style={[styles.headingIconBadge, { borderColor: iconColor }]}>
-          <Icon
-            name={iconDefinition.iconName as never}
-            size={Math.round(24 * (iconDefinition.sizeScale ?? 1))}
-            color={iconColor}
-          />
-        </View>
+        <Icon
+          name={iconDefinition.iconName as never}
+          size={Math.round(20 * (iconDefinition.sizeScale ?? 1))}
+          color={iconColor}
+        />
       );
     }
 
@@ -157,7 +183,7 @@ export default function QRForm({ type, initialData, onDataChange, onFieldLayout,
       ))}
     </View>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -173,23 +199,15 @@ const styles = StyleSheet.create({
   titleGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
   },
-  headingIconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   headingEmoji: {
-    fontSize: 32,
+    fontSize: 24,
   },
   headerAccessory: {
     flexShrink: 0,
@@ -219,3 +237,5 @@ const styles = StyleSheet.create({
     textAlignVertical: 'top',
   },
 });
+
+export default QRForm;

@@ -14,7 +14,7 @@ export default function ViewModal() {
   const [qrCode, setQrCode] = useState<QRCodeData | null>(null);
   const [loading, setLoading] = useState(true);
   const insets = useSafeAreaInsets();
-  const headerPadding = Math.max(insets.top - 42, 10);
+  const headerPadding = Math.max(insets.top, 0) + 10;
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -100,7 +100,7 @@ export default function ViewModal() {
       <ScrollView 
         style={styles.content} 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 120 }}
+        contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 0) + 120 }}
       >
         <View style={[styles.qrContainer, { backgroundColor: theme.surface }]}>
           <QRCodePreview 
@@ -159,7 +159,7 @@ export default function ViewModal() {
         styles.footer
         , 
         { 
-          paddingBottom: Platform.OS === 'android' ? 50 : Math.max(insets.bottom, 50),
+          paddingBottom: Math.max(insets.bottom, 0) + 20,
           backgroundColor: theme.surface,
           borderTopColor: theme.border
         }

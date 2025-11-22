@@ -1,7 +1,7 @@
 // components/QRTypeSelector.tsx
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { LayoutAnimation, Platform, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { LayoutAnimation, LayoutChangeEvent, Platform, StyleSheet, Text, TouchableOpacity, UIManager, View } from 'react-native';
 import { QR_TYPES } from '../../constants/QRTypes';
 import { useTheme } from '../../contexts/ThemeContext';
 import { QRCodeType } from '../../types/QRCode';
@@ -14,13 +14,19 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 interface QRTypeSelectorProps {
   selectedType: QRCodeType;
   onTypeSelect: (type: QRCodeType) => void;
+  onTypeSelectedFromExpanded?: () => void;
 }
 
-export default function QRTypeSelector({ selectedType, onTypeSelect }: QRTypeSelectorProps) {
+const GRID_COLUMNS = 3;
+const GRID_GAP = 8;
+const COLUMN_GAP = 8; // Kept for calculation compatibility, essentially acts as the 3rd gap
+
+export default function QRTypeSelector({ selectedType, onTypeSelect, onTypeSelectedFromExpanded }: QRTypeSelectorProps) {
   const { theme } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
+  const [typeButtonSize, setTypeButtonSize] = useState<number | null>(null);
 
-  // Define the priority order
+  // Define the priority order - top 3 shown when collapsed
   const priorityOrder: QRCodeType[] = ['whatsapp', 'instagram', 'link'];
   
   // Separate top 3 and remaining types
@@ -28,7 +34,7 @@ export default function QRTypeSelector({ selectedType, onTypeSelect }: QRTypeSel
     .sort((a, b) => priorityOrder.indexOf(a.type) - priorityOrder.indexOf(b.type));
   
   const remainingTypes = QR_TYPES.filter(type => !priorityOrder.includes(type.type));
-
+  
   const toggleExpanded = () => {
     LayoutAnimation.configureNext({
       duration: 200,
@@ -52,25 +58,13 @@ export default function QRTypeSelector({ selectedType, onTypeSelect }: QRTypeSel
     if (iconDefinition?.type === 'vector') {
       const Icon = iconDefinition.Icon;
       const iconColor = iconDefinition.color || theme.primary;
-      const badgeBackground =
-        iconDefinition.backgroundColor || (isSelected ? theme.surface : theme.surfaceVariant);
 
       return (
-        <View
-          style={[
-            styles.iconBadge,
-            {
-              backgroundColor: badgeBackground,
-              borderColor: isSelected ? iconColor : 'transparent',
-            },
-          ]}
-        >
-          <Icon
-            name={iconDefinition.iconName as never}
-            size={Math.round(26 * (iconDefinition.sizeScale ?? 1))}
-            color={iconColor}
-          />
-        </View>
+        <Icon
+          name={iconDefinition.iconName as never}
+          size={Math.round(20 * (iconDefinition.sizeScale ?? 1))}
+          color={iconColor}
+        />
       );
     }
 
@@ -89,6 +83,41 @@ export default function QRTypeSelector({ selectedType, onTypeSelect }: QRTypeSel
     );
   };
 
+  const handleTypeSelect = (typeConfig: (typeof QR_TYPES)[number]) => {
+    const wasExpanded = isExpanded;
+    
+    onTypeSelect(typeConfig.type);
+    
+    // If selected from expanded view, collapse and notify parent
+    if (wasExpanded) {
+      setIsExpanded(false);
+      onTypeSelectedFromExpanded?.();
+    }
+  };
+
+  const handleColumnsLayout = useCallback((event: LayoutChangeEvent) => {
+    const { width } = event.nativeEvent.layout;
+    // Calculate size for 4 items per row (3 types + 1 action column/spacer)
+    // We use the same formula as before because it effectively divides by 4
+    // GRID_COLUMNS (3) + 1 = 4 items
+    // totalRowGap (2 gaps) + COLUMN_GAP (1 gap) = 3 gaps total
+    const totalRowGap = GRID_GAP * (GRID_COLUMNS - 1);
+    const computedSize = (width - COLUMN_GAP - totalRowGap) / (GRID_COLUMNS + 1);
+
+    if (!Number.isFinite(computedSize) || computedSize <= 0) {
+      return;
+    }
+
+    setTypeButtonSize((prev) => {
+      if (prev === null || Math.abs(prev - computedSize) > 0.5) {
+        return computedSize;
+      }
+      return prev;
+    });
+  }, []);
+
+  const sharedButtonDimensions = typeButtonSize !== null ? { width: typeButtonSize } : null;
+
   const renderTypeButton = (typeConfig: (typeof QR_TYPES)[number]) => {
     const isSelected = selectedType === typeConfig.type;
     return (
@@ -96,10 +125,11 @@ export default function QRTypeSelector({ selectedType, onTypeSelect }: QRTypeSel
         key={typeConfig.type}
         style={[
           styles.typeButton,
+          sharedButtonDimensions,
           { backgroundColor: theme.surfaceVariant, borderColor: theme.border },
           isSelected && [styles.selectedType, { backgroundColor: theme.surface, borderColor: theme.primary }],
         ]}
-        onPress={() => onTypeSelect(typeConfig.type)}
+        onPress={() => handleTypeSelect(typeConfig)}
       >
         {renderTypeIcon(typeConfig, isSelected)}
         <Text
@@ -114,37 +144,63 @@ export default function QRTypeSelector({ selectedType, onTypeSelect }: QRTypeSel
       </TouchableOpacity>
     );
   };
+
+  const renderExpandButton = () => (
+    <TouchableOpacity 
+      key="expand-button"
+      style={[
+        styles.typeButton,
+        sharedButtonDimensions,
+        { backgroundColor: theme.surfaceVariant, borderColor: theme.border },
+        isExpanded && [styles.selectedType, { backgroundColor: theme.surface, borderColor: theme.primary }],
+      ]} 
+      onPress={toggleExpanded}
+    >
+      <Ionicons 
+        name={isExpanded ? 'chevron-up' : 'chevron-down'} 
+        size={20} 
+        color={isExpanded ? theme.primary : theme.textSecondary} 
+      />
+    </TouchableOpacity>
+  );
+
+  const renderSpacer = (index: number) => (
+    <View 
+      key={`spacer-${index}`}
+      style={[styles.typeButton, sharedButtonDimensions, { opacity: 0, borderWidth: 0 }]} 
+      pointerEvents="none"
+    />
+  );
+  
+  // Build the flat list of grid items
+  const renderGridItems = () => {
+    const items = [];
+    
+    // 1. Top 3 types
+    topTypes.forEach(type => items.push(renderTypeButton(type)));
+    
+    // 2. Expand button (always in the 4th slot of the first row)
+    items.push(renderExpandButton());
+    
+    // 3. Remaining types
+    if (isExpanded) {
+      remainingTypes.forEach((type, index) => {
+        items.push(renderTypeButton(type));
+        // Add spacer after every 3rd item to keep the 4th column empty
+        if ((index + 1) % 3 === 0) {
+          items.push(renderSpacer(index));
+        }
+      });
+    }
+    
+    return items;
+  };
   
   return (
     <View style={styles.container}>
-      <Text style={[styles.title, { color: theme.text }]}>Choose QR Code Type</Text>
-      
-      {/* Top 3 types - always visible */}
-      <View style={styles.typesGrid}>
-        {topTypes.map(renderTypeButton)}
+      <View style={styles.gridContainer} onLayout={handleColumnsLayout}>
+        {renderGridItems()}
       </View>
-      
-      {/* Remaining types - collapsible */}
-      {isExpanded && (
-        <View style={[styles.typesGrid, styles.expandedGrid]}>
-          {remainingTypes.map(renderTypeButton)}
-        </View>
-      )}
-      
-      {/* Expand/Collapse button */}
-      <TouchableOpacity 
-        style={[styles.expandButton, { borderColor: theme.border }]} 
-        onPress={toggleExpanded}
-      >
-        <Text style={[styles.expandButtonText, { color: theme.textSecondary }]}>
-          {isExpanded ? 'Show Less' : 'Show More'}
-        </Text>
-        <Ionicons 
-          name={isExpanded ? 'chevron-up' : 'chevron-down'} 
-          size={16} 
-          color={theme.textSecondary} 
-        />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -153,72 +209,35 @@ const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 15,
-    color: '#333',
-  },
-  typesGrid: {
+  gridContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
-  },
-  expandedGrid: {
-    marginTop: 10,
+    gap: GRID_GAP,
+    alignItems: 'flex-start',
   },
   typeButton: {
-    flex: 1,
-    minWidth: '30%',
-    padding: 15,
+    width: '22%', // Fallback width (approx 4 columns)
+    aspectRatio: 1,
+    padding: 10,
     borderRadius: 10,
-    backgroundColor: '#f5f5f5',
     alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
-    borderColor: 'transparent',
   },
   selectedType: {
-    backgroundColor: '#e3f2fd',
-    borderColor: '#2196f3',
-  },
-  iconBadge: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-    borderWidth: 2,
+    // Applied dynamically with theme colors
   },
   emojiIcon: {
-    fontSize: 26,
-    marginBottom: 5,
+    fontSize: 20,
+    marginBottom: 4,
   },
   typeTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '500',
-    color: '#666',
     textAlign: 'center',
+    marginTop: 4,
   },
   selectedTypeText: {
-    color: '#2196f3',
     fontWeight: 'bold',
-  },
-  expandButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    marginTop: 15,
-    gap: 8,
-  },
-  expandButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
   },
 });

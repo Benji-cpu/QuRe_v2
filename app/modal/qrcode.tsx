@@ -12,7 +12,7 @@ import { QRStorage } from '../../services/QRStorage';
 import { UserPreferencesService } from '../../services/UserPreferences';
 import { QRCodeData, QRCodeDesign, QRCodeType, QRCodeTypeData } from '../../types/QRCode';
 import QRCodePreview from '../components/QRCodePreview';
-import QRForm from '../components/QRForm';
+import QRForm, { QRFormRef } from '../components/QRForm';
 import QRTypeSelector from '../components/QRTypeSelector';
 import QRDesignForm from '../components/qr-design/QRDesignForm';
 import { canGenerateQRCode } from '../utils/qrValidation';
@@ -22,15 +22,15 @@ const PREVIEW_ACTION_PADDING = PREVIEW_ACTION_WIDTH + 28;
 
 export default function QRCodeModal() {
   const insets = useSafeAreaInsets();
-  const headerPadding = Math.max(insets.top - 42, 10);
   const { theme } = useTheme();
   const { id, slot } = useLocalSearchParams<{ id?: string; slot?: string }>();
   const scrollViewRef = useRef<ScrollView>(null);
+  const qrFormRef = useRef<QRFormRef>(null);
   const previewLayoutY = useRef<number | null>(null);
   // Store field layout as RELATIVE offsets to the form container.
   const fieldLayouts = useRef<Record<string, number>>({});
   const formOffset = useRef(0);
-  const [selectedType, setSelectedType] = useState<QRCodeType>('link');
+  const [selectedType, setSelectedType] = useState<QRCodeType>('whatsapp');
   const [formData, setFormData] = useState<QRCodeTypeData>({} as QRCodeTypeData);
   const [activeTab, setActiveTab] = useState<'content' | 'design'>('content');
   const [design, setDesign] = useState<QRCodeDesign>({
@@ -150,7 +150,7 @@ export default function QRCodeModal() {
   const handleCreateNew = () => {
     if (isEditMode && slot) {
       // When editing and creating new, clear the form and switch to create mode
-      setSelectedType('link');
+      setSelectedType('whatsapp');
       setFormData({} as QRCodeTypeData);
       setDesign({
         color: '#000000',
@@ -166,7 +166,7 @@ export default function QRCodeModal() {
       router.replace(`/modal/qrcode?slot=${slot}`);
     } else {
       // Normal create new behavior
-      setSelectedType('link');
+      setSelectedType('whatsapp');
       setFormData({} as QRCodeTypeData);
       setDesign({
         color: '#000000',
@@ -179,6 +179,16 @@ export default function QRCodeModal() {
       setShowHistorySelector(false);
     }
   };
+
+  const handleTypeSelect = useCallback((type: QRCodeType) => {
+    setSelectedType(type);
+    // Focus the first field after the type selection and form render
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        qrFormRef.current?.focusFirstField();
+      }, 100);
+    });
+  }, []);
 
   const handleFormDataChange = useCallback((data: QRCodeTypeData) => {
     setFormData(data);
@@ -499,7 +509,7 @@ export default function QRCodeModal() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 110 : insets.top + 56}
     >
-      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: headerPadding, paddingBottom: headerPadding }]}>
+      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: Platform.OS === 'ios' ? 12 : insets.top + 12, paddingBottom: 12 }]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
@@ -562,12 +572,13 @@ export default function QRCodeModal() {
             {!isEditMode && (
               <QRTypeSelector
                 selectedType={selectedType}
-                onTypeSelect={setSelectedType}
+                onTypeSelect={handleTypeSelect}
               />
             )}
             
             <View onLayout={(event) => { formOffset.current = event.nativeEvent.layout.y; }}>
               <QRForm
+                ref={qrFormRef}
                 type={selectedType}
                 initialData={formData}
                 onDataChange={handleFormDataChange}
@@ -737,12 +748,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
   backButton: {
-    marginRight: 15,
+    marginRight: 12,
+    padding: 4,
   },
   headerTitle: {
     fontSize: 20,

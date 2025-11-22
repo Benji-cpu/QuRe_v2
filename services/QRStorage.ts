@@ -1,9 +1,13 @@
 // services/QRStorage.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { QRCodeData } from '../types/QRCode';
+import { QRCodeData, LinkData } from '../types/QRCode';
+import { QRGenerator } from './QRGenerator';
 
 const STORAGE_KEY = '@qure_qr_codes';
 const INDEX_KEY = '@qure_qr_index';
+export const BRAND_PLACEHOLDER_QR_ID = 'qure-brand-placeholder';
+export const BRAND_PLACEHOLDER_URL = 'https://benji-cpu.github.io/qure_web/';
+const BRAND_PLACEHOLDER_LABEL = 'QuRe';
 
 export class QRStorage {
   private static async getIndex(): Promise<Record<string, QRCodeData>> {
@@ -47,7 +51,8 @@ export class QRStorage {
   static async saveQRCode(qrCode: QRCodeData): Promise<void> {
     try {
       const existingCodes = await this.getAllQRCodes();
-      const updatedCodes = [qrCode, ...existingCodes];
+      const filteredCodes = existingCodes.filter(code => code.id !== qrCode.id);
+      const updatedCodes = [qrCode, ...filteredCodes];
       await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(updatedCodes));
       const index = await this.getIndex();
       index[qrCode.id] = qrCode;
@@ -108,5 +113,29 @@ export class QRStorage {
       console.error('Error getting QR code by ID:', error);
       return null;
     }
+  }
+
+  static async ensureBrandPlaceholder(): Promise<QRCodeData> {
+    const existing = await this.getQRCodeById(BRAND_PLACEHOLDER_QR_ID);
+    if (existing) {
+      return existing;
+    }
+
+    const linkData: LinkData = {
+      url: BRAND_PLACEHOLDER_URL,
+      label: BRAND_PLACEHOLDER_LABEL,
+    };
+
+    const placeholder: QRCodeData = {
+      id: BRAND_PLACEHOLDER_QR_ID,
+      type: 'link',
+      label: QRGenerator.generateLabel('link', linkData),
+      data: linkData,
+      content: QRGenerator.generateContent('link', linkData),
+      createdAt: new Date().toISOString(),
+    };
+
+    await this.saveQRCode(placeholder);
+    return placeholder;
   }
 }

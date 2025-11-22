@@ -56,6 +56,18 @@ export class PreferencesCache {
     this.emit();
     return merged;
   }
+
+  /**
+   * Clears the in-memory cache (dev-only utility)
+   */
+  static clearCache(): void {
+    if (!__DEV__) {
+      return;
+    }
+    this.snapshot = null;
+    this.loading = null;
+    this.emit();
+  }
 }
 
 

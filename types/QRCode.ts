@@ -24,6 +24,7 @@ export interface QRCodeDesign {
 }
 
 export type QRCodeType = 'link' | 'instagram' | 'whatsapp' | 'email' | 'phone' | 'contact' | 'paypal' | 'wise' | 'bitcoin';
+export const DEFAULT_QR_TYPE: QRCodeType = 'whatsapp';
 
 export type QRCodeTypeData = 
   | LinkData 

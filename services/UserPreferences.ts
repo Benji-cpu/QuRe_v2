@@ -303,5 +303,47 @@ export class UserPreferencesService {
       throw error;
     }
   }
+
+  /**
+   * Clears all app data from AsyncStorage (dev-only utility)
+   * This resets the app to a fresh install state
+   */
+  static async clearAllData(): Promise<void> {
+    if (!__DEV__) {
+      throw new Error('clearAllData can only be called in development mode');
+    }
+
+    try {
+      // Import PreferencesCache dynamically to avoid circular dependency
+      const { PreferencesCache } = await import('./PreferencesCache');
+      
+      // Clear the in-memory cache
+      PreferencesCache.clearCache();
+      
+      // List of all AsyncStorage keys used in the app
+      const keysToRemove = [
+        PREFERENCES_KEY,
+        PREMIUM_KEY,
+        ONBOARDING_KEY,
+        '@qure_qr_codes',
+        '@qure_qr_index',
+        '@qure_custom_background',
+        '@qure_engagement_metrics',
+        '@qure_offer_history',
+        'customColors',
+        'customGradients',
+        '@qure_theme_preference',
+        'swipeHelperShownCount',
+      ];
+
+      // Remove all keys
+      await AsyncStorage.multiRemove(keysToRemove);
+      
+      console.log('✅ All app data cleared successfully');
+    } catch (error) {
+      console.error('Error clearing app data:', error);
+      throw error;
+    }
+  }
 }
 

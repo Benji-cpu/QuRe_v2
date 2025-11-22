@@ -11,6 +11,9 @@ import { UserPreferencesService } from '../../services/UserPreferences';
 import { QRCodeData } from '../../types/QRCode';
 import QRListItem from '../components/QRListItem';
 
+const HEADER_TOP_PADDING = 10;
+const HEADER_BOTTOM_PADDING = 10;
+
 export default function HistoryModal() {
   const { theme } = useTheme();
   const insets = useSafeAreaInsets();
@@ -144,6 +147,8 @@ export default function HistoryModal() {
     </View>
   );
 
+  const headerTopPadding = Math.max(insets.top, 0) + HEADER_TOP_PADDING;
+
   if (loading) {
     return (
       <View style={[styles.loadingContainer, { backgroundColor: theme.background }]}>
@@ -154,7 +159,17 @@ export default function HistoryModal() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: insets.top + 15 }]}>
+      <View
+        style={[
+          styles.header,
+          {
+            backgroundColor: theme.surface,
+            borderBottomColor: theme.border,
+            paddingTop: headerTopPadding,
+            paddingBottom: HEADER_BOTTOM_PADDING,
+          },
+        ]}
+      >
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
@@ -176,13 +191,25 @@ export default function HistoryModal() {
             hideActions={isSelectMode}
           />
         )}
-        contentContainerStyle={qrCodes.length === 0 ? styles.emptyList : styles.list}
+        contentContainerStyle={[
+          qrCodes.length === 0 ? styles.emptyList : styles.list,
+          { paddingBottom: Math.max(insets.bottom, 0) + 20 }
+        ]}
         ListEmptyComponent={renderEmpty}
         showsVerticalScrollIndicator={false}
       />
       
       {(qrCodes.length > 0 && !isSelectMode) && (
-        <TouchableOpacity style={[styles.fab, { backgroundColor: theme.primary }]} onPress={handleCreate}>
+        <TouchableOpacity 
+          style={[
+            styles.fab, 
+            { 
+              backgroundColor: theme.primary,
+              bottom: Math.max(insets.bottom, 0) + 20
+            }
+          ]} 
+          onPress={handleCreate}
+        >
           <Text style={[styles.fabIcon, { color: theme.primaryText }]}>+</Text>
         </TouchableOpacity>
       )}
