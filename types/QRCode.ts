@@ -81,7 +81,8 @@ export interface PayPalData {
 }
 
 export interface WiseData {
-  email: string;
+  wiseTag?: string;
+  email?: string; // Deprecated: use wiseTag instead
   amount?: string;
   currency?: string;
   label?: string;

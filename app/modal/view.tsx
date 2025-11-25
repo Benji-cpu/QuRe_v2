@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { QR_TYPES } from '../../constants/QRTypes';
+import { Layout } from '../../constants/Layout';
 import { useTheme } from '../../contexts/ThemeContext';
 import { QRStorage } from '../../services/QRStorage';
 import { QRCodeData } from '../../types/QRCode';
@@ -14,7 +15,7 @@ export default function ViewModal() {
   const [qrCode, setQrCode] = useState<QRCodeData | null>(null);
   const [loading, setLoading] = useState(true);
   const insets = useSafeAreaInsets();
-  const headerPadding = Math.max(insets.top, 0) + 10;
+  const headerPadding = Math.max(insets.top, 0) + Layout.spacing.small;
   const { theme } = useTheme();
 
   useEffect(() => {
@@ -90,7 +91,15 @@ export default function ViewModal() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: headerPadding, paddingBottom: headerPadding }]}>
+      <View style={[
+        styles.header, 
+        { 
+          backgroundColor: theme.surface, 
+          borderBottomColor: theme.border, 
+          paddingTop: headerPadding, 
+          paddingBottom: Layout.spacing.headerPadding 
+        }
+      ]}>
         <TouchableOpacity style={styles.backButton} onPress={handleClose}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
@@ -159,7 +168,7 @@ export default function ViewModal() {
         styles.footer
         , 
         { 
-          paddingBottom: Math.max(insets.bottom, 0) + 20,
+          paddingBottom: Math.max(insets.bottom, 0) + Layout.spacing.screenPadding,
           backgroundColor: theme.surface,
           borderTopColor: theme.border
         }
@@ -202,31 +211,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 16,
+    ...Layout.typography.body,
     color: '#666',
   },
-     header: {
-     flexDirection: 'row',
-     alignItems: 'center',
-     paddingHorizontal: 20,
-     paddingBottom: 15,
-     borderBottomWidth: 1,
-   },
-   backButton: {
-     marginRight: 15,
-   },
-   headerTitle: {
-     fontSize: 20,
-     fontWeight: 'bold',
-     flex: 1,
-   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Layout.spacing.screenPadding,
+    paddingBottom: 15,
+    borderBottomWidth: 1,
+  },
+  backButton: {
+    marginRight: 15,
+  },
+  headerTitle: {
+    ...Layout.typography.header,
+    flex: 1,
+  },
   content: {
     flex: 1,
   },
   qrContainer: {
     backgroundColor: '#fff',
-    margin: 20,
-    borderRadius: 15,
+    margin: Layout.spacing.screenPadding,
+    borderRadius: Layout.borderRadius.large,
     padding: 30,
     alignItems: 'center',
     shadowColor: '#000',
@@ -240,10 +248,10 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     backgroundColor: '#fff',
-    margin: 20,
+    margin: Layout.spacing.screenPadding,
     marginTop: 0,
-    borderRadius: 15,
-    padding: 20,
+    borderRadius: Layout.borderRadius.large,
+    padding: Layout.spacing.screenPadding,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -261,17 +269,17 @@ const styles = StyleSheet.create({
   typeIconBadge: {
     width: 44,
     height: 44,
-    borderRadius: 12,
+    borderRadius: Layout.borderRadius.medium,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: Layout.spacing.itemSpacing,
   },
   typeIconEmoji: {
     fontSize: 24,
   },
   typeText: {
-    fontSize: 16,
+    ...Layout.typography.subtitle,
     color: '#666',
     fontWeight: '500',
   },
@@ -282,7 +290,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   date: {
-    fontSize: 14,
+    ...Layout.typography.caption,
     color: '#999',
     marginBottom: 20,
   },
@@ -292,22 +300,21 @@ const styles = StyleSheet.create({
     paddingTop: 20,
   },
   dataTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    ...Layout.typography.subtitle,
     color: '#333',
     marginBottom: 10,
   },
   dataContent: {
-    fontSize: 14,
+    ...Layout.typography.body,
     color: '#666',
     fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
     backgroundColor: '#f5f5f5',
     padding: 15,
-    borderRadius: 8,
+    borderRadius: Layout.borderRadius.small,
  },
  footer: {
    flexDirection: 'row',
-   padding: 20,
+   padding: Layout.spacing.screenPadding,
    gap: 15,
    backgroundColor: '#fff',
    borderTopWidth: 1,
@@ -320,36 +327,36 @@ const styles = StyleSheet.create({
  closeButton: {
    flex: 1,
    paddingVertical: 15,
-   borderRadius: 8,
+   borderRadius: Layout.borderRadius.small,
    backgroundColor: '#f5f5f5',
    alignItems: 'center',
  },
  closeButtonText: {
-   fontSize: 16,
+   ...Layout.typography.subtitle,
    color: '#666',
    fontWeight: '500',
  },
  changeButton: {
    flex: 1,
    paddingVertical: 15,
-   borderRadius: 8,
+   borderRadius: Layout.borderRadius.small,
    backgroundColor: '#FF9800',
    alignItems: 'center',
  },
  changeButtonText: {
-   fontSize: 16,
+   ...Layout.typography.subtitle,
    color: '#fff',
    fontWeight: 'bold',
  },
  editButton: {
    flex: 1,
    paddingVertical: 15,
-   borderRadius: 8,
+   borderRadius: Layout.borderRadius.small,
    backgroundColor: '#2196f3',
    alignItems: 'center',
  },
  editButtonText: {
-   fontSize: 16,
+   ...Layout.typography.subtitle,
    color: '#fff',
    fontWeight: 'bold',
  },

@@ -4,6 +4,9 @@
   "version": "1.0.4",
   "scripts": {
     "start": "expo start --dev-client",
+    "bump": "node ./scripts/bump-version.js",
+    "build:android": "npm run bump && eas build --platform android --profile production --local",
+    "build:ios": "npm run bump && eas build --platform ios --profile production --local",
     "reset-project": "node ./scripts/reset-project.js",
     "android": "expo run:android",
     "ios": "expo run:ios",

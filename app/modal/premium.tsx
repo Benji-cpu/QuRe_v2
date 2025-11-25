@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Platform, ScrollView, StyleSheet, Text, Touch
 import { Product, PurchaseError } from 'react-native-iap';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PRODUCT_IDS } from '../../config/IAPConfig';
+import { Layout } from '../../constants/Layout';
 import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService, PricingOffer } from '../../services/EngagementPricingService';
 import { IAPService } from '../../services/IAPService';
@@ -315,7 +316,15 @@ export default function PremiumModal() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
-      <View style={[styles.headerBar, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: Platform.OS === 'ios' ? 12 : insets.top + 12, paddingBottom: 12 }]}>
+      <View style={[
+        styles.headerBar, 
+        { 
+          backgroundColor: theme.surface, 
+          borderBottomColor: theme.border, 
+          paddingTop: Platform.OS === 'ios' ? 12 : insets.top + 12, 
+          paddingBottom: Layout.spacing.headerPadding 
+        }
+      ]}>
         <TouchableOpacity style={styles.backButton} onPress={handleBackPress}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
@@ -439,7 +448,8 @@ const styles = StyleSheet.create({
   headerBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: Layout.spacing.screenPadding,
+    paddingVertical: Layout.spacing.headerPadding,
     borderBottomWidth: 1,
   },
   backButton: {
@@ -447,43 +457,40 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    ...Layout.typography.header,
     flex: 1,
   },
   header: {
     paddingVertical: 40,
-    paddingHorizontal: 20,
+    paddingHorizontal: Layout.spacing.screenPadding,
     alignItems: 'center',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    ...Layout.typography.title,
+    marginBottom: Layout.spacing.small,
   },
   subtitle: {
-    fontSize: 16,
+    ...Layout.typography.subtitle,
     textAlign: 'center',
   },
   specialMessageContainer: {
     padding: 15,
-    margin: 20,
-    borderRadius: 8,
+    margin: Layout.spacing.screenPadding,
+    borderRadius: Layout.borderRadius.small,
     borderLeftWidth: 4,
   },
   specialMessage: {
-    fontSize: 14,
-    lineHeight: 20,
+    ...Layout.typography.body,
   },
   featuresContainer: {
-    margin: 20,
-    borderRadius: 12,
-    padding: 20,
+    margin: Layout.spacing.screenPadding,
+    borderRadius: Layout.borderRadius.medium,
+    padding: Layout.spacing.screenPadding,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: Layout.spacing.sectionSpacing,
   },
   featureIcon: {
     fontSize: 24,
@@ -494,20 +501,18 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   featureTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...Layout.typography.subtitle,
     marginBottom: 2,
   },
   featureDescription: {
-    fontSize: 14,
-    lineHeight: 18,
+    ...Layout.typography.body,
   },
   pricingContainer: {
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: Layout.spacing.screenPadding,
   },
   priceCard: {
-    borderRadius: 16,
+    borderRadius: Layout.borderRadius.large,
     padding: 30,
     alignItems: 'center',
     shadowColor: '#000',
@@ -549,30 +554,30 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   pricePeriod: {
-    fontSize: 16,
+    ...Layout.typography.subtitle,
     marginTop: 5,
   },
   savingsText: {
-    fontSize: 14,
+    ...Layout.typography.body,
     fontWeight: '600',
     marginTop: 10,
   },
   guaranteeContainer: {
-    margin: 20,
-    borderRadius: 12,
-    padding: 20,
+    margin: Layout.spacing.screenPadding,
+    borderRadius: Layout.borderRadius.medium,
+    padding: Layout.spacing.screenPadding,
   },
   guaranteeText: {
-    fontSize: 14,
-    marginBottom: 8,
+    ...Layout.typography.body,
+    marginBottom: Layout.spacing.small,
     fontWeight: '500',
   },
   warningContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    margin: 20,
+    margin: Layout.spacing.screenPadding,
     padding: 15,
-    borderRadius: 8,
+    borderRadius: Layout.borderRadius.small,
     borderLeftWidth: 4,
   },
   warningIcon: {
@@ -581,17 +586,16 @@ const styles = StyleSheet.create({
   },
   warningText: {
     flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
+    ...Layout.typography.body,
   },
   footer: {
-    padding: 20,
+    padding: Layout.spacing.screenPadding,
     borderTopWidth: 1,
     paddingBottom: 40,
   },
   upgradeButton: {
     paddingVertical: 16,
-    borderRadius: 12,
+    borderRadius: Layout.borderRadius.medium,
     alignItems: 'center',
   },
   upgradeButtonText: {

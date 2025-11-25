@@ -53,8 +53,8 @@ export class QRGenerator {
   }
 
   private static generateInstagramContent(data: InstagramData): string {
-    const username = data.username.replace('@', '');
-    return `https://instagram.com/${username}`;
+    const username = (data.username || '').replace(/^@/, '').trim();
+    return `https://instagram.com/${encodeURIComponent(username)}`;
   }
 
   private static generateWhatsAppContent(data: WhatsAppData): string {
@@ -113,7 +113,9 @@ export class QRGenerator {
   }
 
   private static generatePayPalContent(data: PayPalData): string {
-    let url = `https://paypal.me/${data.paypalme}`;
+    // Sanitize handle: remove spaces, leading @, and ensure it's clean
+    const cleanHandle = (data.paypalme || '').replace(/^@/, '').replace(/\s+/g, '').trim();
+    let url = `https://paypal.me/${encodeURIComponent(cleanHandle)}`;
     
     if (data.amount) {
       url += `/${data.amount}`;
@@ -126,9 +128,12 @@ export class QRGenerator {
   }
 
   private static generateWiseContent(data: WiseData): string {
-    // For Wise, we'll generate a payment request link format
-    // This is a simplified format - actual Wise integration might require API calls
-    let content = `https://wise.com/pay/${encodeURIComponent(data.email)}`;
+    // Use wiseTag if available, fallback to email (legacy support)
+    const input = data.wiseTag || data.email || '';
+    // Remove leading @ if user included it, as wise.com/pay/me/ expects just the handle
+    const cleanTag = input.replace(/^@/, '').trim();
+    
+    let content = `https://wise.com/pay/me/${encodeURIComponent(cleanTag)}`;
     
     const params: string[] = [];
     if (data.amount) {
@@ -191,7 +196,9 @@ export class QRGenerator {
         return `PayPal: ${paypalData.paypalme}`;
       case 'wise':
         const wiseData = data as WiseData;
-        return `Wise: ${wiseData.email}`;
+        // Use wiseTag or fallback to email
+        const wiseLabel = wiseData.wiseTag || wiseData.email || '';
+        return `Wise: ${wiseLabel.replace(/^@/, '')}`;
       case 'bitcoin':
         const bitcoinData = data as BitcoinData;
         return `Bitcoin: ${bitcoinData.address.substring(0, 20)}...`;

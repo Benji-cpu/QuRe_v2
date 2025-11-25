@@ -39,7 +39,7 @@ export class UserPreferencesService {
       if (__DEV__) console.log('🔍 Raw AsyncStorage data:', data);
       
       const defaultPreferences = { 
-        selectedGradientId: 'sunset', 
+        selectedGradientId: 'royal', 
         qrXPosition: DEFAULT_QR_X_POSITION,
         qrYPosition: DEFAULT_QR_Y_POSITION,
         qrScale: DEFAULT_QR_SCALE,
@@ -95,7 +95,7 @@ export class UserPreferencesService {
     } catch (error) {
       console.error('Error loading user preferences:', error);
       return { 
-        selectedGradientId: 'sunset', 
+        selectedGradientId: 'royal', 
         qrXPosition: DEFAULT_QR_X_POSITION,
         qrYPosition: DEFAULT_QR_Y_POSITION,
         qrScale: DEFAULT_QR_SCALE,

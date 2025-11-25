@@ -12,16 +12,17 @@ export default ({ config }: ConfigContext): ExpoConfig => {
   const variant = resolveVariant();
   const isDevVariant = variant === "dev" || process.env.EXPO_DEV_CLIENT === "true";
 
-  const androidPackage = isDevVariant ? "com.anonymous.QuRe.dev" : "com.anonymous.QuRe";
+  // Note: Android package is set in native android code (android/app/build.gradle)
   const iosBundleIdentifier = isDevVariant ? "com.qureapp.app.dev" : "com.qureapp.app";
 
   const androidConfig = {
-    versionCode: 46,
+    versionCode: 50,
     adaptiveIcon: {
       foregroundImage: "./assets/images/adaptive-icon.png",
       backgroundColor: "#ffffff"
     },
-    package: androidPackage,
+    // Note: package is set in native android code (android/app/build.gradle)
+    // and is ignored here when android directory exists
     missingDimensionStrategy: {
       store: "play"
     },
@@ -54,7 +55,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         NSPhotoLibraryAddUsageDescription:
           "QuRe needs permission to save generated wallpapers to your photo library."
       },
-      buildNumber: "46"
+      buildNumber: "50"
     },
 
     android: androidConfig,

@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GRADIENT_PRESETS } from '../../constants/Gradients';
+import { Layout } from '../../constants/Layout';
 import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { IAPService } from '../../services/IAPService';
@@ -17,7 +18,7 @@ export default function SettingsModal() {
   const insets = useSafeAreaInsets();
   const headerTopPadding = Platform.OS === 'ios' ? 12 : insets.top + 12;
   const { theme, mode, toggleTheme } = useTheme();
-  const [selectedGradientId, setSelectedGradientId] = useState('sunset');
+  const [selectedGradientId, setSelectedGradientId] = useState('royal');
   const [isPremium, setIsPremium] = useState(false);
   const [showTitle, setShowTitle] = useState(true);
   const [qrSlotMode, setQrSlotMode] = useState<'single' | 'double'>('double');
@@ -224,7 +225,15 @@ export default function SettingsModal() {
       style={[styles.container, { backgroundColor: theme.background }]}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: headerTopPadding, paddingBottom: 12 }]}>
+      <View style={[
+        styles.header, 
+        { 
+          backgroundColor: theme.surface, 
+          borderBottomColor: theme.border, 
+          paddingTop: headerTopPadding, 
+          paddingBottom: Layout.spacing.headerPadding 
+        }
+      ]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
@@ -236,7 +245,7 @@ export default function SettingsModal() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: insets.bottom + 30 }
+          { paddingBottom: insets.bottom + Layout.spacing.sectionSpacing }
         ]}
         keyboardShouldPersistTaps="handled"
       >
@@ -531,7 +540,7 @@ export default function SettingsModal() {
           </View>
         </View>
 
-        <Text style={[styles.sectionTitle, { marginTop: 20, color: theme.text }]}>Developer Options</Text>
+        <Text style={[styles.sectionTitle, { marginTop: Layout.spacing.sectionSpacing, color: theme.text }]}>Developer Options</Text>
         
         <View style={[styles.settingsContainer, styles.devOptionsContainer, { backgroundColor: theme.surface }]}>
           <Pressable 
@@ -660,13 +669,13 @@ const styles = StyleSheet.create({
   },
   buttonBase: {
     minHeight: 44,
-    paddingHorizontal: 20,
+    paddingHorizontal: Layout.spacing.screenPadding,
     paddingVertical: 12,
-    borderRadius: 12,
+    borderRadius: Layout.borderRadius.medium,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    gap: 8,
+    gap: Layout.spacing.small,
     borderWidth: 2,
   },
   buttonText: {
@@ -676,44 +685,42 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 12,
+    paddingHorizontal: Layout.spacing.screenPadding,
+    paddingVertical: Layout.spacing.headerPadding,
     borderBottomWidth: 1,
   },
   backButton: {
     marginRight: 15,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    ...Layout.typography.header,
     marginLeft: 0,
     flex: 1,
   },
   content: {
     flex: 1,
-    padding: 20,
+    padding: Layout.spacing.screenPadding,
   },
   scrollContent: {
     paddingBottom: 100,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    marginTop: 6,
+    ...Layout.typography.section,
+    marginBottom: Layout.spacing.xsmall,
+    marginTop: 6, // Kept slightly different for first element visual balance, but generally standardized
   },
   gradientsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    gap: 8,
+    gap: Layout.spacing.small,
     marginBottom: 6,
   },
   gradientOption: {
     flexBasis: '23%',
     maxWidth: '23%',
     aspectRatio: 9 / 16,
-    borderRadius: 12,
+    borderRadius: Layout.borderRadius.medium,
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: 'transparent',
@@ -749,8 +756,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
-    borderRadius: 12,
+    gap: Layout.spacing.small,
+    borderRadius: Layout.borderRadius.medium,
     padding: 16,
     borderWidth: 2,
     borderStyle: 'dashed',
@@ -779,7 +786,7 @@ const styles = StyleSheet.create({
   backgroundThumbnail: {
     width: 80,
     height: 140,
-    borderRadius: 8,
+    borderRadius: Layout.borderRadius.small,
   },
   removeBackgroundButton: {
     paddingHorizontal: 16,
@@ -792,7 +799,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   settingsContainer: {
-    borderRadius: 12,
+    borderRadius: Layout.borderRadius.medium,
     overflow: 'hidden',
     marginBottom: 6,
   },
@@ -810,15 +817,13 @@ const styles = StyleSheet.create({
   settingTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: Layout.spacing.small,
   },
   settingTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...Layout.typography.subtitle,
   },
   settingDescription: {
-    fontSize: 14,
-    lineHeight: 18,
+    ...Layout.typography.body,
     marginTop: 4,
   },
   settingDivider: {
@@ -849,7 +854,7 @@ const styles = StyleSheet.create({
   qrModeButtonTextActive: {
   },
   planContainer: {
-    borderRadius: 12,
+    borderRadius: Layout.borderRadius.medium,
     padding: 14,
     marginBottom: 6,
   },
@@ -857,7 +862,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 8,
+    gap: Layout.spacing.small,
   },
   planDetails: {
     flexShrink: 1,
@@ -899,7 +904,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: Layout.spacing.small,
     paddingVertical: 12,
     paddingHorizontal: 16,
     borderRadius: 10,
@@ -920,8 +925,7 @@ const styles = StyleSheet.create({
   backgroundTypeButtonTextLocked: {
   },
   subsectionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...Layout.typography.subtitle,
     marginBottom: 10,
   },
   customBackgroundLarge: {
@@ -930,7 +934,7 @@ const styles = StyleSheet.create({
   backgroundLargeThumbnail: {
     width: '100%',
     height: 200,
-    borderRadius: 8,
+    borderRadius: Layout.borderRadius.small,
     marginBottom: 10,
   },
   customBackgroundActions: {
@@ -960,13 +964,17 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 1,
   },
+  removeButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
   uploadHint: {
-    fontSize: 12,
+    ...Layout.typography.caption,
     textAlign: 'center',
     marginTop: 10,
   },
   noBackgroundText: {
-    fontSize: 14,
+    ...Layout.typography.body,
     textAlign: 'center',
     marginTop: 10,
   },

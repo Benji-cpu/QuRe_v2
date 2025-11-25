@@ -152,11 +152,11 @@ export const QR_TYPES: QRTypeConfig[] = [
     ],
     fields: [
       {
-        key: 'email',
-        label: 'Wise Email',
+        key: 'wiseTag',
+        label: 'Wise Tag / Username',
         required: true,
-        placeholder: 'your-wise-email@example.com',
-        keyboardType: 'email-address'
+        placeholder: '@yourtag',
+        keyboardType: 'default'
       },
       {
         key: 'amount',

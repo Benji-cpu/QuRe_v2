@@ -10,6 +10,14 @@ describe('QRGenerator.generateContent', () => {
       expect(content).toBe('https://paypal.me/janedoe');
     });
 
+    it('sanitizes username with spaces and @', () => {
+      const content = QRGenerator.generateContent('paypal', {
+        paypalme: '@jane doe',
+      });
+
+      expect(content).toBe('https://paypal.me/janedoe');
+    });
+
     it('includes amount and currency when provided', () => {
       const content = QRGenerator.generateContent('paypal', {
         paypalme: 'janedoe',
@@ -22,23 +30,40 @@ describe('QRGenerator.generateContent', () => {
   });
 
   describe('wise', () => {
-    it('creates a Wise payment link', () => {
+    it('creates a Wise payment link with wiseTag', () => {
       const content = QRGenerator.generateContent('wise', {
-        email: 'payer@example.com',
+        wiseTag: 'janedoe',
+        email: 'ignored@example.com', // wiseTag takes precedence
       });
 
-      expect(content).toBe('https://wise.com/pay/payer%40example.com');
+      expect(content).toBe('https://wise.com/pay/me/janedoe');
+    });
+
+    it('supports legacy email field as tag', () => {
+      const content = QRGenerator.generateContent('wise', {
+        email: 'janedoe', // No wiseTag provided
+      });
+
+      expect(content).toBe('https://wise.com/pay/me/janedoe');
+    });
+
+    it('strips @ from tag', () => {
+      const content = QRGenerator.generateContent('wise', {
+        wiseTag: '@janedoe',
+      });
+
+      expect(content).toBe('https://wise.com/pay/me/janedoe');
     });
 
     it('appends query parameters for amount and currency', () => {
       const content = QRGenerator.generateContent('wise', {
-        email: 'payer@example.com',
+        wiseTag: 'janedoe',
         amount: '100',
         currency: 'eur',
       });
 
       expect(content).toBe(
-        'https://wise.com/pay/payer%40example.com?amount=100&currency=EUR',
+        'https://wise.com/pay/me/janedoe?amount=100&currency=EUR',
       );
     });
   });

@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert, Keyboard, KeyboardAvoidingView, Linking, NativeModules, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, findNodeHandle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Layout } from '../../constants/Layout';
 import { useTheme } from '../../contexts/ThemeContext';
 import { EngagementPricingService } from '../../services/EngagementPricingService';
 import { navigationService } from '../../services/NavigationService';
@@ -509,7 +510,15 @@ export default function QRCodeModal() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top + 110 : insets.top + 56}
     >
-      <View style={[styles.header, { backgroundColor: theme.surface, borderBottomColor: theme.border, paddingTop: Platform.OS === 'ios' ? 12 : insets.top + 12, paddingBottom: 12 }]}>
+      <View style={[
+        styles.header, 
+        { 
+          backgroundColor: theme.surface, 
+          borderBottomColor: theme.border, 
+          paddingTop: Platform.OS === 'ios' ? 12 : insets.top + 12, 
+          paddingBottom: Layout.spacing.headerPadding 
+        }
+      ]}>
         <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={theme.text} />
         </TouchableOpacity>
@@ -747,7 +756,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
-    paddingHorizontal: 20,
+    paddingHorizontal: Layout.spacing.screenPadding,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
@@ -756,8 +765,7 @@ const styles = StyleSheet.create({
     padding: 4,
   },
   headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    ...Layout.typography.header,
     color: '#333',
     flex: 1,
   },
@@ -771,7 +779,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   headerActionText: {
-    fontSize: 12,
+    ...Layout.typography.caption,
     fontWeight: '500',
   },
   slotIndicator: {
@@ -782,7 +790,7 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   slotIndicatorText: {
-    fontSize: 14,
+    ...Layout.typography.body,
     fontWeight: '600',
   },
   loadingContainer: {
@@ -791,7 +799,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    fontSize: 16,
+    ...Layout.typography.body,
     color: '#666',
   },
   tabsContainer: {
@@ -816,8 +824,7 @@ const styles = StyleSheet.create({
     gap: 5,
   },
   tabText: {
-    fontSize: 16,
-    fontWeight: '500',
+    ...Layout.typography.subtitle,
     color: '#666',
   },
   activeTabText: {
@@ -829,22 +836,22 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingHorizontal: 20,
+    paddingHorizontal: Layout.spacing.screenPadding,
     paddingVertical: 16,
   },
   contentContainer: {
-    gap: 12,
+    gap: Layout.spacing.itemSpacing,
   },
   typeDisplay: {
     backgroundColor: '#fff',
-    borderRadius: 8,
+    borderRadius: Layout.borderRadius.small,
     padding: 15,
     marginBottom: 20,
     borderWidth: 1,
     borderColor: '#ddd',
   },
   typeLabel: {
-    fontSize: 14,
+    ...Layout.typography.body,
     color: '#666',
     marginBottom: 5,
   },
@@ -854,12 +861,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   typeText: {
-    fontSize: 16,
-    fontWeight: '600',
+    ...Layout.typography.subtitle,
     color: '#333',
   },
   lockedText: {
-    fontSize: 14,
+    ...Layout.typography.body,
     color: '#999',
   },
   previewContainer: {
@@ -883,7 +889,7 @@ const styles = StyleSheet.create({
   previewPlaceholder: {
     width: 150,
     height: 150,
-    borderRadius: 12,
+    borderRadius: Layout.borderRadius.medium,
     borderWidth: 1,
     borderStyle: 'dashed',
     alignItems: 'center',
@@ -892,7 +898,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   previewPlaceholderText: {
-    fontSize: 13,
+    ...Layout.typography.caption,
     textAlign: 'center',
   },
   previewActions: {
@@ -901,7 +907,7 @@ const styles = StyleSheet.create({
     bottom: 20,
     right: 20,
     width: PREVIEW_ACTION_WIDTH,
-    borderRadius: 16,
+    borderRadius: Layout.borderRadius.large,
     overflow: 'hidden',
     borderWidth: 2,
   },
@@ -936,7 +942,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   previewActionText: {
-    fontSize: 14,
+    ...Layout.typography.body,
     fontWeight: '600',
   },
   copyFeedbackToast: {
@@ -948,7 +954,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 10,
     paddingHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: Layout.borderRadius.medium,
     borderWidth: 1,
   },
   copyFeedbackText: {
@@ -959,7 +965,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: Layout.borderRadius.small,
     marginTop: 12,
     marginBottom: 0,
   },
@@ -990,7 +996,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 20,
     borderWidth: 0,
-    borderRadius: 12,
+    borderRadius: Layout.borderRadius.medium,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -998,7 +1004,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   premiumOverlayText: {
-    fontSize: 14,
+    ...Layout.typography.body,
     fontWeight: '600',
     marginLeft: 8,
   },
@@ -1028,8 +1034,7 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee',
   },
   historyTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    ...Layout.typography.header,
     color: '#333',
   },
   historyList: {
@@ -1045,7 +1050,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 10,
     paddingHorizontal: 15,
-    borderRadius: 8,
+    borderRadius: Layout.borderRadius.small,
     marginTop: 10,
     marginBottom: 10,
   },
@@ -1055,16 +1060,16 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   createNewText: {
-    fontSize: 16,
+    ...Layout.typography.subtitle,
     fontWeight: '500',
   },
   historyItemLabel: {
-    fontSize: 16,
+    ...Layout.typography.subtitle,
     color: '#333',
     marginBottom: 5,
   },
   historyItemType: {
-    fontSize: 14,
+    ...Layout.typography.body,
     color: '#666',
   },
-}); 
+});
